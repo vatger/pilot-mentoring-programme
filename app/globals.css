@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #002F5D;
+  --secondary: #FFFFFF;
+  --accent-red: #D32F2F;
+  --accent-yellow: #FFC107;
+  --accent-black: #000000;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
