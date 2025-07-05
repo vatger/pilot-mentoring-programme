@@ -1,0 +1,19 @@
+# VATSIM PMP - Apache/Passenger Konfiguration
+PassengerAppRoot /var/www/html/pmp
+PassengerAppType node
+PassengerStartupFile passenger.js
+PassengerNodejs /usr/bin/node
+
+# Fehlerseiten unterdrücken
+ErrorDocument 404 /404.html
+ErrorDocument 500 /500.html
+
+# Statische Dateien direkt servieren
+<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$">
+    Header set Cache-Control "public, max-age=31536000"
+</FilesMatch>
+
+# Passenger Restart bei Änderungen
+<FilesMatch "restart\.txt$">
+    PassengerRestartDir /tmp
+</FilesMatch>
