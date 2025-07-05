@@ -1,3 +1,0 @@
-# VATSIM PMP - Einfache Passenger Konfiguration
-PassengerAppType node
-PassengerStartupFile passenger.js
