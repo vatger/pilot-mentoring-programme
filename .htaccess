@@ -1,15 +1,3 @@
-# VATSIM PMP - Sichere Passenger Konfiguration
+# VATSIM PMP - Einfache Passenger Konfiguration
 PassengerAppType node
 PassengerStartupFile passenger.js
-
-# Automatische Node.js Erkennung
-# PassengerNodejs /usr/bin/node
-
-# Debug-Modus aktivieren
-PassengerFriendlyErrorPages on
-PassengerLogLevel 2
-
-# Statische Dateien
-<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|html)$">
-    Header set Cache-Control "public, max-age=3600"
-</FilesMatch>

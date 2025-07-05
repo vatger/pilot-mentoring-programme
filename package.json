@@ -1,14 +1,12 @@
 {
   "name": "vatsim-pmp-website",
   "version": "1.0.0",
+  "main": "app.js",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "node passenger.js",
-    "start:passenger": "node passenger.js",
-    "start:app": "node app.js",
-    "start:test": "node app-test.js",
+    "start": "node app.js",
     "lint": "next lint"
   },
   "dependencies": {
