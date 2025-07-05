@@ -8,16 +8,28 @@ const app = express()
 // Einfaches Logging
 function log(message) {
   const timestamp = new Date().toISOString()
-  const logEntry = `[${timestamp}] ${message}\n`
-  console.log(message)
+  console.log(`[${timestamp}] ${message}`)
+  
   try {
+    const logEntry = `[${timestamp}] ${message}\n`
     fs.appendFileSync(path.join(__dirname, 'app.log'), logEntry)
   } catch (e) {
-    console.error('Logging error:', e)
+    // Logging-Fehler ignorieren, um App nicht zu stoppen
+    console.error('Logging error:', e.message)
   }
 }
 
 log('🚀 VATSIM PMP Website starting...')
+
+// Globaler Error Handler für unerwartete Fehler
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.message)
+  console.error('Stack:', err.stack)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason)
+})
 
 // Request Logging
 app.use((req, res, next) => {
@@ -202,7 +214,7 @@ module.exports = app
 
 // Für direkten Start
 if (require.main === module) {
-  const port = process.env.PORT || 3000
+  const port = process.env.PORT || 80
   app.listen(port, () => {
     log(`✅ Website running on port ${port}`)
   })
