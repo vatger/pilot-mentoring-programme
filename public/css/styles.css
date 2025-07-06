@@ -133,6 +133,142 @@ a:focus {
     outline-offset: 2px;
 }
 
+/* Stepper Styles */
+.steps-container {
+    margin: 40px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+}
+
+.stepper {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    position: relative;
+}
+
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    position: relative;
+    animation: fadeInUp 0.8s;
+}
+
+.step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 32px;
+    top: 56px;
+    width: 4px;
+    height: calc(100% - 56px);
+    background: linear-gradient(180deg, #1976d2 0%, #e3f2fd 100%);
+    border-radius: 2px;
+    z-index: 0;
+    animation: growLine 1s;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px);}
+    to { opacity: 1; transform: translateY(0);}
+}
+
+@keyframes growLine {
+    from { height: 0;}
+    to { height: calc(100% - 56px);}
+}
+
+.step-icon {
+    min-width: 56px;
+    min-height: 56px;
+    background: linear-gradient(135deg, #1976d2 60%, #42a5f5 100%);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 2em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(25,118,210,0.12);
+    z-index: 1;
+    transition: transform 0.2s;
+}
+
+.step:hover .step-icon {
+    transform: scale(1.08) rotate(-2deg);
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-title {
+    font-size: 1.2em;
+    color: #1976d2;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.step-desc {
+    font-size: 1em;
+    color: #222;
+    margin-bottom: 0;
+}
+
+/* Info Boxes */
+.info-amber {
+    background: #fffbe6;
+    border-left: 5px solid #ffc107;
+    color: #795548;
+    padding: 16px 20px;
+    border-radius: 7px;
+    margin: 18px 0;
+    font-size: 1em;
+    box-shadow: 0 1px 6px rgba(255,193,7,0.08);
+}
+
+.info-danger {
+    background: #fff0f0;
+    border-left: 5px solid #e53935;
+    color: #b71c1c;
+    padding: 16px 20px;
+    border-radius: 7px;
+    margin: 18px 0;
+    font-size: 1em;
+    box-shadow: 0 1px 6px rgba(229,57,53,0.08);
+}
+
+/* Stepper Controls */
+.stepper-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 24px;
+    gap: 12px;
+}
+.stepper-controls button {
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 22px;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.stepper-controls button:disabled {
+    background: #b0bec5;
+    cursor: not-allowed;
+}
+.stepper-progress {
+    text-align: center;
+    margin-bottom: 18px;
+    color: #1976d2;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
 /* Responsive Design */
 @media (max-width: 900px) {
     .container {
@@ -164,4 +300,36 @@ a:focus {
     .grid {
         grid-template-columns: 1fr;
     }
+    /* Stepper Responsive */
+    .step {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .step:not(:last-child)::after {
+        left: 28px;
+        top: 56px;
+        width: 3px;
+        height: calc(100% - 56px);
+    }
+    .step-icon {
+        margin-bottom: 8px;
+        margin-right: 0;
+        align-self: flex-start;
+    }
+    .stepper-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .stepper-controls button {
+        width: 100%;
+        min-width: 0;
+        padding: 12px 0;
+        font-size: 1.05em;
+    }
+}
+
+/* Extra: Make links in step-desc wrap and not overflow */
+.step-desc a {
+    word-break: break-all;
 }

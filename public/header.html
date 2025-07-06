@@ -1,0 +1,26 @@
+<div class="header">
+    <div class="logo" aria-label="VATSIM Germany Logo">VATSIM Germany</div>
+    <h1>Piloten-Mentoren-Programm</h1>
+</div>
+<nav class="nav" aria-label="Hauptnavigation">
+    <a href="/" id="nav-home">Home</a>
+    <a href="/teilnahme" id="nav-teilnahme">Teilnahme</a>
+    <a href="/events" id="nav-events">Events</a>
+    <a href="/howto" id="nav-howto">How to get started</a>
+    <a href="/kontakt" id="nav-kontakt">Kontakt</a>
+    <a href="/status" id="nav-status">Status</a>
+</nav>
+<script>
+  // Highlight active nav link
+  const navMap = {
+    '/': 'nav-home',
+    '/teilnahme': 'nav-teilnahme',
+    '/events': 'nav-events',
+    '/howto': 'nav-howto',
+    '/kontakt': 'nav-kontakt'
+  };
+  const path = window.location.pathname.replace(/\/$/, '') || '/';
+  if (navMap[path]) {
+    document.getElementById(navMap[path])?.classList.add('active');
+  }
+</script>
