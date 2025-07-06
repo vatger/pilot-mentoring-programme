@@ -36,6 +36,11 @@ app.get('/status', (req, res) => {
   })
 })
 
+// Redirect .html URLs to their route counterparts
+app.get('/teilnahme.html', (req, res) => res.redirect('/teilnahme'))
+app.get('/events.html', (req, res) => res.redirect('/events'))
+app.get('/kontakt.html', (req, res) => res.redirect('/kontakt'))
+
 // 404 Handler
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', '404.html'))

@@ -9,41 +9,71 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">VATSIM Germany</div>
+            <div class="logo" aria-label="VATSIM Germany Logo">VATSIM Germany</div>
             <h1>Piloten-Mentoren-Programm</h1>
         </div>
         
-        <nav class="nav">
-            <a href="/" class="active">🏠 Home</a>
-            <a href="/teilnahme">✈️ Teilnahme</a>
-            <a href="/events">📅 Events</a>
-            <a href="/kontakt">📞 Kontakt</a>
-            <a href="/status">📊 Status</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a href="/" class="active">Home</a>
+            <a href="/teilnahme">Teilnahme</a>
+            <a href="/events">Events</a>
+            <a href="/kontakt">Kontakt</a>
+            <a href="/status">Status</a>
         </nav>
         
         <div class="content">
-            <h2>Willkommen beim Piloten-Mentoren-Programm</h2>
-            <p>Das Piloten-Mentoren-Programm (PMP) von VATSIM Germany bietet angehenden Piloten die Möglichkeit, von erfahrenen Mentoren zu lernen und ihre Fähigkeiten zu verbessern.</p>
-            
+            <h2>Herzlich willkommen beim Piloten-Mentoren-Programm!</h2>
+            <p>
+                Das <strong>Piloten-Mentoren-Programm (PMP)</strong> von VATSIM Germany ist Ihre Anlaufstelle, um als virtueller Pilot auf VATSIM durchzustarten. 
+                Unser Ziel ist es, Ihnen mit erfahrenen Mentoren zur Seite zu stehen, damit Sie Ihre Fähigkeiten im Flugsimulator gezielt ausbauen können – egal, ob Sie gerade erst beginnen oder schon erste Erfahrungen gesammelt haben.
+            </p>
+            <p>
+                Wir bieten Ihnen eine strukturierte und unterstützende Lernumgebung, in der Sie nicht nur die technischen Aspekte des Fliegens, sondern auch die Kommunikation mit der Flugsicherung und das Verhalten im Netzwerk erlernen. 
+                Unser Team aus engagierten Mentoren begleitet Sie individuell und in Gruppen, damit Sie sicher und mit Freude am virtuellen Luftverkehr teilnehmen können.
+            </p>
             <div class="grid">
                 <div class="card">
                     <h3>Für Mentees</h3>
-                    <p>Lernen Sie von erfahrenen Piloten und verbessern Sie Ihre Fähigkeiten im virtuellen Luftraum.</p>
+                    <p>
+                        Sie möchten Ihre Fähigkeiten als Pilot verbessern? Im PMP erhalten Sie persönliche Unterstützung, regelmäßiges Feedback und praxisnahe Trainings. 
+                        Unsere Mentoren helfen Ihnen, Unsicherheiten abzubauen und Routine im Umgang mit Flugzeugen und ATC zu gewinnen.
+                    </p>
                 </div>
                 <div class="card">
                     <h3>Für Mentoren</h3>
-                    <p>Teilen Sie Ihr Wissen und helfen Sie neuen Piloten beim Einstieg in VATSIM.</p>
+                    <p>
+                        Sie sind ein erfahrener Pilot und möchten Ihr Wissen weitergeben? Werden Sie Teil unseres Mentorenteams und unterstützen Sie neue Mitglieder beim Einstieg in die Welt von VATSIM. 
+                        Gemeinsam sorgen wir für eine starke Community und fördern die nächste Generation virtueller Piloten.
+                    </p>
                 </div>
                 <div class="card">
-                    <h3>Events</h3>
-                    <p>Nehmen Sie an speziellen Training-Events und Gruppenflügen teil.</p>
+                    <h3>Events & Trainings</h3>
+                    <p>
+                        Nehmen Sie an unseren regelmäßigen Trainings, Workshops und Gruppenflügen teil. 
+                        Hier können Sie Ihr Wissen vertiefen, sich mit anderen Piloten austauschen und gemeinsam spannende Flüge erleben.
+                    </p>
                 </div>
+            </div>
+            <div class="card">
+                <h3>Warum PMP?</h3>
+                <ul>
+                    <li>Individuelle Betreuung durch erfahrene Mentoren</li>
+                    <li>Strukturierte Lerninhalte und praxisnahe Übungen</li>
+                    <li>Regelmäßige Events und Gruppenflüge</li>
+                    <li>Starke Community und freundliche Atmosphäre</li>
+                </ul>
             </div>
         </div>
         
         <div class="footer">
-            <p>&copy; 2024 VATSIM Germany - Piloten-Mentoren-Programm</p>
+            <p>
+                &copy; <span id="year"></span> Jacob Koglin &ndash; VATSIM Germany PMP<br>
+                <small>Fragen? Kontaktieren Sie uns jederzeit über das Forum <a href="/kontakt"> Forum</a>.</small>
+            </p>
         </div>
     </div>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>

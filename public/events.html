@@ -13,37 +13,70 @@
             <h1>Piloten-Mentoren-Programm</h1>
         </div>
         
-        <nav class="nav">
-            <a href="/">🏠 Home</a>
-            <a href="/teilnahme">✈️ Teilnahme</a>
-            <a href="/events" class="active">📅 Events</a>
-            <a href="/kontakt">📞 Kontakt</a>
-            <a href="/status">📊 Status</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a href="/">Home</a>
+            <a href="/teilnahme">Teilnahme</a>
+            <a href="/events" class="active">Events</a>
+            <a href="/kontakt">Kontakt</a>
+            <a href="/status">Status</a>
         </nav>
         
         <div class="content">
-            <h2>Aktuelle Events</h2>
+            <h2>Aktuelle und kommende Events</h2>
+            <p>
+                Im Rahmen des PMP bieten wir regelmäßig spannende Events, Trainings und Gruppenflüge an. 
+                Hier finden Sie die nächsten Termine und eine Übersicht unserer wiederkehrenden Veranstaltungen. 
+                Die Teilnahme steht allen PMP-Mitgliedern offen – unabhängig vom Erfahrungsstand!
+            </p>
             
             <div class="event-card">
                 <h3>Nächstes Training: Grundlagen IFR</h3>
                 <p><strong>Datum:</strong> Samstag, 15. Dezember 2024</p>
-                <p><strong>Zeit:</strong> 19:00 - 21:00 UTC</p>
+                <p><strong>Zeit:</strong> 19:00 – 21:00 UTC</p>
                 <p><strong>Thema:</strong> IFR-Verfahren und Navigation</p>
+                <p>
+                    In diesem Training vermitteln wir die Grundlagen des Fliegens nach Instrumentenflugregeln (IFR). 
+                    Sie lernen, wie Sie Flugpläne korrekt erstellen, Navigationshilfen nutzen und mit der Flugsicherung kommunizieren. 
+                    Das Training richtet sich an Einsteiger und alle, die ihre IFR-Kenntnisse auffrischen möchten.
+                </p>
             </div>
             
             <div class="card">
-                <h3>Regelmäßige Events:</h3>
+                <h3>Regelmäßige Events & Angebote</h3>
                 <ul>
-                    <li>Wöchentliche Gruppen-Trainings (Samstags 19:00 UTC)</li>
-                    <li>Individuelle Mentoring-Sessions (nach Vereinbarung)</li>
-                    <li>Monatliche Gruppenflüge</li>
+                    <li>
+                        <strong>Wöchentliche Gruppen-Trainings:</strong> Jeden Samstag um 19:00 UTC treffen wir uns zu wechselnden Themen – von Grundlagen bis zu fortgeschrittenen Verfahren.
+                    </li>
+                    <li>
+                        <strong>Individuelle Mentoring-Sessions:</strong> Nach Vereinbarung bieten wir persönliche Trainings, die auf Ihre Wünsche und Ihren Lernstand zugeschnitten sind.
+                    </li>
+                    <li>
+                        <strong>Monatliche Gruppenflüge:</strong> Gemeinsam fliegen wir spannende Routen und üben das Zusammenspiel im Netzwerk.
+                    </li>
+                    <li>
+                        <strong>Workshops & Spezialthemen:</strong> In unregelmäßigen Abständen bieten wir Workshops zu Themen wie Funkkommunikation, Flugplanung oder Notverfahren an.
+                    </li>
                 </ul>
+            </div>
+            <div class="card">
+                <h3>Wie kann ich teilnehmen?</h3>
+                <p>
+                    Die Teilnahme an unseren Events ist für alle PMP-Mitglieder kostenlos. 
+                    Die Anmeldung erfolgt über das Forum oder direkt bei Ihrem Mentor. 
+                    Weitere Informationen und aktuelle Termine finden Sie regelmäßig auf dieser Seite und im <a href="https://board.vatsim-germany.org/forums/piloten-mentoren-programm.739/" target="_blank">VATSIM Germany Forum</a>.
+                </p>
             </div>
         </div>
         
         <div class="footer">
-            <p>&copy; 2024 VATSIM Germany - Piloten-Mentoren-Programm</p>
+            <p>
+                &copy; <span id="year"></span> Jacob Koglin &ndash; VATSIM Germany PMP<br>
+                <small>Fragen zu Events? <a href="/kontakt">Kontaktieren Sie uns!</a></small>
+            </p>
         </div>
     </div>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>

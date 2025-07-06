@@ -13,33 +13,54 @@
             <h1>Piloten-Mentoren-Programm</h1>
         </div>
         
-        <nav class="nav">
-            <a href="/">🏠 Home</a>
-            <a href="/teilnahme">✈️ Teilnahme</a>
-            <a href="/events">📅 Events</a>
-            <a href="/kontakt" class="active">📞 Kontakt</a>
-            <a href="/status">📊 Status</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a href="/">Home</a>
+            <a href="/teilnahme">Teilnahme</a>
+            <a href="/events">Events</a>
+            <a href="/kontakt" class="active">Kontakt</a>
+            <a href="/status">Status</a>
         </nav>
         
         <div class="content">
-            <h2>Kontakt</h2>
+            <h2>Kontakt zum PMP-Team</h2>
             
             <div class="card">
-                <h3>PMP-Team</h3>
-                <p><strong>E-Mail:</strong> pmp@vatsim-germany.org</p>
-                <p><strong>Forum:</strong> <a href="https://forum.vatsim-germany.org" target="_blank">VATSIM Germany Forum</a></p>
-                <p><strong>Discord:</strong> VATSIM Germany Discord Server</p>
+                <h3>So erreichen Sie uns</h3>
+                <p>
+                    Sie haben Fragen zum Programm, zur Anmeldung oder zu unseren Events? 
+                    Unser Team hilft Ihnen gerne weiter! Nutzen Sie eine der folgenden Kontaktmöglichkeiten:
+                </p>
+                <ul>
+                    <li><strong>Forum:</strong> <a href="https://board.vatsim-germany.org/forums/piloten-mentoren-programm.739/" target="_blank">VATSIM Germany Forum</a></li>
+                    <li><strong>Discord:</strong> VATSIM Germany Discord Server (Zugang über <a href="https://community.vatsim.net/" target="_blank">Vatsim Community</a></li>
+                </ul>
             </div>
             
             <div class="card">
-                <h3>Häufige Fragen</h3>
-                <p>Bevor Sie uns kontaktieren, schauen Sie gerne in unsere FAQ im Forum.</p>
+                <h3>Häufige Fragen (FAQ)</h3>
+                <p>
+                    Viele Antworten auf häufig gestellte Fragen finden Sie bereits in unserem <a href="https://board.vatsim-germany.org/forums/piloten-mentoren-programm.739/" target="_blank">FAQ-Bereich im Forum</a>. 
+                    Schauen Sie dort gerne vorbei, bevor Sie uns kontaktieren – vielleicht ist Ihre Frage schon beantwortet!
+                </p>
+            </div>
+            <div class="card">
+                <h3>Wir freuen uns auf Ihre Nachricht!</h3>
+                <p>
+                    Egal, ob Sie am PMP teilnehmen möchten, Feedback haben oder einfach nur neugierig sind – schreiben Sie uns. 
+                    Wir melden uns so schnell wie möglich zurück.
+                </p>
             </div>
         </div>
         
         <div class="footer">
-            <p>&copy; 2024 VATSIM Germany - Piloten-Mentoren-Programm</p>
+            <p>
+                &copy; <span id="year"></span> Jacob Koglin &ndash; VATSIM Germany PMP<br>
+                <small>Wir sind für Sie da – Ihr PMP-Team</small>
+            </p>
         </div>
     </div>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>
