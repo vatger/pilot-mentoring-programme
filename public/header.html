@@ -1,4 +1,7 @@
 <div class="header">
+    <button class="dark-mode-toggle" id="dark-mode-toggle" aria-label="Toggle Dark Mode">
+        🌙 Dark Mode
+    </button>
     <div class="logo" aria-label="VATSIM Germany Logo">VATSIM Germany</div>
     <h1>Piloten-Mentoren-Programm</h1>
 </div>
@@ -11,6 +14,31 @@
     <a href="/status" id="nav-status">Status</a>
 </nav>
 <script>
+  // Dark Mode Toggle
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  
+  // Set initial theme
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  updateToggleText(currentTheme);
+  
+  function updateToggleText(theme) {
+    if (theme === 'dark') {
+      darkModeToggle.innerHTML = '☀️ Light Mode';
+    } else {
+      darkModeToggle.innerHTML = '🌙 Dark Mode';
+    }
+  }
+  
+  darkModeToggle.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateToggleText(newTheme);
+  });
+
   // Highlight active nav link
   const navMap = {
     '/': 'nav-home',

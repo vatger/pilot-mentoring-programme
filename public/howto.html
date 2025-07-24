@@ -7,37 +7,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <style>
         /* Inline for quick demo, move to styles.css if you like */
-        .stepper { position: relative; }
-        .step { display: none; }
-        .step.active { display: flex; animation: fadeInUp 0.5s; }
-        .stepper-controls {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 24px;
-            gap: 12px;
-        }
-        .stepper-controls button {
-            background: #1976d2;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            padding: 10px 22px;
-            font-size: 1em;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .stepper-controls button:disabled {
-            background: #b0bec5;
-            cursor: not-allowed;
-        }
-        .stepper-progress {
-            text-align: center;
-            margin-bottom: 18px;
-            color: #1976d2;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-        }
+
     </style>
 </head>
 <body>
@@ -60,10 +30,6 @@
                                 Falls du bereits einen Account hast, kannst du diesen Schritt überspringen.<br>
                                 <br>
                                 Erstelle dir unter <a href="https://my.vatsim.net/register" target="_blank">https://my.vatsim.net/register</a> einen neuen Account. Gib deine echten Daten an (keine Fantasienamen!) und wähle:
-                                <ul>
-                                    <li><strong>Region:</strong> Europa, Middle East and Africa</li>
-                                    <li><strong>Division:</strong> Europe (except UK)</li>
-                                </ul>
                                 Nach erfolgreicher Registrierung erhältst du eine VATSIM-ID (CID) und ein Passwort per E-Mail.
                             </div>
                             <div class="info-danger">
@@ -75,10 +41,11 @@
                     <div class="step">
                         <div class="step-icon">2</div>
                         <div class="step-content">
-                            <div class="step-title">Registrierung VATSIM Germany</div>
+                            <div class="step-title">New Member Orientation Test</div>
                             <div class="step-desc">
-                                Nach der VATSIM-Registrierung kannst du dich bei <a href="https://vatsim-germany.org/" target="_blank">VATSIM Germany</a> anmelden. 
-                                Dort erhältst du Zugang zum Forum, zu Ressourcen und zum PMP.
+                                Nach der Registrierung musst du den <strong>New Member Orientation Test</strong> absolvieren. 
+                                Dieser Test stellt sicher, dass du die Grundlagen des Netzwerks verstanden hast. 
+                                Den Link zum Test erhältst du nach der Registrierung per E-Mail und er ist auf <a href="https://my.vatsim.net/" target="_blank">my.vatsim.net</a> verfügbar.
                             </div>
                         </div>
                     </div>
@@ -86,11 +53,16 @@
                     <div class="step">
                         <div class="step-icon">3</div>
                         <div class="step-content">
-                            <div class="step-title">New Member Orientation Test</div>
+                            <div class="step-title">Registrierung VATSIM Germany</div>
                             <div class="step-desc">
-                                Nach der Registrierung musst du den <strong>New Member Orientation Test</strong> absolvieren. 
-                                Dieser Test stellt sicher, dass du die Grundlagen des Netzwerks verstanden hast. 
-                                Den Link zum Test erhältst du nach der Registrierung per E-Mail und er ist auf <a href="https://my.vatsim.net/" target="_blank">my.vatsim.net</a> verfügbar.
+                                Nach der VATSIM-Registrierung kannst du dich bei <a href="https://vatsim-germany.org/" target="_blank">VATSIM Germany</a> anmelden. 
+                                Dort erhältst du Zugang zum Forum, zu Ressourcen und zum PMP.
+                                <br>
+                                <div class="info-success">
+                                    <strong>Wichtige Links:</strong><br>
+                                    - Forum: <a href="https://board.vatsim-germany.org/" target="_blank">VATSIM Germany Forum</a><br>
+                                    - Knowledgebase: <a href="https://knowledgebase.vatsim-germany.org/" target="_blank">VATSIM Germany Knowledgebase</a>
+                                </div>
                             </div>
                         </div>
                     </div>

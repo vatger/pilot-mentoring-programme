@@ -7,32 +7,61 @@
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-    <div class="header">
-        <div class="logo" aria-label="VATSIM Germany Logo">VATSIM Germany</div>
-        <h1>Piloten-Mentoren-Programm</h1>
-    </div>
-    <nav class="nav" aria-label="Hauptnavigation">
-        <a href="/" id="nav-home">Home</a>
-        <a href="/teilnahme" id="nav-teilnahme">Teilnahme</a>
-        <a href="/events" id="nav-events">Events</a>
-        <a href="/howto" id="nav-howto">How to get started</a>
-        <a href="/kontakt" id="nav-kontakt">Kontakt</a>
-        <a href="/status" id="nav-status">Status</a>
-    </nav>
-    <script>
-    // Highlight active nav link
-    const navMap = {
-        '/': 'nav-home',
-        '/teilnahme': 'nav-teilnahme',
-        '/events': 'nav-events',
-        '/howto': 'nav-howto',
-        '/kontakt': 'nav-kontakt'
-    };
-    const path = window.location.pathname.replace(/\/$/, '') || '/';
-    if (navMap[path]) {
-        document.getElementById(navMap[path])?.classList.add('active');
+<div class="header">
+    <button class="dark-mode-toggle" id="dark-mode-toggle" aria-label="Toggle Dark Mode">
+        🌙 Dark Mode
+    </button>
+    <div class="logo" aria-label="VATSIM Germany Logo">VATSIM Germany</div>
+    <h1>Piloten-Mentoren-Programm</h1>
+</div>
+<nav class="nav" aria-label="Hauptnavigation">
+    <a href="/" id="nav-home">Home</a>
+    <a href="/teilnahme" id="nav-teilnahme">Teilnahme</a>
+    <a href="/events" id="nav-events">Events</a>
+    <a href="/howto" id="nav-howto">How to get started</a>
+    <a href="/kontakt" id="nav-kontakt">Kontakt</a>
+    <a href="/status" id="nav-status">Status</a>
+</nav>
+<script>
+  // Dark Mode Toggle
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  
+  // Set initial theme
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  updateToggleText(currentTheme);
+  
+  function updateToggleText(theme) {
+    if (theme === 'dark') {
+      darkModeToggle.innerHTML = '☀️ Light Mode';
+    } else {
+      darkModeToggle.innerHTML = '🌙 Dark Mode';
     }
-    </script>
+  }
+  
+  darkModeToggle.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateToggleText(newTheme);
+  });
+
+  // Highlight active nav link
+  const navMap = {
+    '/': 'nav-home',
+    '/teilnahme': 'nav-teilnahme',
+    '/events': 'nav-events',
+    '/howto': 'nav-howto',
+    '/kontakt': 'nav-kontakt'
+  };
+  const path = window.location.pathname.replace(/\/$/, '') || '/';
+  if (navMap[path]) {
+    document.getElementById(navMap[path])?.classList.add('active');
+  }
+</script>
+
     <div class="container">
         <h2>Herzlich willkommen beim Piloten-Mentoren-Programm!</h2>
         <p>
@@ -45,24 +74,24 @@
         </p>
         <div class="grid">
             <div class="card">
-                <h3>Für Mentees</h3>
+                <h3>Für Newbies</h3>
                 <p>
-                    Sie möchten Ihre Fähigkeiten als Pilot verbessern? Im PMP erhalten Sie persönliche Unterstützung, regelmäßiges Feedback und praxisnahe Trainings. 
-                    Unsere Mentoren helfen Ihnen, Unsicherheiten abzubauen und Routine im Umgang mit Flugzeugen und ATC zu gewinnen.
+                    Du möchtest Deine Fähigkeiten als Pilot verbessern? Im PMP erhältst Du persönliche Unterstützung, regelmäßiges Feedback und praxisnahe Trainings. 
+                    Unsere Mentoren helfen Dir, Unsicherheiten abzubauen und Routine im Umgang mit Flugzeugen und ATC zu gewinnen.
                 </p>
             </div>
             <div class="card">
                 <h3>Für Mentoren</h3>
                 <p>
-                    Sie sind ein erfahrener Pilot und möchten Ihr Wissen weitergeben? Werden Sie Teil unseres Mentorenteams und unterstützen Sie neue Mitglieder beim Einstieg in die Welt von VATSIM. 
+                    Du bist ein erfahrener Pilot und möchtest Dein Wissen weitergeben? Werde Teil unseres Mentorenteams und unterstütze neue Mitglieder beim Einstieg in die Welt von VATSIM. 
                     Gemeinsam sorgen wir für eine starke Community und fördern die nächste Generation virtueller Piloten.
                 </p>
             </div>
             <div class="card">
                 <h3>Events & Trainings</h3>
                 <p>
-                    Nehmen Sie an unseren regelmäßigen Trainings, Workshops und Gruppenflügen teil. 
-                    Hier können Sie Ihr Wissen vertiefen, sich mit anderen Piloten austauschen und gemeinsam spannende Flüge erleben.
+                    Nimm an unseren regelmäßigen Trainings, Workshops und Gruppenflügen teil. 
+                    Hier kannst Du Dein Wissen vertiefen, Dich mit anderen Piloten austauschen und gemeinsam spannende Flüge erleben.
                 </p>
             </div>
         </div>
