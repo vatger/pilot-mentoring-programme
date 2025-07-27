@@ -734,7 +734,7 @@ a:focus {
     overflow: hidden;
 
     /* how long is a picture shown (in seconds) */
-    --image-duration: 5;
+    --image-duration: 20; /* Increased from 5 to 20 seconds per image */
 }
 
 /* Hide background on mobile devices to save resources */
@@ -751,9 +751,9 @@ a:focus {
 
 .slider-container {
     display: flex;
-    width: calc(8 * 100vw);
+    width: calc(9 * 100vw); /* Adjusted for 8 images plus 1 duplicate for smooth looping */
     height: 100%;
-    animation: slideSteps calc(var(--image-duration) * 8 * 1s) infinite ease-in-out;
+    animation: slideSteps calc(var(--image-duration) * 8 * 1s) infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
     will-change: transform; /* Performance optimization for animation */
 }
 
@@ -766,17 +766,25 @@ a:focus {
     filter: blur(1px);
 }
 
-/* Improved step animation with smoother transitions */
+/* Improved step animation with smoother transitions and no abrupt reset */
 @keyframes slideSteps {
-    0%, 10% { transform: translateX(0); }
-    12.5%, 22.5% { transform: translateX(-100vw); }
-    25%, 35% { transform: translateX(-200vw); }
-    37.5%, 47.5% { transform: translateX(-300vw); }
-    50%, 60% { transform: translateX(-400vw); }
-    62.5%, 72.5% { transform: translateX(-500vw); }
-    75%, 85% { transform: translateX(-600vw); }
-    87.5%, 97.5% { transform: translateX(-700vw); }
-    100% { transform: translateX(0); }
+    0% { transform: translateX(0); }
+    11% { transform: translateX(0); }
+    12.5% { transform: translateX(-100vw); }
+    23.5% { transform: translateX(-100vw); }
+    25% { transform: translateX(-200vw); }
+    36% { transform: translateX(-200vw); }
+    37.5% { transform: translateX(-300vw); }
+    48.5% { transform: translateX(-300vw); }
+    50% { transform: translateX(-400vw); }
+    61% { transform: translateX(-400vw); }
+    62.5% { transform: translateX(-500vw); }
+    73.5% { transform: translateX(-500vw); }
+    75% { transform: translateX(-600vw); }
+    86% { transform: translateX(-600vw); }
+    87.5% { transform: translateX(-700vw); }
+    98.5% { transform: translateX(-700vw); }
+    100% { transform: translateX(-800vw); } /* End at -800vw instead of 0 for smooth transition */
 }
 
 [data-theme="dark"] .slider-image {
