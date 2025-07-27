@@ -146,13 +146,32 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 })
 
-// Export für Passenger
-module.exports = app
+// Better error handling for uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+  // Don't exit the process, just log the error
+});
 
-// Start Server wenn direkt ausgeführt
-if (require.main === module) {
-  const port = process.env.PORT || 80
+// Better error handling for unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit the process, just log the error
+});
+
+// Improve the export for Passenger
+if (typeof(PhusionPassenger) !== 'undefined') {
+  PhusionPassenger.configure({ autoInstall: false });
+  
+  const port = process.env.PORT || 80;
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`VATSIM PMP running in Passenger mode on port ${port}`);
+  });
+} else if (require.main === module) {
+  const port = process.env.PORT || 80;
   app.listen(port, () => {
-    console.log(`VATSIM PMP running on port ${port}`)
-  })
+    console.log(`VATSIM PMP running in standalone mode on port ${port}`);
+  });
 }
+
+// Export for Passenger
+module.exports = app
