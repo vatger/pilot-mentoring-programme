@@ -158,14 +158,14 @@ process.on('unhandledRejection', (reason, promise) => {
   // Don't exit the process, just log the error
 });
 
-// Improve the export for Passenger
-if (typeof(PhusionPassenger) !== 'undefined') {
-  PhusionPassenger.configure({ autoInstall: false });
-  
+// Export for Passenger
+module.exports = app;
+
+// Start Server when directly executed
 if (require.main === module) {
   const port = process.env.PORT || 80;
   app.listen(port, () => {
-    console.log(`VATSIM PMP running in standalone mode on port ${port}`);
+    console.log(`VATSIM PMP running on port ${port}`);
   });
 }
-}
+
