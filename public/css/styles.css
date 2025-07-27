@@ -753,7 +753,8 @@ a:focus {
     display: flex;
     width: calc(8 * 100vw);
     height: 100%;
-    animation: slideSteps calc(var(--image-duration) * 8 * 1s) infinite;
+    animation: slideSteps calc(var(--image-duration) * 8 * 1s) infinite ease-in-out;
+    will-change: transform; /* Performance optimization for animation */
 }
 
 .slider-image {
@@ -765,16 +766,16 @@ a:focus {
     filter: blur(1px);
 }
 
-/* Step animation */
+/* Improved step animation with smoother transitions */
 @keyframes slideSteps {
-    0%, 11% { transform: translateX(0); }
-    12.5%, 23.5% { transform: translateX(-100vw); }
-    25%, 36% { transform: translateX(-200vw); }
-    37.5%, 48.5% { transform: translateX(-300vw); }
-    50%, 61% { transform: translateX(-400vw); }
-    62.5%, 73.5% { transform: translateX(-500vw); }
-    75%, 86% { transform: translateX(-600vw); }
-    87.5%, 98.5% { transform: translateX(-700vw); }
+    0%, 10% { transform: translateX(0); }
+    12.5%, 22.5% { transform: translateX(-100vw); }
+    25%, 35% { transform: translateX(-200vw); }
+    37.5%, 47.5% { transform: translateX(-300vw); }
+    50%, 60% { transform: translateX(-400vw); }
+    62.5%, 72.5% { transform: translateX(-500vw); }
+    75%, 85% { transform: translateX(-600vw); }
+    87.5%, 97.5% { transform: translateX(-700vw); }
     100% { transform: translateX(0); }
 }
 
