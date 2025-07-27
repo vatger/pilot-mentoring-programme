@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-<div class="mobile-header-controls">
+<<div class="mobile-header-controls">
   <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle Navigation Menu">
     <!-- Better airplane icon -->
     <svg class="icon-plane" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -38,18 +38,11 @@
       </button>
       <div class="logo" aria-label="VATSIM Germany Logo">VATSIM Germany</div>
       <h1>Piloten-Mentoren-Programm</h1>
-      <div class="background">
-        <div class="slider-container">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/1.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/2.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/3.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/5.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/6.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/7.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/8.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/9.png" alt="Aircraft Background" class="slider-image">
-            </div>
+      <div class="background" id="background-slider">
+        <div class="slider-container" id="slider-container">
+            <!-- Images will be loaded via JavaScript for desktop/tablet only -->
         </div>
+      </div>
   </div>
   <nav class="nav" aria-label="Hauptnavigation">
       <a href="/" id="nav-home">Home</a>
@@ -145,6 +138,54 @@
   mobileMenuToggle.addEventListener('click', () => {
     headerContainer.classList.add('manual-toggle');
   });
+  
+  // Conditional background image loading for desktop/tablet only
+  function loadBackgroundImages() {
+    const isMobile = window.innerWidth < 768;
+    const sliderContainer = document.getElementById('slider-container');
+    const backgroundSlider = document.getElementById('background-slider');
+    
+    // Only load images if not on mobile
+    if (!isMobile && sliderContainer.children.length === 0) {
+      // Background image URLs
+      const imageUrls = [
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/1.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/2.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/3.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/5.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/6.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/7.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/8.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/9.PNG'
+      ];
+      
+      // Create and add image elements
+      imageUrls.forEach(url => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = "Aircraft Background";
+        img.className = "slider-image";
+        sliderContainer.appendChild(img);
+      });
+      
+      // Make sure background is visible
+      backgroundSlider.style.display = 'block';
+    } else if (isMobile) {
+      // Ensure background is hidden on mobile
+      backgroundSlider.style.display = 'none';
+      
+      // Clear images to free up resources if screen is resized to mobile
+      if (sliderContainer.children.length > 0) {
+        sliderContainer.innerHTML = '';
+      }
+    }
+  }
+  
+  // Load images on page load
+  document.addEventListener('DOMContentLoaded', loadBackgroundImages);
+  
+  // Update on resize
+  window.addEventListener('resize', loadBackgroundImages);
   
   // Run once on load and attach to resize
   handleResize();

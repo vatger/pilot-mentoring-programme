@@ -42,18 +42,11 @@
       </button>
       <div class="logo" aria-label="VATSIM Germany Logo">VATSIM Germany</div>
       <h1>Piloten-Mentoren-Programm</h1>
-      <div class="background">
-        <div class="slider-container">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/1.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/2.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/3.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/5.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/6.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/7.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/8.png" alt="Aircraft Background" class="slider-image">
-                <img src="https://cdn.pmp.hosting201623.ae912.netcup.net/9.png" alt="Aircraft Background" class="slider-image">
-            </div>
+      <div class="background" id="background-slider">
+        <div class="slider-container" id="slider-container">
+            <!-- Images will be loaded via JavaScript for desktop/tablet only -->
         </div>
+      </div>
   </div>
   <nav class="nav" aria-label="Hauptnavigation">
       <a href="/" id="nav-home">Home</a>
@@ -150,6 +143,54 @@
     headerContainer.classList.add('manual-toggle');
   });
   
+  // Conditional background image loading for desktop/tablet only
+  function loadBackgroundImages() {
+    const isMobile = window.innerWidth < 768;
+    const sliderContainer = document.getElementById('slider-container');
+    const backgroundSlider = document.getElementById('background-slider');
+    
+    // Only load images if not on mobile
+    if (!isMobile && sliderContainer.children.length === 0) {
+      // Background image URLs
+      const imageUrls = [
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/1.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/2.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/3.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/5.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/6.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/7.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/8.PNG',
+        'https://cdn.pmp.hosting201623.ae912.netcup.net/9.PNG'
+      ];
+      
+      // Create and add image elements
+      imageUrls.forEach(url => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = "Aircraft Background";
+        img.className = "slider-image";
+        sliderContainer.appendChild(img);
+      });
+      
+      // Make sure background is visible
+      backgroundSlider.style.display = 'block';
+    } else if (isMobile) {
+      // Ensure background is hidden on mobile
+      backgroundSlider.style.display = 'none';
+      
+      // Clear images to free up resources if screen is resized to mobile
+      if (sliderContainer.children.length > 0) {
+        sliderContainer.innerHTML = '';
+      }
+    }
+  }
+  
+  // Load images on page load
+  document.addEventListener('DOMContentLoaded', loadBackgroundImages);
+  
+  // Update on resize
+  window.addEventListener('resize', loadBackgroundImages);
+  
   // Run once on load and attach to resize
   handleResize();
   window.addEventListener('resize', handleResize);
@@ -195,6 +236,22 @@
                     <div class="step">
                         <div class="step-icon">3</div>
                         <div class="step-content">
+                            <div class="step-title">Zuordnung EMEA / EUD / GER</div>
+                            <div class="step-desc">
+                                Nach Bestehen des Tests musst Du dich einer Region und Division zugeordnet:<br>
+                                <ul>
+                                    <li><strong>Region:</strong> EMEA (Europa, Middle East and Africa)</li>
+                                    <li><strong>Division:</strong> EUD (Europe except UK)</li>
+                                    <li><strong>Subdivision:</strong> GER (Germany)</li>
+                                </ul>
+                                Sollte hier etwas nicht klappen, kontaktiere bitte den Membership Support.
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="step">
+                        <div class="step-icon">4</div>
+                        <div class="step-content">
                             <div class="step-title">Registrierung VATSIM Germany</div>
                             <div class="step-desc">
                                 Nach der VATSIM-Registrierung kannst du dich bei <a href="https://vatsim-germany.org/" target="_blank">VATSIM Germany</a> anmelden. 
@@ -208,22 +265,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Step 4 -->
-                    <div class="step">
-                        <div class="step-icon">4</div>
-                        <div class="step-content">
-                            <div class="step-title">Zuordnung EMEA / EUD / GER</div>
-                            <div class="step-desc">
-                                Nach Bestehen des Tests musst Du dich einer Region und Division zugeordnet:<br>
-                                <ul>
-                                    <li><strong>Region:</strong> EMEA (Europa, Middle East and Africa)</li>
-                                    <li><strong>Division:</strong> EUD (Europe except UK)</li>
-                                    <li><strong>Subdivision:</strong> GER (Germany)</li>
-                                </ul>
-                                Sollte hier etwas nicht klappen, kontaktiere bitte den Membership Support.
-                            </div>
-                        </div>
-                    </div>
+
                     <!-- Step 5 -->
                     <div class="step">
                         <div class="step-icon">5</div>
@@ -269,10 +311,20 @@
         function updateStepper() {
             steps.forEach((step, idx) => {
                 step.classList.toggle('active', idx === currentStep);
+                
+                // Add data attribute for current step to help with styling
+                const stepper = document.getElementById('stepper');
+                stepper.setAttribute('data-current-step', currentStep + 1);
             });
             progress.textContent = `Schritt ${currentStep + 1} von ${steps.length}`;
             prevBtn.disabled = currentStep === 0;
             nextBtn.textContent = currentStep === steps.length - 1 ? 'Fertig' : 'Weiter';
+            
+            // Scroll to top of stepper for better mobile experience
+            if (window.innerWidth <= 600) {
+                const stepperEl = document.getElementById('stepper');
+                stepperEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         prevBtn.addEventListener('click', () => {
@@ -292,7 +344,20 @@
             }
         });
 
+        // Add responsive class to stepper based on viewport
+        function updateStepperLayout() {
+            const stepper = document.getElementById('stepper');
+            if (window.innerWidth <= 600) {
+                stepper.classList.add('mobile-layout');
+            } else {
+                stepper.classList.remove('mobile-layout');
+            }
+        }
+
+        // Run on load and resize
         updateStepper();
+        updateStepperLayout();
+        window.addEventListener('resize', updateStepperLayout);
     </script>
 </body>
 </html>

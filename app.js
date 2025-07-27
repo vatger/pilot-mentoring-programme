@@ -30,19 +30,12 @@ app.get('/howto', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'howto.html'))
 })
 
-// Route für Status
-app.get('/status', (req, res) => {
-  res.json({
-    status: 'Online',
-    timestamp: new Date().toISOString(),
-    uptime: Math.floor(process.uptime()) + ' seconds'
-  })
-})
 
 // Redirect .html URLs to their route counterparts
 app.get('/teilnahme.html', (req, res) => res.redirect('/teilnahme'))
 app.get('/events.html', (req, res) => res.redirect('/events'))
 app.get('/kontakt.html', (req, res) => res.redirect('/kontakt'))
+app.get('/howto.html', (req, res) => res.redirect('/howto'))
 
 // 404 Handler
 app.use((req, res) => {

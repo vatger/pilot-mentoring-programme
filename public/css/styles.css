@@ -41,7 +41,7 @@ body {
     max-width: 1100px;
     margin: 30px auto;
     background: var(--container-bg);
-    padding: 32px 28px 24px 28px;
+    padding: 32px 32px 28px 32px; /* Increased padding on all sides */
     border-radius: 14px;
     box-shadow: 0 6px 32px var(--shadow-color), 0 1.5px 4px var(--shadow-light);
     transition: background 0.3s ease, box-shadow 0.3s ease;
@@ -564,10 +564,11 @@ a:focus {
 
 @media (max-width: 600px) {
     body {
-        padding: 6px;
+        padding: 10px; /* Increased from 6px for better edge margin */
     }
     .container {
-        padding: 7px 2px;
+        padding: 16px 15px; /* Increased from 7px 2px for better readability */
+        margin: 20px auto; /* Add some vertical space */
     }
     .nav {
         flex-direction: column;
@@ -583,60 +584,145 @@ a:focus {
     .grid {
         grid-template-columns: 1fr;
     }
-    /* Stepper Responsive */
-    .step {
+    
+    /* Mobile Stepper Improvements - Fix line centering */
+    .stepper {
+        padding-top: 60px; /* Space for horizontal indicators */
+        position: relative;
+    }
+    
+    /* Create horizontal step indicators at the top */
+    .stepper::before {
+        content: '';
+        display: flex;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50px;
+        background: var(--container-bg);
+        z-index: 5;
+    }
+    
+    .stepper .step {
         flex-direction: column;
         align-items: stretch;
         gap: 12px;
+        position: relative;
     }
+    
+    /* Remove vertical connector line */
     .step:not(:last-child)::after {
-        left: 28px;
-        top: 56px;
-        width: 3px;
-        height: calc(100% - 56px);
+        display: none;
     }
-    .step-icon {
-        margin-bottom: 8px;
-        margin-right: 0;
-        align-self: flex-start;
+    
+    /* Position step numbers horizontally at the top */
+    .step .step-icon {
+        position: absolute;
+        top: -50px;
+        left: calc((100% / 5) * (var(--step-index, 0)) - 20px);
+        margin: 0;
+        width: 40px;
+        height: 40px;
+        font-size: 1.5em;
+        z-index: 10;
     }
-    .stepper-controls {
-        flex-direction: column;
-        gap: 10px;
+    
+    /* Fix horizontal progress bar to center with bubbles */
+    .stepper::after {
+        content: '';
+        position: absolute;
+        top: 20px; /* Center with the step bubbles */
+        left: 20px; /* Start from first bubble center */
+        right: 20px; /* End at last bubble center */
+        height: 4px;
+        background: #e0e0e0;
+        z-index: 6;
     }
-    .stepper-controls button {
+    
+    /* Add active step highlighting for the horizontal bar */
+    .stepper[data-current-step="1"]::after {
+        background: linear-gradient(to right, 
+            #1976d2 10%, /* First step is active */
+            #e0e0e0 10%);
+    }
+    
+    .stepper[data-current-step="2"]::after {
+        background: linear-gradient(to right, 
+            #1976d2 30%, /* First two steps active */
+            #e0e0e0 30%);
+    }
+    
+    .stepper[data-current-step="3"]::after {
+        background: linear-gradient(to right, 
+            #1976d2 50%, /* First three steps active */
+            #e0e0e0 50%);
+    }
+    
+    .stepper[data-current-step="4"]::after {
+        background: linear-gradient(to right, 
+            #1976d2 70%, /* First four steps active */
+            #e0e0e0 70%);
+    }
+    
+    .stepper[data-current-step="5"]::after {
+        background: linear-gradient(to right, 
+            #1976d2 90%, /* All steps active */
+            #e0e0e0 90%);
+    }
+    
+    /* Better positioning for the steps at smaller sizes */
+    .step:nth-child(1) { --step-index: 0.5; }
+    .step:nth-child(2) { --step-index: 1.5; }
+    .step:nth-child(3) { --step-index: 2.5; }
+    .step:nth-child(4) { --step-index: 3.5; }
+    .step:nth-child(5) { --step-index: 4.5; }
+    
+    /* Additional mobile padding for text content */
+    .step-content {
         width: 100%;
-        min-width: 0;
-        padding: 12px 0;
-        font-size: 1.05em;
+        padding: 15px 8px 5px 8px; /* Add horizontal padding */
+    }
+    
+    /* Fix stepper controls for better mobile experience */
+    .stepper-controls {
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 15px; /* Increased from 10px */
+        margin-top: 25px;
+        padding: 0 5px; /* Add padding to prevent touching edges */
     }
 }
 
-/* Extra: Make links in step-desc wrap and not overflow */
-.step-desc a {
-    word-break: break-all;
-    width: 100%;
-    text-align: center;
-    padding: 12px;
-  }
-  
-  /* Add padding to ensure content doesn't overlap with toggle button */
-  body {
-    padding-top: 70px; /* Space for the toggle button */
-  }
-  
-  .mobile-header-controls {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    z-index: 1000;
-  }
+/* Fix for the overall page layout - prevent content from touching edges */
+@media (max-width: 767px) {
+    body {
+        padding: 12px 15px 20px 15px; /* Better padding all around */
+    }
+    
+    .content {
+        margin: 15px 5px; /* Add horizontal margin */
+    }
+    
+    .footer {
+        margin: 30px 10px 15px 10px; /* Add margin around footer */
+        padding: 20px 5px 10px 5px;
+    }
 }
 
-/* Extra: Make links in step-desc wrap and not overflow */
-.step-desc a {
-    word-break: break-all;
+/* Dark mode style for the horizontal progress bar */
+[data-theme="dark"] .stepper::after {
+    background: #1e293b; /* Darker background for the inactive part */
 }
+
+[data-theme="dark"] .stepper[data-current-step="1"]::after,
+[data-theme="dark"] .stepper[data-current-step="2"]::after,
+[data-theme="dark"] .stepper[data-current-step="3"]::after,
+[data-theme="dark"] .stepper[data-current-step="4"]::after,
+[data-theme="dark"] .stepper[data-current-step="5"]::after {
+    background-image: linear-gradient(to right, #1976d2, #1e293b); /* Gradient for active/inactive in dark mode */
+}
+
 /* Background slider styles */
 .background {
     z-index: -1;
@@ -649,6 +735,18 @@ a:focus {
 
     /* how long is a picture shown (in seconds) */
     --image-duration: 5;
+}
+
+/* Hide background on mobile devices to save resources */
+@media (max-width: 767px) {
+    .background {
+        display: none;
+    }
+    
+    /* Add a simple gradient background for mobile instead */
+    body {
+        background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%) fixed;
+    }
 }
 
 .slider-container {
