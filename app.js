@@ -10,10 +10,7 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 // Helper to inject header/footer into a page
 function renderWithLayout(pagePath, res) {
-  const header = fs.readFileSync(path.join(__dirname, 'public', 'header.html'), 'utf8')
-  const footer = fs.readFileSync(path.join(__dirname, 'public', 'footer.html'), 'utf8')
   let page = fs.readFileSync(pagePath, 'utf8')
-  page = page.replace('<!--#HEADER-->', header).replace('<!--#FOOTER-->', footer)
   res.send(page)
 }
 
@@ -50,14 +47,6 @@ app.get('/howto', (req, res) => {
   renderWithLayout(path.join(__dirname, 'public', 'howto.html'), res)
 })
 
-// Route für Status
-app.get('/status', (req, res) => {
-  res.json({
-    status: 'Online',
-    timestamp: new Date().toISOString(),
-    uptime: Math.floor(process.uptime()) + ' seconds'
-  })
-})
 
 // Redirect .html URLs to their route counterparts
 app.get('/teilnahme.html', (req, res) => res.redirect('/teilnahme'))
