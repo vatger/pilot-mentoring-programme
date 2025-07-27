@@ -104,11 +104,11 @@ body {
     color: #90caf9;
 }
 
-/* Dark Mode Toggle */
+/* Dark Mode Toggle - UPDATED for better mobile positioning */
 .dark-mode-toggle {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 10px;
+    right: 10px;
     background: var(--nav-bg);
     border: 1.5px solid #004494;
     border-radius: 6px;
@@ -443,6 +443,115 @@ a:focus {
         letter-spacing: 0.5px;
     }
 
+/* Mobile header controls - FIXED */
+.mobile-header-controls {
+  display: none;
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.mobile-menu-toggle {
+  background: #004494; /* Use the blue from your theme */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+/* Make sure the airplane icon is visible and properly styled */
+.icon-plane {
+  display: inline-block;
+  color: #ffffff;
+  transition: transform 0.5s ease;
+  width: 24px;
+  height: 24px;
+}
+
+/* Rotate airplane when menu is closed */
+.menu-closed .icon-plane {
+  transform: rotate(180deg);
+}
+
+/* Dark mode version */
+[data-theme="dark"] .mobile-menu-toggle {
+  background: #1976d2;
+}
+
+.mobile-menu-toggle:hover {
+  background: #0066cc;
+}
+
+[data-theme="dark"] .mobile-menu-toggle:hover {
+  background: #1565c0;
+}
+
+/* Header container collapse behavior - FIXED */
+.header-container {
+  transition: max-height 0.7s ease-in-out, opacity 0.5s ease;
+  overflow: hidden;
+  max-height: 600px; /* Make sure this is big enough for all screen sizes */
+}
+
+.header-container.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* Dark Mode Toggle - FIXED positioning */
+.dark-mode-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+/* Media Queries - FIXED */
+@media (max-width: 767px) {
+  body {
+    padding-top: 60px; /* Space for the mobile toggle */
+  }
+  
+  .mobile-header-controls {
+    display: block;
+  }
+  
+  .header-container {
+    background: var(--container-bg);
+    width: 100%;
+    z-index: 999;
+  }
+  
+  .dark-mode-toggle {
+    position: static;
+    margin: 10px auto;
+    display: block;
+  }
+  
+  .logo {
+    margin-top: 10px;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 900px) {
     .container {
@@ -501,6 +610,28 @@ a:focus {
         padding: 12px 0;
         font-size: 1.05em;
     }
+}
+
+/* Extra: Make links in step-desc wrap and not overflow */
+.step-desc a {
+    word-break: break-all;
+}
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+  }
+  
+  /* Add padding to ensure content doesn't overlap with toggle button */
+  body {
+    padding-top: 70px; /* Space for the toggle button */
+  }
+  
+  .mobile-header-controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+  }
 }
 
 /* Extra: Make links in step-desc wrap and not overflow */
