@@ -1,58 +1,34 @@
 // VATSIM PMP - Simple Express Server
 const express = require('express')
 const path = require('path')
-const fs = require('fs')
 
 const app = express()
 
 // Statische Dateien aus public/ servieren
 app.use(express.static(path.join(__dirname, 'public')))
 
-// Helper to inject header/footer into a page
-function renderWithLayout(pagePath, res) {
-  let page = fs.readFileSync(pagePath, 'utf8')
-  res.send(page)
-}
-
-// Serve header and footer as partials
-app.get('/header.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'header.html'))
-})
-app.get('/footer.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'footer.html'))
-})
-
 // Route für die Hauptseite
 app.get('/', (req, res) => {
-  renderWithLayout(path.join(__dirname, 'public', 'index.html'), res)
+  res.sendFile(path.join(__dirname, 'public', 'index.html'))
 })
 
 // Route für Teilnahme
 app.get('/teilnahme', (req, res) => {
-  renderWithLayout(path.join(__dirname, 'public', 'teilnahme.html'), res)
+  res.sendFile(path.join(__dirname, 'public', 'teilnahme.html'))
 })
 
 // Route für Events
 app.get('/events', (req, res) => {
-  renderWithLayout(path.join(__dirname, 'public', 'events.html'), res)
+  res.sendFile(path.join(__dirname, 'public', 'events.html'))
 })
 
 // Route für Kontakt
 app.get('/kontakt', (req, res) => {
-  renderWithLayout(path.join(__dirname, 'public', 'kontakt.html'), res)
+  res.sendFile(path.join(__dirname, 'public', 'kontakt.html'))
 })
-
-// Route für Anleitung
 app.get('/howto', (req, res) => {
-  renderWithLayout(path.join(__dirname, 'public', 'howto.html'), res)
+  res.sendFile(path.join(__dirname, 'public', 'howto.html'))
 })
-
-
-// Redirect .html URLs to their route counterparts
-app.get('/teilnahme.html', (req, res) => res.redirect('/teilnahme'))
-app.get('/events.html', (req, res) => res.redirect('/events'))
-app.get('/kontakt.html', (req, res) => res.redirect('/kontakt'))
-app.get('/howto.html', (req, res) => res.redirect('/howto'))
 
 // 404 Handler
 app.use((req, res) => {
