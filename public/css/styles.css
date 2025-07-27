@@ -118,11 +118,33 @@ body {
     color: #004494;
     font-weight: 500;
     font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-color, #ccc);
+    padding: 5px 12px;
 }
 
 .dark-mode-toggle:hover {
     background: #004494;
     color: #fff;
+    background-color: var(--accent-light, #f0f0f0);
+}
+
+.icon-sun, .icon-moon {
+  margin-right: 6px;
+}
+
+/* Show sun icon in dark mode, moon icon in light mode */
+.icon-sun {
+  display: none;
+}
+
+.dark-mode-toggle.dark-active .icon-sun {
+  display: inline-block;
+}
+
+.dark-mode-toggle.dark-active .icon-moon {
+  display: none;
 }
 
 [data-theme="dark"] .dark-mode-toggle {

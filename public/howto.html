@@ -11,7 +11,77 @@
     </style>
 </head>
 <body>
-    <!--#HEADER-->
+<div class="header">
+    <button class="dark-mode-toggle" id="dark-mode-toggle" aria-label="Toggle Dark Mode">
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <span class="toggle-text">Dark Mode</span>
+    </button>
+    <div class="logo" aria-label="VATSIM Germany Logo">VATSIM Germany</div>
+    <h1>Piloten-Mentoren-Programm</h1>
+</div>
+<nav class="nav" aria-label="Hauptnavigation">
+    <a href="/" id="nav-home">Home</a>
+    <a href="/teilnahme" id="nav-teilnahme">Teilnahme</a>
+    <a href="/events" id="nav-events">Events</a>
+    <a href="/howto" id="nav-howto">How to get started</a>
+    <a href="/kontakt" id="nav-kontakt">Kontakt</a>
+    <a href="/status" id="nav-status">Status</a>
+</nav>
+<script>
+  // Dark Mode Toggle
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+  const toggleText = darkModeToggle.querySelector('.toggle-text');
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  
+  // Set initial theme
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  updateToggleState(currentTheme);
+  
+  function updateToggleState(theme) {
+    if (theme === 'dark') {
+      toggleText.textContent = 'Light Mode';
+      darkModeToggle.classList.add('dark-active');
+    } else {
+      toggleText.textContent = 'Dark Mode';
+      darkModeToggle.classList.remove('dark-active');
+    }
+  }
+  
+  darkModeToggle.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateToggleState(newTheme);
+  });
+
+  // Highlight active nav link
+  const navMap = {
+    '/': 'nav-home',
+    '/teilnahme': 'nav-teilnahme',
+    '/events': 'nav-events',
+    '/howto': 'nav-howto',
+    '/kontakt': 'nav-kontakt'
+  };
+  const path = window.location.pathname.replace(/\/$/, '') || '/';
+  if (navMap[path]) {
+    document.getElementById(navMap[path])?.classList.add('active');
+  }
+</script>
     <div class="content">
         <div class="container">
             <h2>How to get started – In 5 Schritten zum PMP</h2>
@@ -108,7 +178,12 @@
             </div>
         </div>
     </div>
-    <!--#FOOTER-->
+    <div class="footer">
+        <p>
+            &copy; <span id="year"></span> Jacob Koglin &ndash; VATSIM Germany PMP<br>
+            <small>Bereit zum Start? <a href="/teilnahme">Jetzt anmelden!</a></small>
+        </p>
+    </div>
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
 
