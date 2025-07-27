@@ -168,6 +168,4 @@ if (require.main === module) {
     console.log(`VATSIM PMP running in standalone mode on port ${port}`);
   });
 }
-
-// Export for Passenger
-module.exports = app
+}
