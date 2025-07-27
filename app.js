@@ -1,30 +1,62 @@
 // VATSIM PMP - Simple Express Server
 const express = require('express')
 const path = require('path')
+const fs = require('fs')
 
 const app = express()
 
 // Statische Dateien aus public/ servieren
 app.use(express.static(path.join(__dirname, 'public')))
 
-// Route für Events
-app.get('/events', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'events.html'))
+// Helper to inject header/footer into a page
+function renderWithLayout(pagePath, res) {
+  const header = fs.readFileSync(path.join(__dirname, 'public', 'header.html'), 'utf8')
+  const footer = fs.readFileSync(path.join(__dirname, 'public', 'footer.html'), 'utf8')
+  let page = fs.readFileSync(pagePath, 'utf8')
+  page = page.replace('<!--#HEADER-->', header).replace('<!--#FOOTER-->', footer)
+  res.send(page)
+}
+
+// Serve header and footer as partials
+app.get('/header.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'header.html'))
+})
+app.get('/footer.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'footer.html'))
 })
 
-// Route für Kontakt
-app.get('/kontakt', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'kontakt.html'))
-})
-
-// Route für Anleitung
-app.get('/howto', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'howto.html'))
+// Route für die Hauptseite
+app.get('/', (req, res) => {
+  renderWithLayout(path.join(__dirname, 'public', 'index.html'), res)
 })
 
 // Route für Teilnahme
 app.get('/teilnahme', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'teilnahme.html'))
+  renderWithLayout(path.join(__dirname, 'public', 'teilnahme.html'), res)
+})
+
+// Route für Events
+app.get('/events', (req, res) => {
+  renderWithLayout(path.join(__dirname, 'public', 'events.html'), res)
+})
+
+// Route für Kontakt
+app.get('/kontakt', (req, res) => {
+  renderWithLayout(path.join(__dirname, 'public', 'kontakt.html'), res)
+})
+
+// Route für Anleitung
+app.get('/howto', (req, res) => {
+  renderWithLayout(path.join(__dirname, 'public', 'howto.html'), res)
+})
+
+// Route für Status
+app.get('/status', (req, res) => {
+  res.json({
+    status: 'Online',
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()) + ' seconds'
+  })
 })
 
 // Redirect .html URLs to their route counterparts
@@ -48,7 +80,3 @@ if (require.main === module) {
     console.log(`VATSIM PMP running on port ${port}`)
   })
 }
-
-// Export für Passenger
-module.exports = app
-
