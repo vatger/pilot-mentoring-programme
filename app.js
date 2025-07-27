@@ -57,6 +57,43 @@ app.get('/footer.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'footer.html'))
 })
 
+// Image routes for back1-9
+app.get('/back1', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'assets', 'img', '1.png'))
+})
+
+app.get('/back2', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'assets', 'img', '2.png'))
+})
+
+app.get('/back3', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'assets', 'img', '3.png'))
+})
+
+app.get('/back4', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'assets', 'img', '4.png'))
+})
+
+app.get('/back5', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'assets', 'img', '5.png'))
+})
+
+app.get('/back6', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'assets', 'img', '6.png'))
+})
+
+app.get('/back7', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'assets', 'img', '7.png'))
+})
+
+app.get('/back8', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'assets', 'img', '8.png'))
+})
+
+app.get('/back9', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'assets', 'img', '9.png'))
+})
+
 // Route für die Hauptseite
 app.get('/', (req, res) => {
   renderWithLayout(path.join(__dirname, 'public', 'index.html'), res)
