@@ -615,7 +615,6 @@ a:focus {
 /* Extra: Make links in step-desc wrap and not overflow */
 .step-desc a {
     word-break: break-all;
-}
     width: 100%;
     text-align: center;
     padding: 12px;
@@ -637,4 +636,50 @@ a:focus {
 /* Extra: Make links in step-desc wrap and not overflow */
 .step-desc a {
     word-break: break-all;
+}
+/* Background slider styles */
+.background {
+    z-index: -1;
+    position: fixed;
+    height: 100vh;
+    width: 100vw;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+
+    /* how long is a picture shown (in seconds) */
+    --image-duration: 5;
+}
+
+.slider-container {
+    display: flex;
+    width: calc(8 * 100vw);
+    height: 100%;
+    animation: slideSteps calc(var(--image-duration) * 8 * 1s) infinite;
+}
+
+.slider-image {
+    width: 100vw;
+    height: 100%;
+    object-fit: cover;
+    flex-shrink: 0;
+    opacity: 0.3;
+    filter: blur(1px);
+}
+
+/* Step animation */
+@keyframes slideSteps {
+    0%, 11% { transform: translateX(0); }
+    12.5%, 23.5% { transform: translateX(-100vw); }
+    25%, 36% { transform: translateX(-200vw); }
+    37.5%, 48.5% { transform: translateX(-300vw); }
+    50%, 61% { transform: translateX(-400vw); }
+    62.5%, 73.5% { transform: translateX(-500vw); }
+    75%, 86% { transform: translateX(-600vw); }
+    87.5%, 98.5% { transform: translateX(-700vw); }
+    100% { transform: translateX(0); }
+}
+
+[data-theme="dark"] .slider-image {
+    opacity: 0.2;
 }
