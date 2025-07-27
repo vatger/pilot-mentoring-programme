@@ -162,11 +162,7 @@ process.on('unhandledRejection', (reason, promise) => {
 if (typeof(PhusionPassenger) !== 'undefined') {
   PhusionPassenger.configure({ autoInstall: false });
   
-  const port = process.env.PORT || 80;
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`VATSIM PMP running in Passenger mode on port ${port}`);
-  });
-} else if (require.main === module) {
+if (require.main === module) {
   const port = process.env.PORT || 80;
   app.listen(port, () => {
     console.log(`VATSIM PMP running in standalone mode on port ${port}`);
