@@ -10,11 +10,43 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 // Helper to inject header/footer into a page
 function renderWithLayout(pagePath, res) {
-  const header = fs.readFileSync(path.join(__dirname, 'public', 'header.html'), 'utf8')
-  const footer = fs.readFileSync(path.join(__dirname, 'public', 'footer.html'), 'utf8')
-  let page = fs.readFileSync(pagePath, 'utf8')
-  page = page.replace('<!--#HEADER-->', header).replace('<!--#FOOTER-->', footer)
-  res.send(page)
+  try {
+    // Use path.resolve to ensure absolute paths
+    const headerPath = path.resolve(__dirname, 'public', 'header.html');
+    const footerPath = path.resolve(__dirname, 'public', 'footer.html');
+    const contentPath = path.resolve(pagePath);
+    
+    // Check if files exist
+    if (!fs.existsSync(headerPath)) {
+      console.error(`Header file not found: ${headerPath}`);
+      return res.status(500).send('Server Error: Header template missing');
+    }
+    
+    if (!fs.existsSync(footerPath)) {
+      console.error(`Footer file not found: ${footerPath}`);
+      return res.status(500).send('Server Error: Footer template missing');
+    }
+    
+    if (!fs.existsSync(contentPath)) {
+      console.error(`Content file not found: ${contentPath}`);
+      return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+    }
+    
+    // Read files with error handling
+    const header = fs.readFileSync(headerPath, 'utf8');
+    const footer = fs.readFileSync(footerPath, 'utf8');
+    let page = fs.readFileSync(contentPath, 'utf8');
+    
+    // Replace placeholders
+    page = page.replace('<!--#HEADER-->', header).replace('<!--#FOOTER-->', footer);
+    
+    // Send the response
+    res.send(page);
+    
+  } catch (error) {
+    console.error('Error in renderWithLayout:', error);
+    res.status(500).send('Server Error: Failed to render page');
+  }
 }
 
 // Serve header and footer as partials
@@ -65,9 +97,16 @@ app.get('/events.html', (req, res) => res.redirect('/events'))
 app.get('/kontakt.html', (req, res) => res.redirect('/kontakt'))
 app.get('/howto.html', (req, res) => res.redirect('/howto'))
 
-// 404 Handler
+// Error handling for static files
+app.use((err, req, res, next) => {
+  console.error('Express error:', err);
+  res.status(500).send('Server Error');
+});
+
+// 404 Handler - make sure this is the last middleware
 app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'))
+  console.log(`404 Not Found: ${req.originalUrl}`);
+  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 })
 
 // Export für Passenger
