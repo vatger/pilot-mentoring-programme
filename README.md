@@ -8,30 +8,15 @@
 
 ### Phase 2: Enhanced Features (Next)
 - [ ] User authentication for mentors and mentees
-- [ ] Dynamic event calendar with registration
-- [ ] Resource library with training materials
-- [ ] Profile system for participants
-
-### Phase 3: Advanced Functionality
-- [ ] Integrated mentoring session scheduling
-- [ ] Progress tracking for mentees
-- [ ] Feedback and rating system
-- [ ] Certificates and achievements
-
-### Phase 4: Community Features
-- [ ] Forum or discussion board
-- [ ] Shared flight planning tools
-- [ ] Group events and challenges
 - [ ] Integration with VATSIM data API
+- [ ] Integration with VATSIM-Germany data API
+- [ ] Signup System via VATSIM-Germany SSO
+- [ ] Move PMP-Signup from Forum to website
 
 ## Development Tasks
-
-- [ ] Fix header loading across all pages
-- [ ] Implement consistent styling for forms
+- [ ] Implement styling for/and forms
 - [ ] Create proper 404 and error pages
 - [ ] Add analytics for usage tracking
-- [ ] Improve accessibility features
-- [ ] Set up CI/CD pipeline for updates
 
 ## Setup & Development
 
