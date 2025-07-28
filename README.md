@@ -32,7 +32,22 @@
    ```
 3. Start the development server:
    ```
-   node app.js
+   npm run dev
    ```
-4. Open your browser at `http://localhost:80`
+4. Open your browser at `http://localhost:3000`
 
+### Building for Production
+1. Build the application:
+   ```
+   npm run build
+   ```
+2. Start the production server:
+   ```
+   npm start
+   ```
+
+### Legacy Express Server
+If you need to run the legacy Express server:
+```
+npm run express
+```
