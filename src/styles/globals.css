@@ -1,24 +1,110 @@
+.stepper-stripe {
+    position: absolute;
+    left: 56px; /* center of bubble (bubble is 56px wide) */
+    top: 36px; /* center of bubble (bubble is 56px tall, so 28px + some offset) */
+    width: 4px;
+    height: calc(100% - 36px); /* from center of bubble to bottom of card */
+    background: linear-gradient(180deg, var(--accent-color) 0%, var(--card-bg) 100%);
+    border-radius: 2px;
+    z-index: 0;
+}
+
+[data-theme="dark"] .stepper-stripe {
+    background: linear-gradient(180deg, var(--accent-color) 0%, #151d35 100%);
+}
+/* Consistent button style for stepper and other pages */
+.button {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 24px;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  margin: 0 8px;
+  box-shadow: 0 2px 8px var(--shadow-light);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.button:disabled {
+  background: #ccc;
+  color: #888;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+/* Info box styles for Howto page */
+.info-amber {
+    background: #fff7d1;
+    border-left: 5px solid #ffc107;
+    color: #795548;
+    padding: 16px 20px;
+    border-radius: 7px;
+    margin: 18px 0;
+    font-size: 1em;
+    box-shadow: 0 1px 6px rgba(255,193,7,0.08);
+    transition: background 0.3s ease;
+}
+
+[data-theme="dark"] .info-amber {
+    background: #2e2416;
+    color: #ffd54f;
+}
+
+.info-danger {
+    background: #ffd1d1;
+    border-left: 5px solid #e53935;
+    color: #420505;
+    padding: 16px 20px;
+    border-radius: 7px;
+    margin: 18px 0;
+    font-size: 1em;
+    box-shadow: 0 1px 6px rgba(229,57,53,0.08);
+    transition: background 0.3s ease;
+}
+
+[data-theme="dark"] .info-danger {
+    background: #2e0e0e;
+    color: #ef5350;
+}
+
+.info-success {
+    background: #d0fddc;
+    border-left: 5px solid #4caf50;
+    color: #18421a;
+    padding: 16px 20px;
+    border-radius: 7px;
+    margin: 18px 0;
+    font-size: 1em;
+    box-shadow: 0 1px 6px rgba(76,175,80,0.08);
+    transition: background 0.3s ease;
+}
+
+[data-theme="dark"] .info-success {
+    background: #0e2e0e;
+    color: #66bb6a;
+}
 /* VATSIM PMP - Styles */
 
 /* CSS Variables for Light/Dark Mode */
 :root {
-    --bg-gradient-start: #e3f0ff;
-    --bg-gradient-end: #f5f5f5;
-    --container-bg: #fff;
-    --text-color: #222;
-    --card-bg: #d0e3ff;
-    --footer-border: #e0e7ef;
-    --footer-text: #666;
-    --nav-bg: #f7fbff;
-    --shadow-color: rgba(0,0,0,0.08);
-    --shadow-light: rgba(0,0,0,0.03);
-    --accent-color: #0066cc;
-    --link-color: #0066cc;
-    --header-color: #00a3e0;
-    --button-bg: #0066cc;
-    --button-text: white;
+    --bg-gradient-start: #dbe6f3;
+    --bg-gradient-end: #e6eaf0;
+    --container-bg: #f6f8fa;
+    --text-color: #222a36;
+    --card-bg: #c7d4e6;
+    --footer-border: #cfd8e3;
+    --footer-text: #444;
+    --nav-bg: #eaf0f7;
+    --shadow-color: rgba(0,0,0,0.10);
+    --shadow-light: rgba(0,0,0,0.05);
+    --accent-color: #005fa3;
+    --link-color: #005fa3;
+    --header-color: #0077b6;
+    --button-bg: #005fa3;
+    --button-text: #f6f8fa;
     --card-shadow: 0 4px 12px var(--shadow-color);
-    --overlay-bg: rgba(255, 255, 255, 0.85);
+    --overlay-bg: rgba(240, 245, 255, 0.70);
 }
 
 [data-theme="dark"] {
@@ -111,6 +197,49 @@ p {
     margin-bottom: 20px;
 }
 
+.step-title {
+    font-size: 1.2em;
+    color: var(--header-color);
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.step-desc {
+    font-size: 1em;
+    color: var(--text-color);
+    margin-bottom: 0;
+}
+
+[data-theme="dark"] .step-title {
+    color: var(--accent-color);
+}
+
+[data-theme="dark"] .step-desc {
+    color: var(--text-color);
+}
+
+.step-icon {
+    min-width: 56px;
+    min-height: 56px;
+    background: linear-gradient(135deg, var(--accent-color) 60%, #42a5f5 100%);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 2em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(25,118,210,0.12);
+    z-index: 1;
+    transition: transform 0.2s;
+    margin-top: 8px;
+    margin-right: 8px;
+}
+
+[data-theme="dark"] .step-icon {
+    background: linear-gradient(135deg, var(--accent-color) 60%, #1976d2 100%);
+    color: #fff;
+}
 /* Header styles */
 .header-container {
     background: var(--nav-bg);
