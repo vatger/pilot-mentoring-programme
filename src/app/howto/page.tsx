@@ -136,12 +136,6 @@ export default function HowtoPage() {
             </div>
           </div>
         </div>
-        <div className="footer">
-          <p>
-            &copy; <span>{year}</span> Jacob Koglin &ndash; VATSIM Germany PMP<br />
-            <small>Bereit zum Start? <Link href="/teilnahme">Jetzt anmelden!</Link></small>
-          </p>
-        </div>
       </div>
     </PageLayout>
   );
