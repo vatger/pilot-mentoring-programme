@@ -40,7 +40,7 @@ const steps = [
           <li><strong>Division:</strong> EUD (Europe except UK)</li>
           <li><strong>Subdivision:</strong> GER (Germany)</li>
         </ul>
-        Sollte hier etwas nicht klappen, kontaktiere bitte den Membership Support.
+        Sollte hier etwas nicht klappen, kontaktiere bitte den Membership Support der jeweiligen Organisation.
       </>
     ),
   },

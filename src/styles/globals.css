@@ -46,8 +46,19 @@
     transition: background 0.3s ease;
 }
 
+[data-theme="dark"] body,
+[data-theme="dark"] body *:not(.info-amber):not(.info-danger):not(.info-success) {
+    color: var(--text-color) !important;
+}
+
 [data-theme="dark"] .info-amber {
     background: #2e2416;
+    color: #ffd54f;
+}
+
+[data-theme="dark"] .info-amber p,
+[data-theme="dark"] .info-amber span,
+[data-theme="dark"] .info-amber li {
     color: #ffd54f;
 }
 
@@ -215,14 +226,14 @@ p {
 }
 
 [data-theme="dark"] .step-desc {
-    color: var(--text-color);
+    color: #ffffff;
 }
 
 .step-icon {
     min-width: 56px;
     min-height: 56px;
     background: linear-gradient(135deg, var(--accent-color) 60%, #42a5f5 100%);
-    color: #fff;
+    color: #ffffff;
     border-radius: 50%;
     font-size: 2em;
     font-weight: 700;
