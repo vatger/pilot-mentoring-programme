@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -96,7 +95,6 @@ export default function HowtoPage() {
   }, []);
 
   useEffect(() => {
-    // Scroll to top of stepper for better mobile experience
     if (isMobile) {
       const stepperEl = document.getElementById('stepper');
       stepperEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -112,27 +110,38 @@ export default function HowtoPage() {
             <div className="stepper-progress" id="stepper-progress">
               Schritt {currentStep + 1} von {steps.length}
             </div>
-            <div className="stepper" id="stepper" data-current-step={currentStep + 1}>
-              {/* Vertical line */}
-              <div style={{ position: 'absolute', left: 32, top: 56, width: 4, height: 'calc(100% - 56px)', background: 'linear-gradient(180deg, #1976d2 0%, #e3f2fd 100%)', borderRadius: 2, zIndex: 0, display: currentStep < steps.length - 1 ? 'block' : 'none' }} />
-              {/* Step bubble */}
-              <div className="step" style={{ display: 'flex', alignItems: 'flex-start', gap: 24, position: 'relative', animation: 'fadeInUp 0.8s' }}>
-                <div className="step-icon" style={{ minWidth: 56, minHeight: 56, background: 'linear-gradient(135deg, #1976d2 60%, #42a5f5 100%)', color: '#fff', borderRadius: '50%', fontSize: '2em', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(25,118,210,0.12)', zIndex: 1 }}>
+            {/* Flex column for step card and controls */}
+            <div
+              className="stepper"
+              id="stepper"
+              data-current-step={currentStep + 1}
+              style={{ display: 'flex', flexDirection: 'column', minHeight: '420px' }}
+            >
+              <div className="step">
+                {currentStep < steps.length - 1 && (
+                  isMobile ? (
+                    <div className="stepper-stripe" />
+                  ) : (
+                    <div className="stepper-stripe" />
+                  )
+                )}
+                <div className="step-icon">
                   {steps[currentStep].icon}
                 </div>
                 <div className="step-content">
-                  <div className="step-title" style={{ fontSize: '1.2em', color: '#1976d2', fontWeight: 600, marginBottom: 6 }}>{steps[currentStep].title}</div>
-                  <div className="step-desc" style={{ fontSize: '1em', color: '#222', marginBottom: 0 }}>{steps[currentStep].desc}</div>
+                  <div className="step-title">{steps[currentStep].title}</div>
+                  <div className="step-desc">{steps[currentStep].desc}</div>
                   {steps[currentStep].info}
                 </div>
               </div>
-            </div>
-            <div className="stepper-controls" style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 32 }}>
-              <button className="button" id="prevStep" disabled={currentStep === 0} onClick={() => setCurrentStep(currentStep - 1)}>Zurück</button>
-              <button className="button" id="nextStep" onClick={() => {
-                if (currentStep < steps.length - 1) setCurrentStep(currentStep + 1);
-                else window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}>{currentStep === steps.length - 1 ? 'Fertig' : 'Weiter'}</button>
+              {/* Controls always at bottom */}
+              <div className="stepper-controls" style={{ marginTop: 'auto', display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                <button className="button" id="prevStep" disabled={currentStep === 0} onClick={() => setCurrentStep(currentStep - 1)}>Zurück</button>
+                <button className="button" id="nextStep" onClick={() => {
+                  if (currentStep < steps.length - 1) setCurrentStep(currentStep + 1);
+                  else window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}>{currentStep === steps.length - 1 ? 'Fertig' : 'Weiter'}</button>
+              </div>
             </div>
           </div>
         </div>
@@ -140,3 +149,6 @@ export default function HowtoPage() {
     </PageLayout>
   );
 }
+
+
+

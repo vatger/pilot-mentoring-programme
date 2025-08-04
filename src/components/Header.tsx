@@ -8,6 +8,7 @@ export default function Header() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isManualToggle, setIsManualToggle] = useState(false);
   const [activeNavItem, setActiveNavItem] = useState('/');
+  const [isMobile, setIsMobile] = useState(false);
   
   useEffect(() => {
     // Set initial theme from localStorage
@@ -20,12 +21,16 @@ export default function Header() {
       setIsCollapsed(true);
     }
     
+    // Set initial mobile state
+    setIsMobile(window.innerWidth < 768);
+    
     // Set active nav item based on path
     const path = window.location.pathname.replace(/\/$/, '') || '/';
     setActiveNavItem(path);
     
     // Handle resize
     const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
       if (window.innerWidth < 768 && !isManualToggle) {
         setIsCollapsed(true);
       } else if (window.innerWidth >= 768) {
@@ -55,21 +60,27 @@ export default function Header() {
   
   return (
     <>
-      <div className="mobile-header-controls">
-        <button 
-          id="mobile-menu-toggle" 
-          className={`mobile-menu-toggle ${isCollapsed ? 'menu-closed' : ''}`}
-          aria-label="Toggle Navigation Menu"
-          aria-expanded={!isCollapsed}
-          onClick={toggleMenu}
-        >
-          <svg className="icon-plane" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path>
-          </svg>
-          <span className="sr-only">Toggle Menu</span>
-        </button>
-      </div>
-
+      {/* Only show toggle on mobile */}
+      {isMobile && (
+        <div className="mobile-header-controls">
+          <button 
+            id="mobile-menu-toggle" 
+            className={`mobile-menu-toggle ${isCollapsed ? 'menu-closed' : ''}`}
+            aria-label="Toggle Navigation Menu"
+            aria-expanded={!isCollapsed}
+            onClick={toggleMenu}
+          >
+            {/* Commercial airliner SVG icon, filled white */}
+            <svg className="icon-plane" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="#fff" stroke="currentColor" strokeWidth="2">
+              <path d="M10.18 9" />
+              <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V21l2-1 2 1v-7.5z" />
+            </svg>
+            <span className="sr-only" style={{ position: 'absolute', width: 1, height: 1, padding: 0, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
+              Toggle Menu
+            </span>
+          </button>
+        </div>
+      )}
       <div className={`header-container ${isCollapsed ? 'collapsed' : ''}`} id="header-container">
         <div className="header">
           <button 
@@ -150,3 +161,4 @@ function BackgroundSlider() {
     </div>
   );
 }
+
