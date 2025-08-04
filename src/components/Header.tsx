@@ -4,30 +4,41 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function Header() {
+  // SSO test flag
+  const ENABLE_SSO_TEST = false; // Set to true to activate SSO test mode
+
   const [theme, setTheme] = useState('light');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isManualToggle, setIsManualToggle] = useState(false);
   const [activeNavItem, setActiveNavItem] = useState('/');
   const [isMobile, setIsMobile] = useState(false);
-  
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+
   useEffect(() => {
+    if (ENABLE_SSO_TEST && typeof window !== "undefined") {
+      window.location.href =
+        "https://sso.vatsim-germany.org/login?redirect=" +
+        encodeURIComponent(window.location.href);
+      setShouldRedirect(true);
+      return;
+    }
     // Set initial theme from localStorage
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
-    
+
     // Set initial collapsed state for mobile
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       setIsCollapsed(true);
     }
-    
+
     // Set initial mobile state
     setIsMobile(window.innerWidth < 768);
-    
+
     // Set active nav item based on path
     const path = window.location.pathname.replace(/\/$/, '') || '/';
     setActiveNavItem(path);
-    
+
     // Handle resize
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -38,13 +49,17 @@ export default function Header() {
         setIsManualToggle(false);
       }
     };
-    
+
     window.addEventListener('resize', handleResize);
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, [isManualToggle]);
+
+  if (shouldRedirect) {
+    return null;
+  }
   
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
@@ -113,6 +128,7 @@ export default function Header() {
           <Link href="/events" className={activeNavItem === '/events' ? 'active' : ''}>Events</Link>
           <Link href="/howto" className={activeNavItem === '/howto' ? 'active' : ''}>How to get started</Link>
           <Link href="/kontakt" className={activeNavItem === '/kontakt' ? 'active' : ''}>Kontakt</Link>
+          <Link href="/anmeldung" className={activeNavItem === '/anmeldung' ? 'active' : ''}>Anmeldung</Link>
         </nav>
       </div>
     </>
@@ -121,36 +137,41 @@ export default function Header() {
 
 function BackgroundSlider() {
   const [images, setImages] = useState<string[]>([]);
-  
+  const imageUrls = [
+    'https://cdn.pmp.hosting201623.ae912.netcup.net/1.PNG',
+    'https://cdn.pmp.hosting201623.ae912.netcup.net/2.PNG',
+    'https://cdn.pmp.hosting201623.ae912.netcup.net/3.PNG',
+    'https://cdn.pmp.hosting201623.ae912.netcup.net/5.PNG',
+    'https://cdn.pmp.hosting201623.ae912.netcup.net/6.PNG',
+    'https://cdn.pmp.hosting201623.ae912.netcup.net/7.PNG',
+    'https://cdn.pmp.hosting201623.ae912.netcup.net/8.PNG',
+    'https://cdn.pmp.hosting201623.ae912.netcup.net/9.PNG'
+  ];
+
+  // Preload images once on mount
+  useEffect(() => {
+    imageUrls.forEach(url => {
+      const img = new window.Image();
+      img.src = url;
+    });
+  }, []);
+
   useEffect(() => {
     const loadBackgroundImages = () => {
       const isMobile = window.innerWidth < 768;
-      
       if (!isMobile && images.length === 0) {
-        const imageUrls = [
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/1.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/2.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/3.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/5.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/6.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/7.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/8.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/9.PNG'
-        ];
         setImages(imageUrls);
       } else if (isMobile && images.length > 0) {
         setImages([]);
       }
     };
-    
     loadBackgroundImages();
     window.addEventListener('resize', loadBackgroundImages);
-    
     return () => {
       window.removeEventListener('resize', loadBackgroundImages);
     };
   }, [images.length]);
-  
+
   return (
     <div className="background" id="background-slider" style={{ display: images.length > 0 ? 'block' : 'none' }}>
       <div className="slider-container" id="slider-container">
