@@ -10,11 +10,13 @@ export default function Header() {
   const [theme, setTheme] = useState('light');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isManualToggle, setIsManualToggle] = useState(false);
-  const [activeNavItem, setActiveNavItem] = useState('/');
+  const [activeNavItem, setActiveNavItem] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
+    setIsHydrated(true);
     if (ENABLE_SSO_TEST && typeof window !== "undefined") {
       window.location.href =
         "https://sso.vatsim-germany.org/login?redirect=" +
@@ -57,7 +59,7 @@ export default function Header() {
     };
   }, [isManualToggle]);
 
-  if (shouldRedirect) {
+  if (!isHydrated || shouldRedirect) {
     return null;
   }
   
@@ -128,14 +130,17 @@ export default function Header() {
             </div>
           <h1>Piloten-Mentoren-Programm</h1>
         </div>
-        <nav className="nav" aria-label="Hauptnavigation">
-          <Link href="/" className={activeNavItem === '/' ? 'active' : ''}>Home</Link>
-          <Link href="/teilnahme" className={activeNavItem === '/teilnahme' ? 'active' : ''}>Teilnahme</Link>
-          <Link href="/events" className={activeNavItem === '/events' ? 'active' : ''}>Events</Link>
-          <Link href="/howto" className={activeNavItem === '/howto' ? 'active' : ''}>How to get started</Link>
-          <Link href="/kontakt" className={activeNavItem === '/kontakt' ? 'active' : ''}>Kontakt</Link>
-          <Link href="/anmeldung" className={activeNavItem === '/anmeldung' ? 'active' : ''}>Anmeldung</Link>
-        </nav>
+        {/* Only render nav when activeNavItem is set */}
+        {activeNavItem !== null && (
+          <nav className="nav" aria-label="Hauptnavigation">
+            <Link href="/" className={activeNavItem === '/' ? 'active' : ''}>Home</Link>
+            <Link href="/teilnahme" className={activeNavItem === '/teilnahme' ? 'active' : ''}>Teilnahme</Link>
+            <Link href="/events" className={activeNavItem === '/events' ? 'active' : ''}>Events</Link>
+            <Link href="/howto" className={activeNavItem === '/howto' ? 'active' : ''}>How to get started</Link>
+            <Link href="/kontakt" className={activeNavItem === '/kontakt' ? 'active' : ''}>Kontakt</Link>
+            <Link href="/anmeldung" className={activeNavItem === '/anmeldung' ? 'active' : ''}>Anmeldung</Link>
+          </nav>
+        )}
       </div>
     </>
   );
