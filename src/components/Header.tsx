@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function Header() {
-  // SSO test flag
-  const ENABLE_SSO_TEST = false; // Set to true to activate SSO test mode
 
   const [theme, setTheme] = useState('light');
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -17,13 +15,6 @@ export default function Header() {
 
   useEffect(() => {
     setIsHydrated(true);
-    if (ENABLE_SSO_TEST && typeof window !== "undefined") {
-      window.location.href =
-        "https://sso.vatsim-germany.org/login?redirect=" +
-        encodeURIComponent(window.location.href);
-      setShouldRedirect(true);
-      return;
-    }
     // Set initial theme from localStorage
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
