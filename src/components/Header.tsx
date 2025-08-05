@@ -119,7 +119,13 @@ export default function Header() {
             </svg>
             <span className="toggle-text">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
           </button>
-          <div className="logo" aria-label="VATSIM Germany Logo">VATSIM Germany</div>
+            <div className="logo">
+            {theme === 'dark' ? (
+              <img src="/VATGer-Logo-White.png" alt="Logo Dark" className="logo-img" />
+            ) : (
+              <img src="/VATGer-Logo-Colour.png" alt="Logo Light" className="logo-img" />
+            )}
+            </div>
           <h1>Piloten-Mentoren-Programm</h1>
         </div>
         <nav className="nav" aria-label="Hauptnavigation">

@@ -1,3 +1,19 @@
+/* Logo image scaling for Header */
+
+
+.logo-img {
+  max-width: 320px;
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .logo-img {
+    max-width: 140px;
+  }
+}
 /* ---------------------------------------------------
    Typekit Myriad Pro Italic
 --------------------------------------------------- */
@@ -302,16 +318,17 @@ p { margin-bottom: 20px; }
     position: relative;
     padding-bottom: 15px;
 }
-.logo {
-    font-weight: bold;
-    font-size: 1.2em;
-    margin-bottom: 5px;
-    color: var(--header-color);
+
+.logo-img {
+    margin-bottom: 0px;
+    /* Remove any space below the image */
+    display: block;
 }
+
 .header h1 {
     font-size: 1.8em;
     text-align: center;
-    margin: 5px 0 15px;
+    margin: -8px 0 10px;
 }
 .nav {
     display: flex;

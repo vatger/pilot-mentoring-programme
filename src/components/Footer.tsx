@@ -8,7 +8,7 @@ export default function Footer() {
   return (
     <div className="footer">
       <p>
-        &copy; {year} Jacob Koglin &ndash; VATSIM Germany PMP<br />
+        &copy; {year} &ndash; VATSIM Germany PMP<br />
         <small>Fragen? Kontaktieren Sie uns jederzeit über das <a href="/kontakt">Forum</a>.</small>
       </p>
     </div>
