@@ -1,17 +1,17 @@
-/* Logo image scaling for Header */
-
-
 .logo-img {
   max-width: 320px;
   width: 100%;
-  height: auto;
+  height: auto; /* keep original responsive sizing */
   display: block;
-  margin: 0 auto;
+  margin: 0 auto; /* center */
+  margin-top: 0; /* remove extra top gap */
+  margin-bottom: 2px; /* tiny gap to title */
 }
 
 @media (max-width: 600px) {
   .logo-img {
     max-width: 140px;
+    height: auto;
   }
 }
 /* ---------------------------------------------------
@@ -81,7 +81,7 @@ body {
     font-weight: 500;
     font-style: normal;
     margin: 0;
-    padding: 20px;
+    padding: 12px; /* reduced from 20px to bring content higher */
     line-height: 1.7;
     color: var(--text-color);
     background-color: var(--bg-gradient-start);
@@ -89,29 +89,6 @@ body {
     min-height: 100vh;
     position: relative;
 }
-
-/* ---------------------------------------------------
-   Layout
---------------------------------------------------- */
-.page-background-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: var(--overlay-bg);
-    z-index: -1;
-}
-
-.container {
-    max-width: 1100px;
-    margin: 30px auto;
-    background: var(--container-bg);
-    padding: 32px 32px 28px 32px;
-    border-radius: 14px;
-    box-shadow: 0 6px 32px var(--shadow-color), 0 1.5px 4px var(--shadow-light);
-    transition: background 0.3s, box-shadow 0.3s;
-    position: relative;
-    z-index: 1;
-}
-
 /* ---------------------------------------------------
    Typography
 --------------------------------------------------- */
@@ -301,13 +278,33 @@ p { margin-bottom: 20px; }
 }
 
 /* ---------------------------------------------------
-   Header & Navigation
+   Layout
 --------------------------------------------------- */
+.page-background-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--overlay-bg);
+    z-index: -1;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 8px auto; /* reduced top/bottom margin */
+    background: var(--container-bg);
+    padding: 12px 32px; /* reduced top/bottom padding */
+    border-radius: 14px;
+    box-shadow: 0 6px 32px var(--shadow-color), 0 1.5px 4px var(--shadow-light);
+    transition: background 0.3s, box-shadow 0.3s;
+    position: relative;
+    z-index: 1;
+}
+
+/* Tighten header container and header spacing without changing logo size */
 .header-container {
     background: var(--nav-bg);
+    padding: 2px 20px 10px; /* minimal top padding, modest bottom padding */
+    margin-top: 0; /* ensure header sits at top of container */
     border-radius: 12px;
-    padding: 15px 25px;
-    margin-top: 20px;
     box-shadow: 0 3px 15px var(--shadow-color);
     transition: all 0.3s;
 }
@@ -316,19 +313,15 @@ p { margin-bottom: 20px; }
     flex-direction: column;
     align-items: center;
     position: relative;
-    padding-bottom: 15px;
-}
-
-.logo-img {
-    margin-bottom: 0px;
-    /* Remove any space below the image */
-    display: block;
+    padding: 0 0 6px; /* remove top padding entirely */
+    gap: 2px; /* very small gap between logo and title */
+    z-index: 100; /* ensure header stays above slider overlay */
 }
 
 .header h1 {
-    font-size: 1.8em;
-    text-align: center;
-    margin: -8px 0 10px;
+    font-size: 1.45em;
+    margin: 2px 0 8px; /* tiny top gap, slightly larger bottom gap so nav doesn't stick to title */
+    line-height: 1.1;
 }
 .nav {
     display: flex;
@@ -484,22 +477,71 @@ p { margin-bottom: 20px; }
    Background Slider
 --------------------------------------------------- */
 .background {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
+    /* make the slider cover the entire viewport so images are full-bleed */
+    position: fixed; /* fixed to viewport */
+    inset: 0; /* top:0; right:0; bottom:0; left:0 */
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
-    border-radius: 8px;
-    opacity: 0.15;
-    z-index: 0;
+    border-radius: 0; /* full-bleed, no rounding */
+    opacity: 1; /* images stay fully opaque; dimming now done via container opacity */
+    z-index: -1; /* behind header content */
+    transition: none !important; /* framer-motion controls opacity */
+    will-change: opacity;
+    pointer-events: none; /* don't block interactions */
 }
 .slider-container {
     width: 100%;
     height: 100%;
     display: flex;
+    position: relative;
+    /* de-emphasize imagery per-image via JS-driven opacity (no container opacity or blur) */
+    opacity: 1; /* keep container fully opaque so only animated images control visual dimming */
+    will-change: opacity;
+    z-index: 1;
 }
 .slider-image {
     min-width: 100%;
+    width: 100%;
     height: 100%;
     object-fit: cover;
+    /* avoid additional stacking context and keep animations smooth */
+    backface-visibility: hidden;
+}
+
+/* add a soft overlay so opacity feels natural (keeps images visible but muted) */
+.background::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.06); /* subtle dark overlay */
+    pointer-events: none;
+    z-index: -1; /* place overlay behind the images but above page background */
+}
+
+/* add overlay that darkens the visible image without changing image opacity */
+.slider-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5; /* above images but below the header (header z-index now high) */
+  background: rgba(0,0,0,0.18); /* fallback darkening */
+  transition: background 320ms ease, opacity 320ms ease;
+}
+
+/* theme-specific overlay tints */
+[data-theme="light"] .slider-overlay {
+  /* slight white tint to push images into background */
+  background: rgba(255,255,255,0.12);
+}
+[data-theme="dark"] .slider-overlay {
+  /* stronger dark tint for dark mode */
+  background: rgba(0,0,0,0.55);
+}
+
+/* Ensure no accidental page overflow introduced by the slider */
+html, body {
+    overflow-x: hidden;
 }
 
 /* ---------------------------------------------------
@@ -508,8 +550,10 @@ p { margin-bottom: 20px; }
 @media (max-width: 768px) {
     body { padding: 10px; }
     .container { padding: 20px; margin: 15px auto; }
-    .header-container { padding: 15px; margin-top: 10px; }
-    .header h1 { font-size: 1.5em; }
+    .header-container { padding: 4px 12px 12px; margin-top: 6px; }
+    .header { padding: 2px 0 0; gap: 2px; }
+    .logo-img { max-width: 140px; }
+    .header h1 { font-size: 1.15em; margin-top: 2px; margin-bottom: 8px; }
     .mobile-header-controls { display: block; }
     .header-container.collapsed .nav { display: none; }
     .grid { grid-template-columns: 1fr; }
@@ -687,4 +731,43 @@ p { margin-bottom: 20px; }
 [data-theme="dark"] .form-select:focus {
     background: #1e2a47;
     border-color: var(--accent-color);
+}
+
+/* Remove debug helpers and crop logo whitespace by constraining logo container and using object-fit cover aligned to top */
+.header-container, .header, .logo, .logo-img, .container, .header h1, .nav {
+  outline: none;
+}
+
+.logo {
+  height: 160px; /* larger visible logo area */
+  overflow: hidden; /* hide transparent whitespace in image file */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* align image to top of container */
+  padding: 0;
+  margin: 0;
+}
+
+.logo-visual {
+  /* ensure the visual block has width so background is visible */
+  width: 320px;
+  max-width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: contain; /* scale to fit while preserving aspect */
+  background-position: center top; /* keep top of logo visible */
+  display: block;
+}
+
+/* theme-specific logo images */
+:root .logo-visual {
+  background-image: url('/VATGer-Logo-Colour.png');
+}
+[data-theme="dark"] .logo-visual {
+  background-image: url('/VATGer-Logo-White.png');
+}
+
+@media (max-width: 768px) {
+  .logo { height: 110px; }
+  .logo-visual { width: 140px; height: 100%; }
 }
