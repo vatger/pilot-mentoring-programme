@@ -24,7 +24,8 @@ const steps = [
     title: 'New Member Orientation Test',
     desc: (
       <>
-        Nach der Registrierung musst du den <strong>New Member Orientation Test</strong> absolvieren. Dieser Test stellt sicher, dass du die Grundlagen des Netzwerks verstanden hast. Den Link zum Test erhältst du nach der Registrierung per E-Mail und er ist auf <a href="https://my.vatsim.net/" target="_blank">my.vatsim.net</a> verfügbar.
+        Nach der Registrierung musst du den New Member Orientation Course absolvieren. Dieser besteht aus 6 Modulen, in denen dir die Grundlagen des Netzwerks erklärt werden. Dieser Kurs schließt mit einem Test, den du bestehen musst. Erst dann kannst du dich als Pilot auf Vatsim connecten. <br />
+        Kurs und Test sind in englischer Sprache.
       </>
     ),
   },
@@ -48,7 +49,8 @@ const steps = [
     title: 'Registrierung VATSIM Germany',
     desc: (
       <>
-        Nach der VATSIM-Registrierung kannst du dich bei <a href="https://vatsim-germany.org/" target="_blank">VATSIM Germany</a> anmelden. Dort erhältst du Zugang zum Forum, zu Ressourcen und zum PMP.<br />
+        Nach der VATSIM-Registrierung kannst du dich im <a href="https://vatsim-germany.org/" target="_blank">VATSIM Germany Forum</a> registrieren. Dort organisieren wir unsere Trainings.<br /><br />
+        Bei Vatsim Germany gibt es auch eine umfangreiche Knowledge Base, in der du Informationen zu vielen Themen rund um das Fliegen findest. <br />
         <div className="info-success">
           <strong>Wichtige Links:</strong><br />
           - Forum: <a href="https://board.vatsim-germany.org/" target="_blank">VATSIM Germany Forum</a><br />
@@ -106,6 +108,14 @@ export default function HowtoPage() {
       <div className="content">
         <div className="container">
           <h2>How to get started – In 5 Schritten zum PMP</h2>
+          {currentStep === 0 && (
+            <div className="card info-amber" role="note">
+              <p>Falls du dich bereits registriert hast und für das Fliegen freigeschaltet bist, kannst du gleich zu Schritt 5 springen.</p>
+              <div style={{ textAlign: 'right' }}>
+                <button type="button" className="button" onClick={() => setCurrentStep(4)}>Zu Schritt 5</button>
+              </div>
+            </div>
+          )}
           <div className="steps-container">
             <div className="stepper-progress" id="stepper-progress">
               Schritt {currentStep + 1} von {steps.length}

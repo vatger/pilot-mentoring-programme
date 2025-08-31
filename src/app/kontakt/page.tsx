@@ -5,16 +5,21 @@ export default function KontaktPage() {
     <PageLayout>
       <h2>Kontakt</h2>
       <p>
-        Wenn Sie Fragen zum Piloten-Mentoren-Programm haben oder Interesse an einer Teilnahme haben, zögern Sie nicht, uns zu kontaktieren.
+        Du möchtest mit der Leitung des PMP in Kontakt treten? Das geht über das Vatsim Germany Forum. Gerne per PN.
       </p>
       
       <div className="card">
-        <h3>Kontaktmöglichkeiten</h3>
         <p>
-          Am besten erreichen Sie uns über das <a href="https://board.vatsim-germany.org/forums/piloten-mentoren-programm.739/" target="_blank" rel="noopener noreferrer">VATSIM Germany Forum</a>.
+          Boris Pilecki (955179)
         </p>
         <p>
-          Alternativ können Sie auch eine E-Mail an das PMP-Team senden.
+          Timo Heller (1257735)
+        </p>
+      </div>
+      <p>Du möchtest etwas über das PMP loswerden, aber nicht bei uns? Das PMP ist dem Vatsim Germany Pilot Training Department (PTD) zugeordnet, und du wendest dich am besten an</p>
+      <div className="card">
+        <p>
+          Tim Fuchs (1342244)
         </p>
       </div>
     </PageLayout>

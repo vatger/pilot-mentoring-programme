@@ -121,11 +121,13 @@ export default function Header() {
         {activeNavItem !== null && (
           <nav className="nav" aria-label="Hauptnavigation">
             <Link href="/" className={activeNavItem === '/' ? 'active' : ''}>Home</Link>
-            <Link href="/teilnahme" className={activeNavItem === '/teilnahme' ? 'active' : ''}>Teilnahme</Link>
-            <Link href="/events" className={activeNavItem === '/events' ? 'active' : ''}>Events</Link>
+            <Link href="/pmp" className={activeNavItem === '/pmp' ? 'active' : ''}>PMP</Link>
             <Link href="/howto" className={activeNavItem === '/howto' ? 'active' : ''}>How to get started</Link>
+            <Link href="/infos-fuer-piloten" className={activeNavItem === '/infos-fuer-piloten' ? 'active' : ''}>Infos für Piloten</Link>
+            <Link href="/events" className={activeNavItem === '/events' ? 'active' : ''}>Online-Event</Link>
+            <Link href="/anmeldung-forum" className={activeNavItem === '/anmeldung-forum' ? 'active' : ''}>Anmeldung</Link>
+            <Link href="/mentorenbewerbung" className={activeNavItem === '/mentorenbewerbung' ? 'active' : ''}>Mentorenbewerbung</Link>
             <Link href="/kontakt" className={activeNavItem === '/kontakt' ? 'active' : ''}>Kontakt</Link>
-            <Link href="/anmeldung" className={activeNavItem === '/anmeldung' ? 'active' : ''}>Anmeldung</Link>
           </nav>
         )}
       </div>
