@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import PageLayout from '@/components/PageLayout';
+import { useRouter } from 'next/navigation';
+
 const steps = [
   {
     icon: '1',
@@ -24,7 +26,7 @@ const steps = [
     title: 'New Member Orientation Test',
     desc: (
       <>
-        Nach der Registrierung musst du den New Member Orientation Course absolvieren. Dieser besteht aus 6 Modulen, in denen dir die Grundlagen des Netzwerks erklärt werden. Dieser Kurs schließt mit einem Test, den du bestehen musst. Erst dann kannst du dich als Pilot auf Vatsim connecten. <br />
+        Nach der Registrierung musst du den New Member Orientation Course absolvieren. Dieser besteht aus 5 Modulen, in denen dir die Grundlagen des Netzwerks erklärt werden. Dieser Kurs schließt mit einem Test, den du bestehen musst. Erst dann kannst du dich als Pilot auf Vatsim connecten. <br />
         Kurs und Test sind in englischer Sprache.
       </>
     ),
@@ -49,7 +51,7 @@ const steps = [
     title: 'Registrierung VATSIM Germany',
     desc: (
       <>
-        Nach der VATSIM-Registrierung kannst du dich im <a href="https://vatsim-germany.org/" target="_blank">VATSIM Germany Forum</a> registrieren. Dort organisieren wir unsere Trainings.<br /><br />
+        Nach der VATSIM-Registrierung kannst du dich im <a href="https://board.vatsim-germany.org/" target="_blank">VATSIM Germany Forum</a> registrieren. Dort organisieren wir unsere Trainings.<br /><br />
         Bei Vatsim Germany gibt es auch eine umfangreiche Knowledge Base, in der du Informationen zu vielen Themen rund um das Fliegen findest. <br />
         <div className="info-success">
           <strong>Wichtige Links:</strong><br />
@@ -71,7 +73,7 @@ const steps = [
       <div className="info-amber">
         <strong>Probleme mit deinem Account?</strong><br />
         <ul>
-          <li>Passwort vergessen? <a href="https://my.vatsim.net/reset/password" target="_blank">Hier zurücksetzen</a></li>
+          <li>Passwort vergessen? <a href="https://my.vatsim.net/reset/" target="_blank">Hier zurücksetzen</a></li>
           <li>VATSIM-ID oder E-Mail vergessen? Wende dich an den <a href="https://support.vatsim.net/" target="_blank">Membership Support</a></li>
           <li>Account gesperrt? <a href="https://my.vatsim.net/reactivate" target="_blank">Hier reaktivieren</a></li>
         </ul>
@@ -84,6 +86,8 @@ const steps = [
 export default function HowtoPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const year = new Date().getFullYear();
+
+  const router = useRouter();
 
   // Responsive stepper layout
   const [isMobile, setIsMobile] = useState(false);
@@ -149,7 +153,7 @@ export default function HowtoPage() {
                 <button className="button" id="prevStep" disabled={currentStep === 0} onClick={() => setCurrentStep(currentStep - 1)}>Zurück</button>
                 <button className="button" id="nextStep" onClick={() => {
                   if (currentStep < steps.length - 1) setCurrentStep(currentStep + 1);
-                  else window.scrollTo({ top: 0, behavior: 'smooth' });
+                  else router.push('/anmeldung-forum');
                 }}>{currentStep === steps.length - 1 ? 'Fertig' : 'Weiter'}</button>
               </div>
             </div>

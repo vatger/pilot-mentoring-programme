@@ -122,19 +122,19 @@ export default function InfosFuerPilotenPage() {
 
         <div className="card" role="button" tabIndex={0} onClick={() => setOpen('nav')} onKeyDown={(e) => e.key === 'Enter' && setOpen('nav')}>
           <h3>Navigationsdaten und Charts</h3>
-          <p>Mehr erfahren</p>
+          <p className="link-like" aria-hidden="true">Mehr erfahren</p>
         </div>
         <div className="card" role="button" tabIndex={0} onClick={() => setOpen('briefing')} onKeyDown={(e) => e.key === 'Enter' && setOpen('briefing')}>
           <h3>Flugvorbereitung und Durchführung</h3>
-          <p>Mehr erfahren</p>
+          <p className="link-like" aria-hidden="true">Mehr erfahren</p>
         </div>
         <div className="card" role="button" tabIndex={0} onClick={() => setOpen('radar')} onKeyDown={(e) => e.key === 'Enter' && setOpen('radar')}>
           <h3>Netzwerkmonitor</h3>
-          <p>Mehr erfahren</p>
+          <p className="link-like" aria-hidden="true">Mehr erfahren</p>
         </div>
         <div className="card" role="button" tabIndex={0} onClick={() => setOpen('transitions')} onKeyDown={(e) => e.key === 'Enter' && setOpen('transitions')}>
           <h3>RNAV-Transitions</h3>
-          <p>Mehr erfahren</p>
+          <p className="link-like" aria-hidden="true">Mehr erfahren</p>
         </div>
 
 

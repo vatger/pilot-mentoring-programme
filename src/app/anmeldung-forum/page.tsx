@@ -38,7 +38,7 @@ export default function EventsPage() {
           <li>
             <strong>Flugregeln und Ziele</strong>
             <p>
-              Unser Schwerpunkt im PMP ist "Fit for Online Flying", also das Fliegen auf Vatsim mit ATC. Was möchtest du lernen oder vertiefen?
+              Unser Schwerpunkt im PMP ist &quot;Fit for Online Flying&quot;, also das Fliegen auf Vatsim mit ATC. Was möchtest du lernen oder vertiefen?
             </p>
           </li>
           <li>
@@ -54,7 +54,7 @@ export default function EventsPage() {
             <p>Alter, Beruf/Beschäftigung, Wohnort (optional).</p>
           </li>
         </ol>
-  <h3 style={{ textAlign: 'center' }}><a href="https://board.vatsim-germany.org/forums/piloten-mentoren-programm.739/" target="_blank" className="card card-link">Zur Anmeldung</a></h3>
+  <h3 style={{ textAlign: 'center' }}><a href="https://board.vatsim-germany.org/forums/piloten-mentoren-programm.739/post-thread" target="_blank" className="card card-link">Zur Anmeldung</a></h3>
       </div>
     </PageLayout>
   );

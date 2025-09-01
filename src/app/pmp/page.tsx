@@ -32,7 +32,7 @@ export default function PMPPage() {
         <li>Offenheit für neue Lerninhalte und Teamarbeit</li>
         </ul>
       </div>
-      <Link href="/anmeldung" className="card card-link">
+      <Link href="/anmeldung-forum" className="card card-link">
         <h3>Ja, möchte ich machen.</h3>
         <p>Zur Anmeldung!</p>
       </Link>

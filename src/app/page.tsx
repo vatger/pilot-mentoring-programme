@@ -62,7 +62,7 @@ Denn: „Mein Flugzeug macht nicht was es soll“ gilt bei uns nicht. DU als Pil
 - Was bedeutet „fly published missed approach"?
 `,
     ctas: [
-      { text: 'Du weißt das alles? Schließen und Fliegen.', href: '/get-started' },
+      { text: 'Du weißt das alles? Schließen und Fliegen.', href: '/howto' },
       { text: 'Da fehlt dir doch noch was? Weiter zum PMP!', href: '/pmp' },
     ],
   },
@@ -159,15 +159,15 @@ export default function HomePage() {
       <div className="three-col-grid">
         <div className="card" role="button" tabIndex={0} onClick={() => openCard('vatsim')} onKeyDown={(e) => e.key === 'Enter' && openCard('vatsim')}>
           <h3>Was ist VATSIM?</h3>
-          <p>Mehr erfahren</p>
+          <p className="link-like" aria-hidden="true">Mehr erfahren</p>
         </div>
         <div className="card" role="button" tabIndex={0} onClick={() => openCard('not')} onKeyDown={(e) => e.key === 'Enter' && openCard('not')}>
           <h3>Was ist VATSIM nicht?</h3>
-          <p>Mehr erfahren</p>
+          <p className="link-like" aria-hidden="true">Mehr erfahren</p>
         </div>
         <div className="card" role="button" tabIndex={0} onClick={() => openCard('pilot')} onKeyDown={(e) => e.key === 'Enter' && openCard('pilot')}>
           <h3>Was du als Pilot wissen solltest:</h3>
-          <p>Mehr erfahren</p>
+          <p className="link-like" aria-hidden="true">Mehr erfahren</p>
         </div>
       </div>
 
@@ -182,7 +182,9 @@ export default function HomePage() {
       </div>
 
       <div className="card">
-        <h3>Und jetzt sieh dir das PMP näher an!</h3>
+        <h3 style={{ textAlign: 'center' }}>
+          <Link href="/pmp">Und jetzt sieh dir das PMP näher an!</Link>
+        </h3>
       </div>
 
   <Modal isOpen={open !== null} onClose={() => setOpen(null)} title={open ? details[open as CardKey].title : undefined} variant={open ?? undefined}>

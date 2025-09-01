@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -13,6 +13,7 @@ export default function Header() {
   const [isMobile, setIsMobile] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const isManualToggleRef = useRef(isManualToggle);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -33,14 +34,15 @@ export default function Header() {
     const path = window.location.pathname.replace(/\/$/, '') || '/';
     setActiveNavItem(path);
 
-    // Handle resize
+    // Handle resize (reads latest manual-toggle flag from ref)
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768 && !isManualToggle) {
+      if (window.innerWidth < 768 && !isManualToggleRef.current) {
         setIsCollapsed(true);
       } else if (window.innerWidth >= 768) {
         setIsCollapsed(false);
         setIsManualToggle(false);
+        isManualToggleRef.current = false;
       }
     };
 
@@ -49,7 +51,7 @@ export default function Header() {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [isManualToggle]);
+  }, []);
 
   if (!isHydrated || shouldRedirect) {
     return null;
@@ -63,8 +65,9 @@ export default function Header() {
   };
   
   const toggleMenu = () => {
-    setIsCollapsed(!isCollapsed);
-    setIsManualToggle(true);
+  setIsCollapsed(!isCollapsed);
+  setIsManualToggle(true);
+  isManualToggleRef.current = true;
   };
   
   return (
