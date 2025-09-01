@@ -841,4 +841,99 @@ p { margin-bottom: 20px; }
   z-index: -1;
 }
 
+/* ---------------------------------------------------
+   Animated error page styles (lightweight, zero-deps)
+--------------------------------------------------- */
+
+/* ---------------------------------------------------
+   Aviation-themed animated error page styles
+--------------------------------------------------- */
+.animated-error {
+  position: relative;               /* allow absolute radar background */
+  overflow: hidden;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 28px 18px;
+  border-radius: 12px;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  background: linear-gradient(180deg, #7a0f0f, #4a0606); /* strong red error background */
+  color: #fff;
+  box-shadow: 0 10px 40px rgba(120,10,10,0.18);
+}
+
+/* Make radar visual cover the whole viewport and sit behind all content */
+.ae-visual--bg {
+  position: fixed;      /* cover viewport regardless of component tree */
+  inset: 0;
+  z-index: -9999;        /* behind everything */
+  pointer-events: none;
+  opacity: 0.18;         /* tune visibility to keep foreground readable */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 300ms ease;
+}
+
+/* Ensure the SVG fills the viewport (will scale the 520x520 viewBox) */
+.ae-scene {
+  width: 100vw !important;
+  height: 100vh !important;
+  display: block;
+  pointer-events: none;
+}
+
+/* sweep rotates around the radar center (group translated to center in the SVG) */
+.ae-radar-sweep {
+  /* interpret transform-origin in SVG user coordinates (the viewBox) */
+  transform-box: view-box;
+  /* set rotation origin to (0,0) in the centered viewBox so the sweep starts at the central marker */
+  transform-origin: 0 0;
+  animation: ae-sweep-rotate 4.8s linear infinite;
+  mix-blend-mode: screen;
+}
+
+/* stable rotation keyframes (unchanged) */
+@keyframes ae-sweep-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* subtle shimmer on rings */
+.ae-rings {
+  stroke-opacity: 0.14;
+  animation: ae-rings-shimmer 6s ease-in-out infinite;
+}
+@keyframes ae-rings-shimmer {
+  0% { stroke-opacity: 0.12; }
+  50% { stroke-opacity: 0.18; }
+  100% { stroke-opacity: 0.12; }
+}
+
+/* targets: pulsing outer rings */
+.ae-target .ae-target-pulse {
+  stroke-dasharray: 3 6;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ae-target-pulse 1.6s ease-out infinite;
+}
+@keyframes ae-target-pulse {
+  0% { stroke-opacity: 0.22; transform: scale(0.9); }
+  40% { stroke-opacity: 0.06; transform: scale(1.25); }
+  100% { stroke-opacity: 0; transform: scale(1.9); }
+}
+
+/* ensure error card and content remain above the fixed radar */
+.animated-error { position: relative; z-index: 2; }
+.ae-content { position: relative; z-index: 3; }
+
+/* responsive: reduce radar opacity on small screens */
+@media (max-width: 768px) {
+  .ae-visual--bg { opacity: 0.12; }
+}
+
+/* End appended styles */
+
 /* End of file */
