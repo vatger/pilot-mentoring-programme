@@ -54,7 +54,7 @@ export default function EventsPage() {
             <p>Alter, Beruf/Beschäftigung, Wohnort (optional).</p>
           </li>
         </ol>
-  <h3 style={{ textAlign: 'center' }}><a href="https://board.vatsim-germany.org/forums/piloten-mentoren-programm.739/post-thread" target="_blank" className="card card-link">Zur Anmeldung</a></h3>
+  <h3 style={{ textAlign: 'center' }}><a href="https://board.vatsim-germany.org/threads/pmp-anmeldung-und-ablauf-bitte-vor-der-anmeldung-lesen.70146/" target="_blank" className="card card-link">Zur Anmeldung</a></h3>
       </div>
     </PageLayout>
   );
