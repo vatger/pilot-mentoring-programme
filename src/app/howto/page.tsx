@@ -11,8 +11,8 @@ const steps = [
     desc: (
       <>
         Für die Nutzung des VATSIM Netzwerks benötigst du einen VATSIM Account. Falls du bereits einen Account hast, kannst du diesen Schritt überspringen.<br /><br />
-        Erstelle dir unter <a href="https://my.vatsim.net/register" target="_blank">https://my.vatsim.net/register</a> einen neuen Account. Gib deine echten Daten an (keine Fantasienamen!) und wähle:
-        Nach erfolgreicher Registrierung erhältst du eine VATSIM-ID (CID) und ein Passwort per E-Mail.
+        Erstelle dir unter <a href="https://my.vatsim.net/register" target="_blank">https://my.vatsim.net/register</a> einen neuen Account. Gib deine echten Daten an (keine Fantasienamen!).<br />
+        Nach erfolgreicher Registrierung erhältst du eine VATSIM-ID (CID) per E-Mail.
       </>
     ),
     info: (
