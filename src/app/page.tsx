@@ -27,7 +27,7 @@ Und um beim Beispiel Frankfurt zu bleiben: In der Realität muss ein VFR-Flieger
     title: 'Was ist VATSIM nicht?',
   content: `Vatsim ist <strong>kein</strong> Online Game, in dem du im Militärjet Tiefflüge machen kannst oder andere Flugzeuge abfängst.
 Vatsim ist <strong>keine</strong> Umgebung, in der du mit einem A380 von Dortmund oder einem ähnlich kleinen Airport startest oder dort landest.
-Bei Vatsim verwendest du die Advisory Frequency 122.8 <strong>nicht</strong> dazu, mit deinen Kumpels zu texten, komische Geräusche zu machen oder Sounds oder Musik abzuspielen
+Bei Vatsim verwendest du die allgemeinen Frequenzen Advisory 122.800 und Guard 121.500 <strong>nicht</strong> dazu, mit deinen Kumpels zu texten, komische Geräusche zu machen oder Sounds oder Musik abzuspielen
 Bei Vatsim connectest du dich <strong>nicht</strong> auf der Runway oder einem Taxiway und startest einfach, sondern befolgst Lotsenanweisungen oder stimmst dich mit anderen Piloten ab.
 Bei Vatsim schaltest du <strong>nicht</strong> den Autopiloten ein und schaust mal was das Flugzeug macht, sondern kannst dein Flugzeug bedienen.
 Bei Vatsim fliegst du <strong>nicht</strong> gegen Häuser und spielst auch <strong>nicht</strong> „Flugzeugentführung“ oder ähnlichen Unsinn.
@@ -174,7 +174,7 @@ export default function HomePage() {
       <div className="card">
         <h3>Was wir dir anbieten:</h3>
         <ul>
-          <li>Ein erstes Assessment: Eine halbe Stunde auf Discord mit einem Mentor. Bist du fit für’s Online-Fliegen - oder solltest du noch an deinen Fähigkeiten arbeiten?</li>
+          <li>Eine erste Beurteilung: Eine halbe Stunde auf Discord mit einem Mentor. Bist du fit für’s Online-Fliegen - oder solltest du noch an deinen Fähigkeiten arbeiten?</li>
           <li>Individuelles Pilotentraining: One-on-one Sessions, ausgehend von deinen Fähigkeiten. Flüge planen, mit den richtigen Daten und Karten. Fliegen, IFR oder VFR, mit dem Airliner oder einem Flugzeug der General Aviation. Kommunikation mit ATC. Verhalten im Netzwerk.</li>
           <li>Ein regelmäßiges Online-Event</li>
           <li>Starke Community und freundliche Atmosphäre</li>

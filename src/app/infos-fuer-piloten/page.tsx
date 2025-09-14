@@ -19,7 +19,9 @@ Für die Flugplanung verwendest du vermutlich Simbrief. Hierzu musst du wissen, 
 
 Navigraph bietet allerdings ein „Navigation Data“ Abonnement an, ohne Charts. Das kostet ca. 35€ im Jahr und hält Simbrief aktuell.
 
-Der MSFS 2020 bekommt regelmäßig aktuelle Navdaten per Update, diese sind aber mitunter nicht vollständig. So fehlen z. B. auf RNAV Transitions manchmal Waypoints entlang der Strecke. Auch können diese Navdaten nicht in Addon-Flugzeugen verwendet werden.`,
+Der MSFS 2020 bekommt regelmäßig aktuelle Navdaten per Update, diese sind aber mitunter nicht vollständig. So fehlen z. B. auf RNAV Transitions manchmal Waypoints entlang der Strecke. Auch können diese Navdaten nicht in Addon-Flugzeugen verwendet werden.
+
+Der MSFS 2024 hat aktuelle Navigationsdaten, Charts und einen Flugplaner, die du für die Flugplanung auf Vatsim verwenden kannst. Hier kommst du also auch ohne Navigraph Abonnement weiter. Beachte bei deiner Flugplanung aber stets - soweit aktiv - aktuelle ATIS, z.B: aus Vatsim Radar. Und wenn du deine Flüge mit Simbrief planst, gilt das oben bereits Gesagte.`,
   },
     briefing: {
     title: 'Flugvorbereitung und Durchführung',
