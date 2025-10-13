@@ -21,10 +21,18 @@ jobs:
       - name: GitHub CLI installieren
         run: sudo apt update && sudo apt install -y gh
 
-      - name: Build archivieren und Release erstellen
+      - name: Release erstellen aus "out"-Ordner
         run: |
-          zip -r build.zip ./build
-          RELEASE_NAME="release-$(date +%Y%m%d%H%M%S)"
-          gh release create "$RELEASE_NAME" build.zip --notes "Automatischer Release für Commit $GITHUB_SHA" --prerelease
+          # Ordner zippen
+          ZIP_FILE="out.zip"
+          cd out
+          zip -r "../$ZIP_FILE" .
+          cd ..
+
+          # Release-Name mit Commit-SHA
+          RELEASE_NAME="release-${GITHUB_SHA::8}"
+
+          # Release erstellen mit ZIP
+          gh release create "$RELEASE_NAME" "$ZIP_FILE" --notes "Automatischer Release für Commit $GITHUB_SHA" --prerelease
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
