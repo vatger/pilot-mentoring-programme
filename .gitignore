@@ -6,3 +6,6 @@ out/
 *.tsbuildinfo
 .vscode/
 *.log
+*.zip
+*.tar.gz
+*.pdf
