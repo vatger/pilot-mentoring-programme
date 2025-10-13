@@ -1,4 +1,4 @@
-name: Build and Release on commit
+name: Build and Release on Commit
 
 on:
   push:
@@ -18,9 +18,13 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      - name: GitHub CLI installieren
+        run: sudo apt update && sudo apt install -y gh
+
       - name: Build archivieren und Release erstellen
         run: |
           zip -r build.zip ./build
-          gh release create "commit-${GITHUB_SHA::8}" build.zip --notes "Automatischer Release für Commit $GITHUB_SHA"
+          RELEASE_NAME="release-$(date +%Y%m%d%H%M%S)"
+          gh release create "$RELEASE_NAME" build.zip --notes "Automatischer Release für Commit $GITHUB_SHA" --prerelease
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
