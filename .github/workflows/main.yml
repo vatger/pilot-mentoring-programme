@@ -1,2 +1,35 @@
-- name: release-npm-action
-  uses: tobua/release-npm-action@v3.0.2
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # läuft nur bei Tags wie v1.0.0
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Projekt bauen
+        run: npm run build
+
+      - name: Build archivieren
+        run: zip -r build.zip ./build  # oder ./dist je nach Projekt
+
+      - name: GitHub Release erstellen
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
