@@ -1,0 +1,2 @@
+- name: release-npm-action
+  uses: tobua/release-npm-action@v3.0.2
