@@ -21,18 +21,26 @@ jobs:
       - name: GitHub CLI installieren
         run: sudo apt update && sudo apt install -y gh
 
+      - name: Authentifizieren
+        run: echo $GITHUB_TOKEN | gh auth login --with-token
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Release erstellen aus "out"-Ordner
         run: |
-          # Ordner zippen
-          ZIP_FILE="out.zip"
-          cd out
-          zip -r "../$ZIP_FILE" .
-          cd ..
+          if [ ! -d out ] || [ -z "$(ls -A out)" ]; then
+            echo "Ordner 'out' ist leer oder existiert nicht"
+            exit 1
+          fi
 
-          # Release-Name mit Commit-SHA
-          RELEASE_NAME="release-${GITHUB_SHA::8}"
+          RELEASE_NAME="release-$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::8}"
 
-          # Release erstellen mit ZIP
-          gh release create "$RELEASE_NAME" "$ZIP_FILE" --notes "Automatischer Release für Commit $GITHUB_SHA" --prerelease
+          # Release erstellen
+          gh release create "$RELEASE_NAME" --notes "Automatischer Release für Commit $GITHUB_SHA" --prerelease
+
+          # Alle Dateien im Ordner hochladen
+          for FILE in out/*; do
+            gh release upload "$RELEASE_NAME" "$FILE"
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
