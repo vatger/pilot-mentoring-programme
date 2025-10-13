@@ -1,35 +1,26 @@
-name: Build and Release
+name: Build and Release on commit
 
 on:
   push:
-    tags:
-      - 'v*'  # läuft nur bei Tags wie v1.0.0
+    branches:
+      - main
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Repository auschecken
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Node.js einrichten
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Abhängigkeiten installieren
-        run: npm ci
+      - run: npm ci
+      - run: npm run build
 
-      - name: Projekt bauen
-        run: npm run build
-
-      - name: Build archivieren
-        run: zip -r build.zip ./build  # oder ./dist je nach Projekt
-
-      - name: GitHub Release erstellen
-        uses: softprops/action-gh-release@v2
-        with:
-          files: build.zip
+      - name: Build archivieren und Release erstellen
+        run: |
+          zip -r build.zip ./build
+          gh release create "commit-${GITHUB_SHA::8}" build.zip --notes "Automatischer Release für Commit $GITHUB_SHA"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
