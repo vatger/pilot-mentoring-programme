@@ -1,36 +1,57 @@
-name: Build and Release on Commit
+name: Build and Push Docker Image
 
 on:
   push:
     branches:
       - main
 
-jobs:
-  build-and-release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
-      - uses: actions/setup-node@v4
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # Repo auschecken
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Node.js Setup
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - run: npm ci
-      - run: npm run build
+      # Dependencies installieren
+      - name: Install dependencies
+        run: npm ci
 
-      - name: GitHub CLI installieren
-        run: sudo apt update && sudo apt install -y gh
+      # Next.js Build
+      - name: Build project
+        run: npm run build
 
-      - name: Release erstellen aus "out"-Ordner
+      # Login bei GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Docker Image bauen und pushen
+      - name: Build and push Docker image
         run: |
-          if [ ! -d out ] || [ -z "$(ls -A out)" ]; then
-            echo "Ordner 'out' ist leer – Release wird nicht erstellt"
-          else
-            RELEASE_NAME="release-$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::8}"
-            gh release create "$RELEASE_NAME" --notes "Automatischer Release für Commit $GITHUB_SHA" --prerelease
-            for FILE in out/*; do
-              gh release upload "$RELEASE_NAME" "$FILE"
-            done
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      # Optional: Image auch mit Commit-SHA taggen
+      - name: Tag image with commit SHA
+        run: |
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+                     ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
