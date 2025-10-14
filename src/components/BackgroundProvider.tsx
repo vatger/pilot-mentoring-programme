@@ -40,16 +40,8 @@ export default function BackgroundProvider({
       const isMobile = window.innerWidth < 768;
 
       if (!isMobile) {
-        const imageUrls = [
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/1.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/2.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/3.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/5.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/6.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/7.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/8.PNG',
-          'https://cdn.pmp.hosting201623.ae912.netcup.net/9.PNG',
-        ];
+            const imageFiles = ['1.PNG', '2.PNG', '3.PNG', '5.PNG', '6.PNG', '7.PNG', '8.PNG', '9.PNG'];
+            const imageUrls = imageFiles.map(file => `/images/${file}`);
         // preload the image we want to start with, then show background to avoid flashes
         try {
           const saved = localStorage.getItem('backgroundIndex');
