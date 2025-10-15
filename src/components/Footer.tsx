@@ -10,7 +10,7 @@ export default function Footer() {
       <p>
         &copy; {year} &ndash; VATSIM Germany PMP<br />
         <small>
-          Fragen? Kontaktieren Sie uns jederzeit über das <a href="/kontakt">Forum</a>.<br />
+          Fragen? Kontaktiere uns jederzeit über das <a href="/kontakt">Forum</a>.<br />
           <a href="https://vatsim-germany.org/policies/gdpr">GDPR / Datenschutz</a> | <a href="https://vatsim-germany.org/policies/imprint">Impressum</a>
         </small>
       </p>
