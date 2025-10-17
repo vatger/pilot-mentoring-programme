@@ -17,25 +17,20 @@ jobs:
       packages: write
 
     steps:
-      # Repo auschecken
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Node.js Setup
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Dependencies installieren
       - name: Install dependencies
         run: npm ci
 
-      # Next.js Build
       - name: Build project
         run: npm run build
 
-      # Login bei GitHub Container Registry
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -43,15 +38,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Docker Image bauen und pushen
       - name: Build and push Docker image
         run: |
-          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
+          docker build --pull -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
-      # Optional: Image auch mit Commit-SHA taggen
-      - name: Tag image with commit SHA
-        run: |
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-                     ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
