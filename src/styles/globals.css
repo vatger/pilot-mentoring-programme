@@ -1,7 +1,8 @@
 /* ---------------------------------------------------
    Imports
 --------------------------------------------------- */
-@import url("https://use.typekit.net/yfd6gqk.css");
+/* Adobe Typekit removed (no longer permitted in production), alltough I should be allowed to use it, but idk...
+ */
 
 /* ---------------------------------------------------
    CSS Variables (Light / Dark)
@@ -57,7 +58,8 @@ html, body {
 }
 
 body {
-    font-family: "myriad-pro", sans-serif;
+    /* Use a robust system font stack instead of Adobe Typekit */
+    font-family: "Segoe UI", Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
     font-weight: 500;
     font-style: normal;
     margin: 0;
