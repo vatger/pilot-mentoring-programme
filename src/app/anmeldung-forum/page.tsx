@@ -47,7 +47,7 @@ export default function EventsPage() {
           </li>
           <li>
             <strong>Kommunikation</strong>
-            <p>Bist du auch auf dem Vatsim Germany Discord registriert?</p>
+            <p>Bist du auch auf dem offiziellenVatsim Germany Discord registriert?</p>
           </li>
           <li>
             <strong>Persönliches</strong>

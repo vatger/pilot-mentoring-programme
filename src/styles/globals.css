@@ -157,6 +157,7 @@ p { margin-bottom: 20px; }
   object-fit: contain;
 }
 .logo-visual {
+  margin-top: 10px;
   padding-top: 15px;
   width: 320px;
   max-width: 100%;
@@ -659,6 +660,36 @@ p { margin-bottom: 20px; }
 [data-theme="light"] .slider-overlay { background: rgba(255,255,255,0.12); }
 [data-theme="dark"] .slider-overlay { background: rgba(0,0,0,0.55); }
 
+/* Local page-background (used when #global-bg is not present) */
+.page-background {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    transition: opacity 0.45s ease-in-out, background-image 0.6s ease-in-out;
+    will-change: opacity, background-image;
+}
+
+/* Overlay that sits above the background but below the content.
+     Provides dimming and a backdrop blur. Theme-aware colors use --overlay-bg. */
+.page-background-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--overlay-bg);
+    transition: background 320ms ease, opacity 320ms ease;
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+    opacity: 1;
+}
+    [data-theme="light"] .page-background-overlay { background: rgba(255,255,255,0.08); }
+    [data-theme="dark"] .page-background-overlay { background: rgba(0,0,0,0.38); }
+
 /* ---------------------------------------------------
    Footer
 --------------------------------------------------- */
@@ -803,32 +834,32 @@ p { margin-bottom: 20px; }
    #global-bg is created before hydration. Keep it hidden/inert until JS sets images.
 --------------------------------------------------- */
 #global-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  opacity: 0;           /* hidden by default; JS will set to 1 when ready */
-  transition: none;     /* no container transition; JS controls inner transitions */
-  background-image: none !important;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    opacity: 0;           /* hidden by default; JS will set to 1 when ready */
+    transition: none;     /* no container transition; JS controls inner transitions */
+    background-image: none;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
 }
 
 /* inner layers: base (static) and top (fades in for crossfade) */
 #global-bg .bg-base,
 #global-bg .bg-top {
-  position: absolute;
-  inset: 0;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  opacity: 0;          /* hidden until JS sets them explicitly */
-  pointer-events: none;
-  transition: none;    /* JS will temporarily disable/enable transitions as needed */
-  will-change: opacity, background-image;
-  background-image: none !important;
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    opacity: 0;          /* hidden until JS sets them explicitly */
+    pointer-events: none;
+    transition: none;    /* JS will temporarily disable/enable transitions as needed */
+    will-change: opacity, background-image;
+    background-image: none;
 }
 
 /* top layer is the one we animate (crossfade in) */

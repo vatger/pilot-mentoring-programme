@@ -11,9 +11,10 @@ export default function BackgroundProvider({
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
 
-  const intervalRef = useRef<number | null>(null);
   const imagesRef = useRef<string[]>([]);
+  const preloadRef = useRef<HTMLImageElement | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const isReadyRef = useRef(false);
   const [hasGlobalBg, setHasGlobalBg] = useState(false);
   const transitioningRef = useRef(false);
   const baseIdxRef = useRef<number>(0);
@@ -40,72 +41,66 @@ export default function BackgroundProvider({
       const isMobile = window.innerWidth < 768;
 
       if (!isMobile) {
-            const imageFiles = ['1.PNG', '2.PNG', '3.PNG', '5.PNG', '6.PNG', '7.PNG', '8.PNG', '9.PNG'];
+            const imageFiles = ['1.PNG', '2.PNG', '3.PNG', '4.PNG', '5.PNG', '6.PNG', '7.PNG', '8.PNG', '9.PNG'];
             const imageUrls = imageFiles.map(file => `/images/${file}`);
-        // preload the image we want to start with, then show background to avoid flashes
-        try {
-          const saved = localStorage.getItem('backgroundIndex');
-          const startIdx = saved !== null && !Number.isNaN(parseInt(saved, 10))
-            ? Math.max(0, parseInt(saved, 10) % imageUrls.length)
-            : 0;
+        // choose one random image for this page load (do not rotate)
+          try {
+            const startIdx = Math.floor(Math.random() * imageUrls.length);
 
-          // set images state and ref immediately
-          setBackgroundImages(imageUrls);
-          imagesRef.current = imageUrls;
-
-          // preload chosen image
-          const img = new Image();
-          img.src = imageUrls[startIdx];
-          img.onload = () => {
+            // set images state and ref immediately
+            setBackgroundImages(imageUrls);
+            imagesRef.current = imageUrls;
             setCurrentImageIndex(startIdx);
-            setIsReady(true);
-          };
-          img.onerror = () => {
-            // still mark ready to avoid locking the UI
+
+            // preload chosen image only (so it displays immediately)
+            try {
+              if (preloadRef.current) {
+                preloadRef.current.onload = null;
+                preloadRef.current.onerror = null;
+              }
+            } catch {}
+            const p = new Image();
+            p.src = imageUrls[startIdx];
+            p.onload = () => {
+              setIsReady(true);
+              isReadyRef.current = true;
+            };
+            p.onerror = () => {
+              setIsReady(true);
+              isReadyRef.current = true;
+            };
+            preloadRef.current = p;
+          } catch {
+            // fallback
+            setBackgroundImages(imageUrls);
+            imagesRef.current = imageUrls;
             setCurrentImageIndex(0);
             setIsReady(true);
-          };
-        } catch {
-          // fallback
-          setBackgroundImages(imageUrls);
-          imagesRef.current = imageUrls;
-          setCurrentImageIndex(0);
-          setIsReady(true);
-        }
+            isReadyRef.current = true;
+          }
       } else {
         setBackgroundImages([]);
         imagesRef.current = [];
         setIsReady(false);
+        isReadyRef.current = false;
       }
     };
 
     loadBackgroundImages();
     window.addEventListener('resize', loadBackgroundImages);
 
-    // Start rotation once. Use numeric window timer id for clearInterval compatibility.
-    if (intervalRef.current === null) {
-      intervalRef.current = window.setInterval(() => {
-        // only rotate when ready and images are available
-        const imgs = imagesRef.current;
-        if (!isReady || !imgs || imgs.length === 0) return;
-        setCurrentImageIndex((prev) => {
-          const next = (prev + 1) % imgs.length;
-          try {
-            localStorage.setItem('backgroundIndex', String(next));
-          } catch {
-            // ignore
-          }
-          return next;
-        });
-      }, 8000);
-    }
-
     return () => {
       window.removeEventListener('resize', loadBackgroundImages);
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      // cleanup preloaded image handlers
+      try {
+        if (preloadRef.current) {
+          preloadRef.current.onload = null;
+          preloadRef.current.onerror = null;
+          preloadRef.current = null;
+        }
+      } catch {}
+      // reset ready ref
+      try { isReadyRef.current = false; } catch {}
     };
   }, []);
 
@@ -131,10 +126,13 @@ export default function BackgroundProvider({
 
     const idx = currentImageIndex % imgs.length;
     const url = imgs[idx];
-    // silently preload current image (no UI change)
-    const img = new Image();
-    img.src = url;
-    // no onload handler needed — we don't change visibility here
+    // silently ensure current image is referenced so browser cache can serve it during navigation
+    const p = preloadRef.current;
+    if (p && p.src === url) {
+      void p.src;
+    } else {
+      const img = new Image(); img.src = url; preloadRef.current = img;
+    }
     return () => {
       // nothing to clean up for preloads
     };
@@ -153,7 +151,7 @@ export default function BackgroundProvider({
     const root = document.getElementById('global-bg');
     if (!root) return;
 
-    // Ensure two inner layers exist: .bg-base and .bg-top
+    // Ensure two inner layers exist: .bg-base and .bg-top (top kept for future fades)
     let base = root.querySelector<HTMLDivElement>('.bg-base');
     let top = root.querySelector<HTMLDivElement>('.bg-top');
     if (!base) {
@@ -175,136 +173,44 @@ export default function BackgroundProvider({
       root.appendChild(top);
     }
 
-    // helper to crossfade to a given image url (unchanged behavior)
-    const crossfadeTo = (url: string, idx: number) => {
-      if (!top || !base) return;
-      if (transitioningRef.current) return; // don't overlap transitions
-      transitioningRef.current = true;
-
-      // preload image
-      const img = new Image();
-      img.src = url;
-      img.onload = () => {
-        // set top background to loaded image, then fade it in
-        top!.style.backgroundImage = `url(${url})`;
-        // ensure stacking
-        top!.style.zIndex = '0';
-        base!.style.zIndex = '-1';
-        // start fade
-        requestAnimationFrame(() => {
-          top!.style.opacity = '1';
-        });
-        // after transition, move image to base and reset top
-        const onEnd = () => {
-          base!.style.backgroundImage = `url(${url})`;
-          top!.style.opacity = '0';
-          baseIdxRef.current = idx;
-          transitioningRef.current = false;
-          top!.removeEventListener('transitionend', onEnd);
-          setIsReady(true);
-        };
-        top!.addEventListener('transitionend', onEnd);
-      };
-      img.onerror = () => {
-        transitioningRef.current = false;
-        setIsReady(true);
-      };
-    };
-
-    // If we have backgroundImages and a desired index, ensure the persistent layers show the correct image
+    // If we have backgroundImages and a desired index, set the base image once (no rotation)
     if (backgroundImages.length > 0) {
       const idx = currentImageIndex % backgroundImages.length;
       const url = backgroundImages[idx];
 
-      // check currently applied base url (normalize)
-      const currentBase = (base.style.backgroundImage || '').replace(/^url\(("|')?/, '').replace(/("|')?\)$/, '');
-
-      // If base already matches desired url, ensure element visible state follows isReady
-      if (currentBase === url && base.style.opacity !== '1') {
-        // make sure root & base are visible (no transition needed)
-        try {
-          const prevBaseTransition = base!.style.transition;
-          const prevRootTransition = root!.style.transition;
-          base!.style.transition = 'none';
-          root!.style.transition = 'none';
-          base!.style.opacity = '1';
-          root!.style.opacity = '1';
-          baseIdxRef.current = idx;
-          setIsReady(true);
-          // restore transitions shortly after
-          setTimeout(() => {
-            base!.style.transition = prevBaseTransition || '';
-            root!.style.transition = prevRootTransition || '';
-          }, 50);
-        } catch {
-          base!.style.opacity = '1';
-          root!.style.opacity = '1';
-          baseIdxRef.current = idx;
-          setIsReady(true);
-        }
-      } else if (currentBase !== url) {
-        // If the base is showing a different image (from previous navigation), hide it instantly,
-        // preload the desired image, then set it without transition so no intermediate image flashes.
-        try {
-          // immediately hide visible layers without transition
-          const prevBaseTransition = base!.style.transition;
-          const prevRootTransition = root!.style.transition;
-          base!.style.transition = 'none';
-          top!.style.transition = 'none';
-          root!.style.transition = 'none';
-          base!.style.opacity = '0';
-          top!.style.opacity = '0';
-          root!.style.opacity = '0';
-
-          // preload
-          const img0 = new Image();
-          img0.src = url;
-          img0.onload = () => {
-            // set base image and reveal root + base instantly (no fade)
-            base!.style.backgroundImage = `url(${url})`;
-            base!.style.opacity = '1';
-            root!.style.opacity = '1';
-            baseIdxRef.current = idx;
-            setIsReady(true);
-
-            // restore transitions shortly after so future crossfades work
-            setTimeout(() => {
-              base!.style.transition = prevBaseTransition || '';
-              top!.style.transition = 'opacity 0.45s ease-in-out';
-              root!.style.transition = prevRootTransition || '';
-            }, 50);
-          };
-          img0.onerror = () => {
-            // If preload fails, still reveal to avoid blocking UI
-            base!.style.opacity = '1';
-            root!.style.opacity = '1';
-            baseIdxRef.current = idx;
-            setIsReady(true);
-            // restore transitions
-            setTimeout(() => {
-              base!.style.transition = prevBaseTransition || '';
-              top!.style.transition = 'opacity 0.45s ease-in-out';
-              root!.style.transition = prevRootTransition || '';
-            }, 50);
-          };
-        } catch {
-          // fallback: set directly
-          base!.style.backgroundImage = `url(${url})`;
-          base!.style.opacity = '1';
-          root!.style.opacity = '1';
-          baseIdxRef.current = idx;
-          setIsReady(true);
-        }
+      try {
+        const prevBaseTransition = base!.style.transition;
+        const prevRootTransition = root!.style.transition;
+        base!.style.transition = 'none';
+        root!.style.transition = 'none';
+        base!.style.backgroundImage = `url(${url})`;
+        base!.style.opacity = '1';
+        root!.style.opacity = '1';
+        baseIdxRef.current = idx;
+        setIsReady(true);
+        isReadyRef.current = true;
+        // restore transitions shortly after
+        setTimeout(() => {
+          base!.style.transition = prevBaseTransition || '';
+          root!.style.transition = prevRootTransition || '';
+        }, 50);
+      } catch {
+        base!.style.backgroundImage = `url(${url})`;
+        base!.style.opacity = '1';
+        root!.style.opacity = '1';
+        baseIdxRef.current = idx;
+        setIsReady(true);
+        isReadyRef.current = true;
       }
     }
 
     // cleanup not required for these DOM nodes — they persist across navigations
-  }, [backgroundStyle, isReady, backgroundImages, currentImageIndex]);
+  }, [backgroundImages, currentImageIndex]);
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh' }}>
       {/* If global-bg exists it will show, otherwise render a local background div */}
-  {!hasGlobalBg && (
+      {!hasGlobalBg && (
         <div
           aria-hidden
           className="page-background"
@@ -314,7 +220,10 @@ export default function BackgroundProvider({
             zIndex: -2,
             transition: 'opacity 0.45s ease-in-out, background-image 0.6s ease-in-out',
             opacity: isReady ? 1 : 0,
-            ...backgroundStyle,
+            backgroundImage: backgroundImages.length > 0 && isReady ? `url(${backgroundImages[currentImageIndex]})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed' as const,
           }}
         />
       )}

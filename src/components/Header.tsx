@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
 
@@ -92,7 +91,6 @@ export default function Header() {
         </div>
       )}
       <div className={`header-container ${isCollapsed ? 'collapsed' : ''}`} id="header-container">
-        <BackgroundSlider />
         <div className="header">
           <button 
             className={`dark-mode-toggle ${theme === 'dark' ? 'dark-active' : ''}`} 
@@ -135,164 +133,6 @@ export default function Header() {
         )}
       </div>
     </>
-  );
-}
-
-function BackgroundSlider() {
-  const imageUrls = [
-    'https://cdn.pmp.hosting201623.ae912.netcup.net/1.PNG',
-    'https://cdn.pmp.hosting201623.ae912.netcup.net/2.PNG',
-    'https://cdn.pmp.hosting201623.ae912.netcup.net/3.PNG',
-    'https://cdn.pmp.hosting201623.ae912.netcup.net/5.PNG',
-    'https://cdn.pmp.hosting201623.ae912.netcup.net/6.PNG',
-    'https://cdn.pmp.hosting201623.ae912.netcup.net/7.PNG',
-    'https://cdn.pmp.hosting201623.ae912.netcup.net/8.PNG',
-    'https://cdn.pmp.hosting201623.ae912.netcup.net/9.PNG'
-  ];
-
-  const [isMounted, setIsMounted] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [prevIndex, setPrevIndex] = useState<number | null>(null);
-  const [backgroundVisible, setBackgroundVisible] = useState(false);
-  const [loaded, setLoaded] = useState<boolean[]>(() => new Array(imageUrls.length).fill(false));
-  const [canAutoplay, setCanAutoplay] = useState(false);
-
-  // shorter, still smooth
-  const TRANSITION_DURATION = 1.6; // seconds (shorter fade)
-  const TRANSITION_MS = TRANSITION_DURATION * 1000;
-  const AUTOPLAY_MS = 24000; // images stay longer
-
-  // preload + decode images and mark loaded state
-  useEffect(() => {
-    const imgs: HTMLImageElement[] = [];
-    imageUrls.forEach((src, idx) => {
-      const img = new Image();
-      img.src = src;
-      imgs.push(img);
-
-      const markLoaded = () => setLoaded(prev => {
-        if (prev[idx]) return prev;
-        const copy = prev.slice(); copy[idx] = true; return copy;
-      });
-
-      img.onload = () => markLoaded();
-      img.onerror = () => markLoaded(); // don't block on failures
-
-      // try decode (better chance image is ready when used)
-      if ((img as any).decode) {
-        (img as any).decode().then(markLoaded).catch(() => {});
-      }
-    });
-
-    // safety: after 5s allow autoplay even if not all images loaded
-    const safety = setTimeout(() => setCanAutoplay(true), 5000);
-
-    return () => {
-      clearTimeout(safety);
-      imgs.forEach(i => { i.onload = null; i.onerror = null; });
-    };
-  }, []);
-
-  // enable autoplay when at least two images are ready (current + next)
-  useEffect(() => {
-    const ready = loaded.filter(Boolean).length;
-    if (ready >= 2) setCanAutoplay(true);
-  }, [loaded]);
-
-  // restore index from localStorage and mark mounted
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = localStorage.getItem('backgroundImageIndex');
-    const idx = stored ? Math.max(0, Math.min(imageUrls.length - 1, parseInt(stored, 10))) : 0;
-    setCurrentIndex(isNaN(idx) ? 0 : idx);
-    setIsMounted(true);
-  }, []);
-
-  // show/hide on mobile
-  useEffect(() => {
-    const handle = () => setBackgroundVisible(window.innerWidth >= 768);
-    handle();
-    window.addEventListener('resize', handle);
-    return () => window.removeEventListener('resize', handle);
-  }, []);
-
-  // autoplay crossfade: only start when backgroundVisible && canAutoplay
-  useEffect(() => {
-    if (!backgroundVisible || !canAutoplay) return;
-    const id = setInterval(() => {
-      setCurrentIndex(i => {
-        const next = (i + 1) % imageUrls.length;
-        setPrevIndex(i); // keep previous for overlap
-        try { localStorage.setItem('backgroundImageIndex', String(next)); } catch(e) {}
-        return next;
-      });
-    }, AUTOPLAY_MS);
-    return () => clearInterval(id);
-  }, [backgroundVisible, canAutoplay]);
-
-  // clear prevIndex after the transition has completed
-  useEffect(() => {
-    if (prevIndex === null) return;
-    const t = setTimeout(() => setPrevIndex(null), TRANSITION_MS + 400);
-    return () => clearTimeout(t);
-  }, [prevIndex]);
-
-  if (!isMounted) return null;
-
-  const imgStyle: React.CSSProperties = { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', willChange: 'opacity', pointerEvents: 'none' };
-  // render previous above the current during the fade so it occludes while fading out
-  const prevImgStyle = { ...imgStyle, zIndex: 2 } as React.CSSProperties;
-  const curImgStyle = { ...imgStyle, zIndex: 1 } as React.CSSProperties;
-
-  return (
-    <div
-      className="background"
-      id="background-slider"
-      aria-hidden={!backgroundVisible}
-    >
-      <div className="slider-container" id="slider-container" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-        {backgroundVisible && (
-          <>
-            {prevIndex !== null && (
-              <motion.img
-                key={`prev-${prevIndex}`}
-                src={imageUrls[prevIndex]}
-                alt={`Aircraft Background ${prevIndex + 1}`}
-                className="slider-image"
-                initial={{ opacity: 1 }}
-                animate={{ opacity: 0 }}
-                transition={{ duration: TRANSITION_DURATION, ease: 'easeInOut' }}
-                style={prevImgStyle}
-                onLoad={() => {
-                  setLoaded(prev => { const copy = prev.slice(); copy[prevIndex] = true; return copy; });
-                }}
-              />
-            )}
-
-            <motion.img
-              key={`cur-${currentIndex}`}
-              src={imageUrls[currentIndex]}
-              alt={`Aircraft Background ${currentIndex + 1}`}
-              className="slider-image"
-              initial={{ opacity: 0 }}
-              // keep the current image fully opaque; dimming is handled by the overlay
-              animate={{ opacity: 1 }}
-              transition={{ duration: TRANSITION_DURATION, ease: 'easeInOut' }}
-              style={curImgStyle}
-              onLoad={() => {
-                setLoaded(prev => { const copy = prev.slice(); copy[currentIndex] = true; return copy; });
-              }}
-            />
-            {/* overlay that darkens images without changing their opacity (prevents bleed-through) */}
-            <div
-              className="slider-overlay"
-              aria-hidden
-              style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-            />
-          </>
-        )}
-      </div>
-    </div>
   );
 }
 
