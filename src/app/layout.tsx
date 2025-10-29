@@ -21,6 +21,10 @@ export default function RootLayout({
         <Script id="init-global-bg" strategy="beforeInteractive">
           {`(function(){if(window.__globalBgInit)return;window.__globalBgInit=true;try{if(!document.getElementById('global-bg')){var d=document.createElement('div');d.id='global-bg';d.setAttribute('aria-hidden','true');d.style.position='fixed';d.style.inset='0';d.style.zIndex='-2';d.style.transition='opacity .45s ease-in-out, background-image .6s ease-in-out';d.style.opacity='0';d.style.pointerEvents='none';document.body.appendChild(d);} }catch(e){} })();`}
         </Script>
+
+        {process.env.NODE_ENV === "production" && 
+          <Script src="https://analytics.vatsim-germany.org/script.js" data-website-id="b32bdab3-9de9-41b4-a632-82f2e9384044" strategy="afterInteractive"/>
+        }
       </head>
       <body>
         <BackgroundProvider>{children}</BackgroundProvider>
