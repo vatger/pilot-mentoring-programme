@@ -41,7 +41,7 @@ export default function EventsPage() {
           <strong>Termin</strong>: Termin: Jeden 1. und 3. Freitag im Monat
         </p>
         <p>
-          <strong>Zeit</strong>: 19:00 - 21:30 LCL
+          <strong>Zeit</strong>: 19:00 - 22:00 LCL
         </p>
         <p>
           <strong>Airport</strong>: Wird jeweils im Event-Kalender bekannt gegeben
