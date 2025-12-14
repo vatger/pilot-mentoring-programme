@@ -45,7 +45,18 @@ export default function BackgroundProvider({
             const imageUrls = imageFiles.map(file => `/images/${file}`);
         // choose one random image for this page load (do not rotate)
           try {
-            const startIdx = Math.floor(Math.random() * imageUrls.length);
+            // Check if we have a saved image index for this session
+            let startIdx = parseInt(sessionStorage.getItem('bgImageIndex') || '-1', 10);
+            
+            // If no saved index, pick a random one and save it
+            if (startIdx < 0 || startIdx >= imageUrls.length) {
+              startIdx = Math.floor(Math.random() * imageUrls.length);
+              try {
+                sessionStorage.setItem('bgImageIndex', startIdx.toString());
+              } catch {
+                // ignore sessionStorage errors
+              }
+            }
 
             // set images state and ref immediately
             setBackgroundImages(imageUrls);
