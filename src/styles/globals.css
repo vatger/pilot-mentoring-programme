@@ -270,7 +270,7 @@ p { margin-bottom: 20px; }
 }
 .stepper-stripe {
     position: absolute;
-    left: 28px;
+    left: 37px;
     top: 36px;
     width: 4px;
     height: calc(100% - 36px);
