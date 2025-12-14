@@ -1,5 +1,28 @@
 # VATSIM Germany Piloten-Mentoren-Programm (PMP)
 
+Das **Piloten-Mentoren-Programm** dient als Anlaufstelle für neue Piloten von VATSIM-Germany, also des deutschen vACC. Wir helfen unseren Trainees "Fit for online flying" zu werden, Ziel ist also das Erlernen der Netzwerkprozeduren sowie der sichere Lotsenkontakt und weniger das handwerkliche am Fliegen, welches zumindest Grundlegend vorrausgesetzt wird. 
+
+Die neue Website soll zunächst ersteinmal visuell ansprechender sein als die Knowledgebase und später auch die Anmeldung für das PMP und die interne Organisation aus dem Forum auslagern. Ziel ist es, eine Adresse zu haben, an die sich unerfahrene Piloten wenden können, auf die zum Beispiel auch ein EuroScope Alias verweisen könnte, zum Beispiel `.helppmp` statt dem bisherigen `.helpnewbie`.
+
+## Running the Application
+
+Development:
+
+1. Run `npm install`
+2. Run `npm run dev`
+
+Alternatively, you can build the project using Docker.
+
+Production:
+
+1. Pull the latest docker image `docker pull ghcr.io/vatger/pilot-mentoring-programme:latest`
+2. Start the container, default port 8000: `docker start pilot-mentoring-programme`
+
+
+## Contact
+
+- Jacob Koglin (1893789)
+
 ### Phase 1: Foundation (Current)
 - [x] Basic website structure
 - [x] Core information pages
@@ -7,47 +30,10 @@
 - [x] Dark/light mode
 
 ### Phase 2: Enhanced Features (Next)
-- [ ] User authentication for mentors and mentees
-- [ ] Integration with VATSIM data API
-- [ ] Integration with VATSIM-Germany data API
 - [ ] Signup System via VATSIM-Germany SSO
 - [ ] Move PMP-Signup from Forum to website
 
 ## Development Tasks
-- [ ] Implement styling for/and forms
+- [x] Implement styling for/and forms
 - [ ] Create proper 404 and error pages
-- [ ] Add analytics for usage tracking
-
-## Setup & Development
-
-### Prerequisites
-- Node.js (v14 or newer)
-- npm or yarn
-
-### Installation
-1. Clone the repository
-2. Install dependencies:
-   ```
-   npm install
-   ```
-3. Start the development server:
-   ```
-   npm run dev
-   ```
-4. Open your browser at `http://localhost:3000`
-
-### Building for Production
-1. Build the application:
-   ```
-   npm run build
-   ```
-2. Start the production server:
-   ```
-   npm start
-   ```
-
-### Legacy Express Server
-If you need to run the legacy Express server:
-```
-npm run express
-```
+- [x] Add analytics for usage tracking
