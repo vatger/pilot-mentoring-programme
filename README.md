@@ -2,7 +2,7 @@
 
 Das **Piloten-Mentoren-Programm** dient als Anlaufstelle für neue Piloten von VATSIM-Germany, also des deutschen vACC. Wir helfen unseren Trainees "Fit for online flying" zu werden, Ziel ist also das Erlernen der Netzwerkprozeduren sowie der sichere Lotsenkontakt und weniger das handwerkliche am Fliegen, welches zumindest Grundlegend vorrausgesetzt wird. 
 
-Die neue Website soll zunächst ersteinmal visuell ansprechender sein als die Knowledgebase und später auch die Anmeldung für das PMP und die interne Organisation aus dem Forum auslagern. Ziel ist es, eine Adresse zu haben, am die sich unerfahrene Piloten wenden können, auf die zum Beispiel auch ein EuroScope Alias verweisen könnte, zum Beispiel `.helppmp` statt dem bisherigen `.helpnewbie`.
+Die neue Website soll zunächst ersteinmal visuell ansprechender sein als die Knowledgebase und später auch die Anmeldung für das PMP und die interne Organisation aus dem Forum auslagern. Ziel ist es, eine Adresse zu haben, an die sich unerfahrene Piloten wenden können, auf die zum Beispiel auch ein EuroScope Alias verweisen könnte, zum Beispiel `.helppmp` statt dem bisherigen `.helpnewbie`.
 
 ## Running the Application
 
@@ -34,6 +34,6 @@ Production:
 - [ ] Move PMP-Signup from Forum to website
 
 ## Development Tasks
-- [ ] Implement styling for/and forms
+- [x] Implement styling for/and forms
 - [ ] Create proper 404 and error pages
 - [x] Add analytics for usage tracking
