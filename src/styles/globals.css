@@ -139,6 +139,11 @@ p { margin-bottom: 20px; }
 }
 
 /* Logo */
+.logo-link {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+}
 .logo {
   height: 80px;
   overflow: hidden;

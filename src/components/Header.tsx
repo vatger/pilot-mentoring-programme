@@ -113,10 +113,12 @@ export default function Header() {
             </svg>
             <span className="toggle-text">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
           </button>
+          <Link href="/" className="logo-link">
             <div className="logo">
-            {/* background image chosen by CSS via [data-theme] */}
-            <div className="logo-visual" role="img" aria-label="VATGer logo" />
-           </div>
+              {/* background image chosen by CSS via [data-theme] */}
+              <div className="logo-visual" role="img" aria-label="VATGer logo" />
+            </div>
+          </Link>
           <h1>Piloten-Mentoren-Programm</h1>
         </div>
         {activeNavItem !== null && (
