@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 export default function Header() {
 
+  const { data: session, status } = useSession();
   const [theme, setTheme] = useState('light');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isManualToggle, setIsManualToggle] = useState(false);
@@ -12,6 +14,7 @@ export default function Header() {
   const [isMobile, setIsMobile] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [showInternal, setShowInternal] = useState(false);
   const isManualToggleRef = useRef(isManualToggle);
 
   useEffect(() => {
@@ -68,6 +71,11 @@ export default function Header() {
   setIsManualToggle(true);
   isManualToggleRef.current = true;
   };
+
+  const teams = (session?.user as any)?.teams || [];
+  const isMentor = teams.includes('pmp-mentor') || teams.includes('pmp-leitung');
+  const isHead = teams.includes('pmp-leitung');
+  const isTrainee = !isMentor && !isHead;
   
   return (
     <>
@@ -92,27 +100,36 @@ export default function Header() {
       )}
       <div className={`header-container ${isCollapsed ? 'collapsed' : ''}`} id="header-container">
         <div className="header">
-          <button 
-            className={`dark-mode-toggle ${theme === 'dark' ? 'dark-active' : ''}`} 
-            aria-label="Toggle Dark Mode"
-            onClick={toggleTheme}
-          >
-            <svg className="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-            <svg className="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="5"></circle>
-              <line x1="12" y1="1" x2="12" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="23"></line>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-              <line x1="1" y1="12" x2="3" y2="12"></line>
-              <line x1="21" y1="12" x2="23" y2="12"></line>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-            <span className="toggle-text">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
+          <div style={{ display: 'flex', width: '100%', justifyContent: 'flex-start', gap: '8px', paddingTop: '15px', alignItems: 'center' }}>
+            <button
+              className="button"
+              onClick={() => setShowInternal(true)}
+            >
+              Intern
+            </button>
+            <button 
+              className={`dark-mode-toggle ${theme === 'dark' ? 'dark-active' : ''}`} 
+              aria-label="Toggle Dark Mode"
+              onClick={toggleTheme}
+              style={{ marginLeft: 'auto', position: 'static', top: 'auto', right: 'auto' }}
+            >
+              <svg className="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+              <svg className="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+              <span className="toggle-text">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+          </div>
           <Link href="/" className="logo-link">
             <div className="logo">
               {/* background image chosen by CSS via [data-theme] */}
@@ -121,17 +138,46 @@ export default function Header() {
           </Link>
           <h1>Piloten-Mentoren-Programm</h1>
         </div>
-        {activeNavItem !== null && (
-          <nav className="nav" aria-label="Hauptnavigation">
-            <Link href="/" className={activeNavItem === '/' ? 'active' : ''}>Home</Link>
-            <Link href="/pmp" className={activeNavItem === '/pmp' ? 'active' : ''}>PMP</Link>
-            <Link href="/howto" className={activeNavItem === '/howto' ? 'active' : ''}>How to get started</Link>
-            <Link href="/infos-fuer-piloten" className={activeNavItem === '/infos-fuer-piloten' ? 'active' : ''}>Infos für Piloten</Link>
-            <Link href="/events" className={activeNavItem === '/events' ? 'active' : ''}>Online-Event</Link>
-            <Link href="/anmeldung-forum" className={activeNavItem === '/anmeldung-forum' ? 'active' : ''}>Anmeldung</Link>
-            <Link href="/mentorenbewerbung" className={activeNavItem === '/mentorenbewerbung' ? 'active' : ''}>Mentorenbewerbung</Link>
-            <Link href="/kontakt" className={activeNavItem === '/kontakt' ? 'active' : ''}>Kontakt</Link>
-          </nav>
+        {showInternal ? (
+          <div className="nav" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
+            {status === 'loading' && <p>Lade Session...</p>}
+            {status !== 'loading' && !session && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <p style={{ margin: 0 }}>Interner Bereich</p>
+                <button className="button" onClick={() => signIn('vatsim', { callbackUrl: '/trainings' })}>
+                  Mit VATGER anmelden
+                </button>
+                <button className="button" onClick={() => setShowInternal(false)}>Zurück zur Hauptseite</button>
+              </div>
+            )}
+            {session && (
+              <>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <p style={{ margin: 0 }}>Angemeldet als {session.user?.name}</p>
+                  <button className="button" onClick={() => signOut({ callbackUrl: '/' })}>Logout</button>
+                  <button className="button" onClick={() => setShowInternal(false)}>Zurück zur Hauptseite</button>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {(isMentor || isHead) && <Link className="button" href="/trainings">Trainings</Link>}
+                  {isHead && <span className="button" style={{ cursor: 'not-allowed', opacity: 0.7 }}>Dateiverwaltung (bald)</span>}
+                  {isTrainee && <span className="button" style={{ cursor: 'default' }}>Trainee-Bereich</span>}
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          activeNavItem !== null && (
+            <nav className="nav" aria-label="Hauptnavigation">
+              <Link href="/" className={activeNavItem === '/' ? 'active' : ''}>Home</Link>
+              <Link href="/pmp" className={activeNavItem === '/pmp' ? 'active' : ''}>PMP</Link>
+              <Link href="/howto" className={activeNavItem === '/howto' ? 'active' : ''}>How to get started</Link>
+              <Link href="/infos-fuer-piloten" className={activeNavItem === '/infos-fuer-piloten' ? 'active' : ''}>Infos für Piloten</Link>
+              <Link href="/events" className={activeNavItem === '/events' ? 'active' : ''}>Online-Event</Link>
+              <Link href="/anmeldung-forum" className={activeNavItem === '/anmeldung-forum' ? 'active' : ''}>Anmeldung</Link>
+              <Link href="/mentorenbewerbung" className={activeNavItem === '/mentorenbewerbung' ? 'active' : ''}>Mentorenbewerbung</Link>
+              <Link href="/kontakt" className={activeNavItem === '/kontakt' ? 'active' : ''}>Kontakt</Link>
+            </nav>
+          )
         )}
       </div>
     </>

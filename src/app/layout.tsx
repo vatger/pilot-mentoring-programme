@@ -1,6 +1,7 @@
 import '../styles/globals.css';
 import type { Metadata } from 'next';
 import BackgroundProvider from '@/components/BackgroundProvider';
+import AuthProvider from '@/components/AuthProvider';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -27,7 +28,9 @@ export default function RootLayout({
         }
       </head>
       <body>
-        <BackgroundProvider>{children}</BackgroundProvider>
+        <AuthProvider>
+          <BackgroundProvider>{children}</BackgroundProvider>
+        </AuthProvider>
       </body>
     </html>
   );
