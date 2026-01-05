@@ -9,3 +9,4 @@ out/
 *.zip
 *.tar.gz
 *.pdf
+prisma/dev.db

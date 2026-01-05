@@ -1,0 +1,202 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+enum UserRole {
+  ADMIN
+  PMP_LEITUNG
+  MENTOR
+  TRAINEE
+  PENDING_TRAINEE
+  COMPLETED_TRAINEE
+  VISITOR
+}
+
+enum TrainingTopic {
+  NMOC_BASICS
+  ENROUTE_CLEARANCE
+  STARTUP_PUSHBACK
+  TAXI_RUNWAY
+  TAKEOFF
+  DEPARTURE
+  ENROUTE
+  ARRIVAL_TRANSITION
+  APPROACH
+  LANDING
+  TAXI_PARKING
+  FLIGHT_PLANNING
+  PRE_FLIGHT
+  ATC_PHRASEOLOGY
+  OFFLINE_TRAINING
+  ONLINE_FLIGHT
+  CHECK_RIDE
+  SELF_BRIEFING
+}
+
+enum TrainingStatus {
+  ACTIVE
+  COMPLETED
+  ABGEBROCHEN
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Registration/Anmeldung model
+model Registration {
+  id        Int      @id @default(autoincrement())
+  
+  // User SSO Information (from NextAuth)
+  cid       String   @unique // VATSIM CID
+  name      String   // Full name from SSO
+  rating    String   // ATC Rating
+  fir       String   // FIR Code
+  email     String?  // Optional email if available
+  
+  // Form Data
+  simulator String   // Flight simulator (MSFS, X-Plane, P3D, etc.)
+  aircraft  String   // Known aircraft
+  client    String   // Pilot client (vPilot, xPilot, swift)
+  clientSetup String // Yes/No if client is set up
+  experience String  // Flight sim experience
+  charts    String   // Chart materials used
+  airac     String   // AIRAC data availability
+  category  String   // Flight category (IFR Airliner, IFR GA, VFR)
+  topics    String?  // Flight topics of interest
+  schedule  String   // Preferred times/days
+  communication String // Communication setup (TS, Discord, etc.)
+  personal  String?  // Personal info (age, profession, location)
+  other     String?  // Other notes
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  status    String   @default("pending") // pending, approved, rejected, completed
+  notes     String?  // Internal notes from mentors
+  
+  @@index([cid])
+  @@index([createdAt])
+  @@index([status])
+}
+
+// Account model for potential future SSO session management
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// Session model for NextAuth
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// User model for potential future user management
+model User {
+  id            String   @id @default(cuid())
+  cid           String?  @unique // VATSIM CID
+  name          String?
+  email         String?  @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole @default(VISITOR) // ADMIN, PMP_LEITUNG, MENTOR, TRAINEE, PENDING_TRAINEE, COMPLETED_TRAINEE, VISITOR
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts           Account[]
+  sessions           Session[]
+  trainingsAsTrainee Training[] @relation("trainee")
+  trainingsAsMentor  TrainingMentor[]
+
+  @@index([cid])
+  @@index([role])
+}
+
+// Training model: links mentor(s) to a trainee
+model Training {
+  id         String   @id @default(cuid())
+  traineeId  String
+  status     TrainingStatus @default(ACTIVE) // ACTIVE, COMPLETED, ABGEBROCHEN
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  trainee    User               @relation("trainee", fields: [traineeId], references: [id], onDelete: Cascade)
+  mentors    TrainingMentor[]
+  sessions   TrainingSession[]
+
+  @@index([traineeId])
+  @@index([status])
+}
+
+// Mentor assignment to a training (supports multiple mentors per trainee, up to 3)
+model TrainingMentor {
+  id         String   @id @default(cuid())
+  trainingId String
+  mentorId   String
+  assignedAt DateTime @default(now())
+
+  training   Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  mentor     User     @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+
+  @@unique([trainingId, mentorId])
+  @@index([trainingId])
+  @@index([mentorId])
+}
+
+// Training session: records a training session with topics covered
+model TrainingSession {
+  id         String   @id @default(cuid())
+  trainingId String
+  sessionDate DateTime
+  comments   String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  training   Training                @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  topics     TrainingSessionTopic[]
+
+  @@index([trainingId])
+  @@index([sessionDate])
+}
+
+// Topic tracking per session
+model TrainingSessionTopic {
+  id        String   @id @default(cuid())
+  sessionId String
+  topic     TrainingTopic
+  checked   Boolean  @default(false)
+  order     Int      // Display order for topics
+
+  session   TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, topic])
+  @@index([sessionId])
+}
+
