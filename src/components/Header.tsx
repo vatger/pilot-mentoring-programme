@@ -73,9 +73,15 @@ export default function Header() {
   };
 
   const teams = (session?.user as any)?.teams || [];
-  const isMentor = teams.includes('pmp-mentor') || teams.includes('pmp-leitung');
-  const isHead = teams.includes('pmp-leitung');
-  const isTrainee = !isMentor && !isHead;
+  const userRole = (session?.user as any)?.role;
+  
+  // Role-based access determination
+  const isAdmin = userRole === "ADMIN";
+  const isLeitung = userRole === "PMP_LEITUNG";
+  const isMentor = userRole === "MENTOR" || isLeitung || isAdmin;
+  const isTrainee = userRole === "TRAINEE" || userRole === "PENDING_TRAINEE";
+  const isPendingTrainee = userRole === "PENDING_TRAINEE";
+  const isVisitor = userRole === "VISITOR";
   
   return (
     <>
@@ -157,10 +163,37 @@ export default function Header() {
                   <button className="button" onClick={() => signOut({ callbackUrl: '/' })}>Logout</button>
                   <button className="button" onClick={() => setShowInternal(false)}>Zurück zur Hauptseite</button>
                 </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {(isMentor || isHead) && <Link className="button" href="/trainings">Trainings</Link>}
-                  {isHead && <span className="button" style={{ cursor: 'not-allowed', opacity: 0.7 }}>Dateiverwaltung (bald)</span>}
-                  {isTrainee && <span className="button" style={{ cursor: 'default' }}>Trainee-Bereich</span>}
+                
+                {/* Internal Area Navigation - Role Based */}
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  {/* Admin & Leitung Links */}
+                  {(isAdmin || isLeitung) && (
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      <Link className="button" href="/admin">Admin Control Panel</Link>
+                    </div>
+                  )}
+                  
+                  {/* Mentor Links */}
+                  {isMentor && (
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      <Link className="button" href="/mentor/dashboard">Mentor Dashboard</Link>
+                    </div>
+                  )}
+                  
+                  {/* Trainee Links */}
+                  {isTrainee && (
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      {!isPendingTrainee && <Link className="button" href="/trainee/progress">My Training Progress</Link>}
+                      {isPendingTrainee && <Link className="button" href="/anmeldung">Complete Registration</Link>}
+                    </div>
+                  )}
+                  
+                  {/* Visitor/Pending Trainee - Registration */}
+                  {(isVisitor || isPendingTrainee) && (
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      <Link className="button" href="/anmeldung">PMP Registration</Link>
+                    </div>
+                  )}
                 </div>
               </>
             )}

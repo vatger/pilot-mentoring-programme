@@ -1,6 +1,9 @@
 import type { NextAuthOptions } from "next-auth";
 import type { OAuthConfig } from "next-auth/providers/oauth";
+import { prisma } from "./prisma";
 
+// Admin CID that can manage other admins
+const ADMIN_CIDS = ["1893789"];
 
 export interface VatsimProfile {
   id?: number;
@@ -83,7 +86,6 @@ export const VatgerProvider: OAuthConfig<VatsimProfile> = {
       cid: String(Number.isFinite(cid) ? cid : ""),
       name: fullName,
       rating,
-      role: "USER",
       fir,
       teams,
     } as any;
@@ -96,13 +98,38 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: "/signin" },
   callbacks: {
     async jwt({ token, user }) {
-      // Persist selected fields from user into the JWT on sign-in
+      // On sign-in, create or update user in DB with VISITOR role (unless already set)
       if (user) {
-        token.id = (user as any).id;
-        token.cid = (user as any).cid;
+        const cid = (user as any).cid;
+        
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { cid },
+        });
+
+        let userRecord;
+        if (existingUser) {
+          userRecord = existingUser;
+        } else {
+          // Create new user with VISITOR role (unless CID is admin)
+          const isAdmin = ADMIN_CIDS.includes(cid);
+          userRecord = await prisma.user.create({
+            data: {
+              cid,
+              name: (user as any).name,
+              email: (user as any).email,
+              image: (user as any).image,
+              role: isAdmin ? "ADMIN" : "VISITOR",
+            },
+          });
+        }
+
+        // Persist selected fields from user into the JWT
+        token.id = userRecord.id;
+        token.cid = cid;
         token.name = (user as any).name;
         token.rating = (user as any).rating;
-        token.role = (user as any).role || "USER";
+        token.role = userRecord.role;
         token.fir = (user as any).fir || "";
         token.teams = (user as any).teams || [];
       }
@@ -115,7 +142,7 @@ export const authOptions: NextAuthOptions = {
         cid: token.cid,
         name: token.name,
         rating: token.rating,
-        role: token.role || "USER",
+        role: token.role || "VISITOR",
         fir: token.fir || "",
         teams: token.teams || [],
       };

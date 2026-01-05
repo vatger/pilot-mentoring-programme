@@ -1,21 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import PageLayout from '@/components/PageLayout';
 import { useRouter } from "next/navigation";
-
-// Only allow access if logged in (dummy check for now)
-const isLoggedIn = () => {
-  // Replace with real SSO/session check
-  if (typeof window !== "undefined") {
-    return !!localStorage.getItem("pmp_logged_in");
-  }
-  return false;
-};
+import { useSession } from "next-auth/react";
 
 export default function AnmeldungPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     simulator: "",
     aircraft: "",
@@ -33,34 +28,70 @@ export default function AnmeldungPage() {
   });
   const [submitted, setSubmitted] = useState(false);
 
-  // SSO bypass: allow access for now
-  // Remove this block when SSO is available
-  // if (!isLoggedIn()) {
-  //   if (typeof window !== "undefined") {
-  //     window.location.href =
-  //       "https://sso.vatsim-germany.org/login?redirect=" +
-  //       encodeURIComponent(window.location.href);
-  //   }
-  //   return null;
-  // }
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/signin");
+    }
+  }, [status, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    // TODO: Send form data to backend
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/registrations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to submit registration");
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (status === "loading") {
+    return (
+      <PageLayout>
+        <div className="container">
+          <p>Laden...</p>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return null; // Will be redirected by useEffect
+  }
 
   return (
     <PageLayout>
       <div className="container">
         <div className="anmeldung-form-container">
-          <h2>Anmeldung zum Piloten-Mentoren-Programm KEIN UPSTREAM BACKEND</h2>
+          <h2>Anmeldung zum Piloten-Mentoren-Programm</h2>
+          {error && (
+            <div className="form-error info-error" style={{ marginBottom: "20px", color: "red", padding: "10px", border: "1px solid red", borderRadius: "4px" }}>
+              {error}
+            </div>
+          )}
           {submitted ? (
-            <div className="form-success info-success">Vielen Dank für deine Anmeldung! Ein Mentor wird sich in kürze über das Forum bei dir melden, stelle also sicher, dass du einen Account besitzt.</div>
+            <div className="form-success info-success">Vielen Dank für deine Anmeldung! Ein Mentor wird sich in Kürze über das Forum bei dir melden, stelle also sicher, dass du einen Account besitzt.</div>
           ) : (
             <form onSubmit={handleSubmit} className="anmeldung-form form-card">
               <label className="form-label">
@@ -131,7 +162,9 @@ export default function AnmeldungPage() {
                 Sonstiges:
                 <textarea className="form-textarea" name="other" value={form.other} onChange={handleChange} placeholder="Was du noch erwähnen möchtest" />
               </label>
-              <button type="submit" className="button form-submit">Absenden</button>
+              <button type="submit" className="button form-submit" disabled={isLoading}>
+                {isLoading ? "Wird abgesendet..." : "Absenden"}
+              </button>
             </form>
           )}
         </div>
