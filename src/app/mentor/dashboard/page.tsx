@@ -81,7 +81,7 @@ export default function MentorDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ traineeId }),
       });
-      if (!res.ok) throw new Error("Failed to assign trainee");
+      if (!res.ok) throw new Error("Fehler beim Zuweisen des Trainees");
       await fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -91,7 +91,7 @@ export default function MentorDashboard() {
   };
 
   const cancelTraining = async (trainingId: string) => {
-    if (!window.confirm("Are you sure you want to cancel this training?")) {
+    if (!window.confirm("Bist du sicher, dass du dieses Training abbrechen möchtest?")) {
       return;
     }
 
@@ -101,7 +101,7 @@ export default function MentorDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ trainingId }),
       });
-      if (!res.ok) throw new Error("Failed to cancel training");
+      if (!res.ok) throw new Error("Fehler beim Abbrechen des Trainings");
       await fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -115,7 +115,7 @@ export default function MentorDashboard() {
   if (status === "loading" || loading) {
     return (
       <PageLayout>
-        <div className="text-center py-12">Loading...</div>
+        <div className="text-center py-12">Lädt...</div>
       </PageLayout>
     );
   }
@@ -124,7 +124,7 @@ export default function MentorDashboard() {
     return (
       <PageLayout>
         <div className="text-center py-12 text-red-600">
-          Access denied. Only mentors can access this page.
+          Zugriff verweigert. Nur Mentoren können diese Seite ansehen.
         </div>
       </PageLayout>
     );
@@ -133,7 +133,7 @@ export default function MentorDashboard() {
   return (
     <PageLayout>
       <div className="max-w-7xl mx-auto py-12">
-        <h1 className="text-3xl font-bold mb-8">Mentor Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-8">Mentoren Dashboard</h1>
 
         {error && (
           <div className="mb-6 p-4 bg-red-100 text-red-700 rounded">
@@ -143,15 +143,15 @@ export default function MentorDashboard() {
 
         {/* Current Trainings */}
         <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6">My Current Trainees</h2>
+          <h2 className="text-2xl font-semibold mb-6">Meine aktuellen Trainees</h2>
           {currentTrainings.length === 0 ? (
-            <p className="text-gray-600">You don't have any active trainees yet.</p>
+            <p className="text-gray-600">Du hast noch keine aktiven Trainees.</p>
           ) : (
             <div className="space-y-4">
               {currentTrainings.map((training) => (
                 <div
                   key={training.id}
-                  className="border rounded-lg p-6 bg-blue-50"
+                  className="card"
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -162,30 +162,30 @@ export default function MentorDashboard() {
                         CID: {training.trainee.cid}
                       </p>
                       <p className="text-sm text-gray-600">
-                        Role: {training.trainee.role}
+                        Rolle: {training.trainee.role}
                       </p>
                       <p className="text-sm text-gray-600 mt-2">
-                        Co-mentors: {training.mentors.length}/{training.mentors.length === 1 ? '1 (add up to 2 more)' : '3 max'}
+                        Co-Mentoren: {training.mentors.length}/{training.mentors.length === 1 ? '1 (bis zu 2 weitere hinzufügen)' : '3 max'}
                       </p>
                     </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => logSession(training.id)}
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        className="button"
                       >
-                        Log Session
+                        Neuen Session-Log erstellen
                       </button>
                       <button
                         onClick={() => router.push(`/mentor/trainee/${training.trainee.id}?trainingId=${training.id}`)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        className="button"
                       >
-                        View Progress
+                        Fortschritt ansehen
                       </button>
                       <button
                         onClick={() => cancelTraining(training.id)}
-                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                        className="button button--danger"
                       >
-                        Cancel
+                        Training Abbrechen
                       </button>
                     </div>
                   </div>
@@ -197,15 +197,15 @@ export default function MentorDashboard() {
 
         {/* Pending Trainees */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Available Trainees</h2>
+          <h2 className="text-2xl font-semibold mb-6">Noch nicht zugewiesene Trainees:</h2>
           {pendingTrainees.length === 0 ? (
-            <p className="text-gray-600">No pending trainees available.</p>
+            <p className="text-gray-600">Keine wartenden Trainees verfügbar.</p>
           ) : (
             <div className="grid gap-4">
               {pendingTrainees.map((trainee) => (
                 <div
                   key={trainee.id}
-                  className="border rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition"
+                  className="card"
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -220,9 +220,9 @@ export default function MentorDashboard() {
                     <button
                       onClick={() => assignTrainee(trainee.id)}
                       disabled={assigning === trainee.id}
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                      className="button"
                     >
-                      {assigning === trainee.id ? "Assigning..." : "Assign to Me"}
+                      {assigning === trainee.id ? "Zuweisen..." : "Mir zuweisen"}
                     </button>
                   </div>
                 </div>

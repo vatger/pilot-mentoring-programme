@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
+import PageLayout from "@/components/PageLayout";
 
 const FILE_RULES = [
   { accept: ["application/pdf"], maxMB: 25 },
@@ -41,12 +42,18 @@ export default function TrainingsPage() {
   const isLead = teams.includes("pmp-leitung");
 
   if (status === "loading") {
-    return <div className="container"><p>Lade...</p></div>;
+    return (
+      <PageLayout>
+        <div className="card">
+          <p>Lade...</p>
+        </div>
+      </PageLayout>
+    );
   }
 
   if (!session) {
     return (
-      <div className="container">
+      <PageLayout>
         <div className="header-container">
           <div className="header">
             <h1>Trainings</h1>
@@ -59,7 +66,7 @@ export default function TrainingsPage() {
             Mit VATSIM Germany anmelden
           </button>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -95,7 +102,7 @@ export default function TrainingsPage() {
   };
 
   return (
-    <div className="container" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <PageLayout>
       <div className="header-container">
         <div className="header">
           <h1>Trainings</h1>
@@ -160,6 +167,6 @@ export default function TrainingsPage() {
           <p>{lastError}</p>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }

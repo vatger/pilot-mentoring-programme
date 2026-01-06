@@ -3,6 +3,7 @@
 import { useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import PageLayout from "@/components/PageLayout";
 
 function SignInContent() {
   const searchParams = useSearchParams();
@@ -14,7 +15,7 @@ function SignInContent() {
   }, [searchParams]);
 
   return (
-    <div className="container">
+    <PageLayout>
       <div className="header-container">
         <div className="header">
           <h1>Weiterleitung zur Anmeldung…</h1>
@@ -23,13 +24,13 @@ function SignInContent() {
       <div className="card">
         <p>Bitte warten, du wirst zur Anmeldeseite umgeleitet.</p>
       </div>
-    </div>
+    </PageLayout>
   );
 }
 
 export default function SignInRedirectPage() {
   return (
-    <Suspense fallback={<div className="container"><p>Laden...</p></div>}>
+    <Suspense fallback={<PageLayout><div className="card"><p>Laden...</p></div></PageLayout>}>
       <SignInContent />
     </Suspense>
   );

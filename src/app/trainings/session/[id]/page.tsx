@@ -3,6 +3,7 @@
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import PageLayout from "@/components/PageLayout";
 
 const ACCEPT = "application/pdf,image/jpeg,image/jpg,image/png,image/svg+xml";
 
@@ -119,7 +120,7 @@ export default function TrainingSessionPage() {
   };
 
   return (
-    <div className="container" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <PageLayout>
       <div className="header-container">
         <div className="header">
           <h1>Session {sessionId}</h1>
@@ -190,6 +191,6 @@ export default function TrainingSessionPage() {
           </ul>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }

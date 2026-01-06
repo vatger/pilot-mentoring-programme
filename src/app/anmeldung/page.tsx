@@ -91,7 +91,7 @@ export default function AnmeldungPage() {
             </div>
           )}
           {submitted ? (
-            <div className="form-success info-success">Vielen Dank für deine Anmeldung! Ein Mentor wird sich in Kürze über das Forum bei dir melden, stelle also sicher, dass du einen Account besitzt.</div>
+            <div className="form-success info-success">Vielen Dank für deine Anmeldung! Ein Mentor wird sich in Kürze über das Forum per Private Message bei dir melden, stelle also sicher, dass du einen Account besitzt. Gehe dazu einfach auf <Link href="https://board.vatsim-germany.org">diesen Link</Link> und melde dich dort einmalig an.</div>
           ) : (
             <form onSubmit={handleSubmit} className="anmeldung-form form-card">
               <label className="form-label">

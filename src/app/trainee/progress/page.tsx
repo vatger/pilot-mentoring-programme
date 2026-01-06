@@ -6,24 +6,24 @@ import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 
 const TRAINING_TOPICS = [
-  { key: "NMOC_BASICS", label: "NMOC & Basics" },
-  { key: "ENROUTE_CLEARANCE", label: "Enroute Clearance" },
+  { key: "NMOC_BASICS", label: "Wiederholung Elemente New Member Orientation Course & Grundlagen" },
+  { key: "ENROUTE_CLEARANCE", label: "IFR Clearance" },
   { key: "STARTUP_PUSHBACK", label: "Startup & Pushback" },
-  { key: "TAXI_RUNWAY", label: "Taxi to Runway" },
+  { key: "TAXI_RUNWAY", label: "Taxi zur Runway" },
   { key: "TAKEOFF", label: "Takeoff" },
   { key: "DEPARTURE", label: "Departure" },
   { key: "ENROUTE", label: "Enroute" },
-  { key: "ARRIVAL_TRANSITION", label: "Arrival/Transition" },
+  { key: "ARRIVAL_TRANSITION", label: "Standard Arrival STAR / LNAV-Transition" },
   { key: "APPROACH", label: "Approach" },
-  { key: "LANDING", label: "Landing" },
-  { key: "TAXI_PARKING", label: "Taxi to Parking" },
-  { key: "FLIGHT_PLANNING", label: "Flight Planning & Charts" },
+  { key: "LANDING", label: "Landung" },
+  { key: "TAXI_PARKING", label: "Taxi zum Gate" },
+  { key: "FLIGHT_PLANNING", label: "Flugplanung & Charts" },
   { key: "PRE_FLIGHT", label: "Pre-flight Preparation" },
-  { key: "ATC_PHRASEOLOGY", label: "ATC Phraseology" },
+  { key: "ATC_PHRASEOLOGY", label: "ATC Phraseologie" },
   { key: "OFFLINE_TRAINING", label: "Offline Training (Simulator)" },
-  { key: "ONLINE_FLIGHT", label: "Online Flight" },
-  { key: "CHECK_RIDE", label: "Check Ride" },
+  { key: "ONLINE_FLIGHT", label: "Online Flug" },
   { key: "SELF_BRIEFING", label: "Self Briefing" },
+  { key: "PRE_CHECK_RIDE", label: "Pre Check Ride" },
 ];
 
 interface Mentor {
@@ -113,7 +113,8 @@ export default function TraineeProgressPage() {
 
   const getTopicProgress = () => {
     const covered = new Set<string>();
-    sessions.forEach((s) => {
+    // Only count finalized sessions (not drafts)
+    sessions.filter(s => !s.isDraft).forEach((s) => {
       s.topics.forEach((t) => {
         if (t.checked) covered.add(t.topic);
       });
@@ -135,7 +136,7 @@ export default function TraineeProgressPage() {
     return (
       <PageLayout>
         <div className="text-center py-12 text-red-600">
-          {error || "Training not found"}
+          {error || "Training nicht gefunden"}
         </div>
       </PageLayout>
     );
@@ -147,7 +148,7 @@ export default function TraineeProgressPage() {
     return (
       <PageLayout>
         <div className="text-center py-12 text-red-600">
-          Access denied. Only the trainee and mentors can view this page.
+          Zugriff verweigert. Nur der Trainee und die Mentoren können diese Seite ansehen.
         </div>
       </PageLayout>
     );
@@ -159,80 +160,130 @@ export default function TraineeProgressPage() {
 
   return (
     <PageLayout>
-      <div className="max-w-6xl mx-auto py-12">
-        <h1 className="text-3xl font-bold mb-2">Training Progress</h1>
+      <div className="container">
+        <div className="header-container">
+          <div className="header">
+            <h1>Dein Trainingsfortschritt</h1>
+          </div>
+        </div>
 
-        {/* Training Info */}
-        <div className="bg-blue-50 p-6 rounded-lg mb-8">
-          <h2 className="text-xl font-semibold mb-4">Training Details</h2>
-          <div className="grid grid-cols-2 gap-6">
+        {/* Training Info Card */}
+        <div className="card" style={{ marginBottom: "2rem" }}>
+          <h2 style={{ marginBottom: "1rem" }}>Trainingsdetails</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
             <div>
-              <p className="text-sm text-gray-600">Status</p>
-              <p className="font-semibold text-lg capitalize">{training.status}</p>
+              <p style={{ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: "0.25rem" }}>Status</p>
+              <p style={{ fontWeight: "600", fontSize: "1.1em", textTransform: "capitalize" }}>{training.status}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Started</p>
-              <p className="font-semibold">
-                {new Date(training.createdAt).toLocaleDateString()}
+              <p style={{ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: "0.25rem" }}>Gestartet</p>
+              <p style={{ fontWeight: "600", fontSize: "1.1em" }}>
+                {new Date(training.createdAt).toLocaleDateString("de-DE")}
               </p>
             </div>
-            <div className="col-span-2">
-              <p className="text-sm text-gray-600 mb-2">Mentors</p>
-              <div className="flex gap-2 flex-wrap">
+            <div style={{ gridColumn: "1 / -1" }}>
+              <p style={{ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: "0.5rem" }}>Deine Mentoren</p>
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
                 {training.mentors.map((m) => (
-                  <span key={m.mentorId} className="bg-blue-200 text-blue-800 px-3 py-1 rounded">
-                    {m.mentor.name} (CID: {m.mentor.cid})
-                  </span>
+                  <div
+                    key={m.mentorId}
+                    style={{
+                      backgroundColor: "var(--card-bg)",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "0.5rem",
+                      fontSize: "0.95em",
+                      border: "1px solid var(--footer-border)",
+                    }}
+                  >
+                    <strong>{m.mentor.name}</strong> <span style={{ color: "var(--text-muted)" }}>({m.mentor.cid})</span>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-xl font-semibold">Overall Progress</h2>
-            <span className="text-2xl font-bold text-blue-600">
+        {/* Progress Section */}
+        <div className="card" style={{ marginBottom: "2rem" }}>
+          <h2 style={{ marginBottom: "1.5rem" }}>Gesamtfortschritt</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1rem" }}>
+            <p style={{ fontSize: "1em" }}>Themen abgedeckt</p>
+            <div style={{ fontSize: "2.5em", fontWeight: "bold", color: "var(--accent-color)" }}>
               {progressPercent}%
-            </span>
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+          <div
+            style={{
+              width: "100%",
+              height: "2rem",
+              backgroundColor: "var(--container-bg)",
+              borderRadius: "1rem",
+              overflow: "hidden",
+              border: `1px solid var(--footer-border)`,
+            }}
+          >
             <div
-              className="bg-green-500 h-full transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
+              style={{
+                height: "100%",
+                width: `${progressPercent}%`,
+                backgroundColor: "var(--accent-color)",
+                transition: "width 0.5s ease-in-out",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                paddingRight: "1rem",
+                color: "white",
+                fontWeight: "600",
+                fontSize: "0.9em",
+              }}
+            >
+              {progressPercent > 5 && `${progressPercent}%`}
+            </div>
           </div>
-          <p className="text-sm text-gray-600 mt-2">
-            {coveredTopics.size} of {TRAINING_TOPICS.length} topics covered
+          <p style={{ fontSize: "0.9em", color: "var(--text-muted)", marginTop: "0.75rem" }}>
+            {coveredTopics.size} von {TRAINING_TOPICS.length} Themen abgedeckt
           </p>
         </div>
 
         {/* Topics Grid */}
-        <div>
-          <h2 className="text-xl font-semibold mb-6">Topics</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="card" style={{ marginBottom: "2rem" }}>
+          <h2 style={{ marginBottom: "1.5rem" }}>Trainingsinhalte</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
             {TRAINING_TOPICS.map((topic) => {
               const isCovered = coveredTopics.has(topic.key);
               return (
                 <div
                   key={topic.key}
-                  className={`p-4 rounded-lg border-2 transition ${
-                    isCovered
-                      ? "bg-green-50 border-green-300"
-                      : "bg-gray-50 border-gray-200"
-                  }`}
+                  style={{
+                    padding: "1rem",
+                    borderRadius: "0.5rem",
+                    border: `2px solid ${isCovered ? "var(--accent-color)" : "var(--footer-border)"}`,
+                    backgroundColor: isCovered ? "var(--container-bg)" : "transparent",
+                    transition: "all 0.3s ease",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                  }}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-800">
-                      {topic.label}
-                    </span>
-                    {isCovered && (
-                      <span className="text-green-600 text-xl font-bold">
-                        ✓
-                      </span>
-                    )}
+                  <div
+                    style={{
+                      width: "1.5rem",
+                      height: "1.5rem",
+                      borderRadius: "50%",
+                      backgroundColor: isCovered ? "var(--accent-color)" : "var(--footer-border)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontWeight: "bold",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {isCovered ? "✓" : ""}
                   </div>
+                  <span style={{ fontWeight: isCovered ? "600" : "500", color: "var(--text-color)" }}>
+                    {topic.label}
+                  </span>
                 </div>
               );
             })}
@@ -240,57 +291,97 @@ export default function TraineeProgressPage() {
         </div>
 
         {/* Session History */}
-        {sessions.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-2xl font-semibold mb-6">Session History</h2>
-            <div className="space-y-6">
-              {sessions.map((s) => (
-                <div key={s.id} className="border rounded-lg p-6 bg-gray-50">
-                  <div className="flex justify-between items-start mb-4">
+        {sessions.filter(s => !s.isDraft).length > 0 && (
+          <div className="card">
+            <h2 style={{ marginBottom: "1.5rem" }}>Trainings-Sessions</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+              {sessions.filter(s => !s.isDraft).map((s) => (
+                <div
+                  key={s.id}
+                  style={{
+                    padding: "1.5rem",
+                    backgroundColor: "var(--container-bg)",
+                    borderRadius: "0.5rem",
+                    border: `1px solid var(--footer-border)`,
+                    borderLeft: `4px solid var(--accent-color)`,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
                     <div>
-                      <p className="text-sm text-gray-600">Session Date</p>
-                      <p className="font-semibold text-lg">
-                        {new Date(s.sessionDate).toLocaleDateString()}
+                      <p style={{ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: "0.25rem" }}>
+                        Datum der Session
+                      </p>
+                      <p style={{ fontWeight: "600", fontSize: "1.15em" }}>
+                        {new Date(s.sessionDate).toLocaleDateString("de-DE")}
                       </p>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      {s.topics.filter((t) => t.checked).length} topics covered
-                    </p>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontSize: "0.9em", color: "var(--text-muted)" }}>
+                        {s.topics.filter((t) => t.checked).length} Themen
+                      </p>
+                      <p style={{ fontSize: "0.9em", color: "var(--text-muted)" }}>abgedeckt</p>
+                    </div>
                   </div>
 
                   {s.comments && (
-                    <div className="mb-4 p-3 bg-blue-100 rounded">
-                      <p className="text-sm font-semibold text-blue-900">
-                        Mentor's Notes:
+                    <div
+                      style={{
+                        marginBottom: "1rem",
+                        padding: "1rem",
+                        backgroundColor: "var(--card-bg)",
+                        borderRadius: "0.5rem",
+                        borderLeft: `3px solid var(--accent-color)`,
+                      }}
+                    >
+                      <p style={{ fontSize: "0.9em", fontWeight: "600", marginBottom: "0.5rem", color: "var(--text-color)" }}>
+                        Das möchte dir dein Mentor noch mitgeben:
                       </p>
-                      <p className="text-blue-800">{s.comments}</p>
+                      <p style={{ fontSize: "0.95em", color: "var(--text-color)", fontStyle: "italic" }}>
+                        "{s.comments}"
+                      </p>
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    {s.topics.map((topic) => (
-                      topic.checked && (
-                        <div key={topic.order} className="flex items-center">
-                          <span className="text-green-600 mr-2">✓</span>
-                          <span className="text-gray-700">
-                            {
-                              TRAINING_TOPICS.find((t) => t.key === topic.topic)
-                                ?.label
-                            }
-                          </span>
-                        </div>
-                      )
-                    ))}
-                  </div>
+                  {s.topics.filter((t) => t.checked).length > 0 && (
+                    <div style={{ paddingTop: "1rem", borderTop: `1px solid var(--footer-border)` }}>
+                      <p style={{ fontSize: "0.9em", fontWeight: "600", marginBottom: "0.75rem", color: "var(--text-muted)" }}>
+                        Besprochene Themen:
+                      </p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                        {s.topics.map((topic) => (
+                          topic.checked && (
+                            <span
+                              key={topic.order}
+                              style={{
+                                backgroundColor: "var(--accent-color)",
+                                color: "white",
+                                padding: "0.4rem 0.8rem",
+                                borderRadius: "0.5rem",
+                                fontSize: "0.85em",
+                                fontWeight: "500",
+                              }}
+                            >
+                              ✓ {TRAINING_TOPICS.find((t) => t.key === topic.topic)?.label}
+                            </span>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {sessions.length === 0 && (
-          <div className="mt-12 text-center p-8 bg-gray-100 rounded-lg">
-            <p className="text-gray-600">No session logs yet.</p>
+        {sessions.filter(s => !s.isDraft).length === 0 && (
+          <div className="card" style={{ textAlign: "center", padding: "3rem 1.5rem" }}>
+            <p style={{ fontSize: "1.1em", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
+              📋 Noch keine Trainings-Sessions
+            </p>
+            <p style={{ fontSize: "0.95em", color: "var(--text-muted)" }}>
+              Dein Mentor wird bald die ersten Sitzungen dokumentieren.
+            </p>
           </div>
         )}
       </div>

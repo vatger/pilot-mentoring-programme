@@ -7,24 +7,24 @@ import PageLayout from "@/components/PageLayout";
 
 // Training topics extracted from the draft
 const TRAINING_TOPICS = [
-  { key: "NMOC_BASICS", label: "NMOC & Basics" },
-  { key: "ENROUTE_CLEARANCE", label: "Enroute Clearance" },
+  { key: "NMOC_BASICS", label: "Wiederholung Elemente New Member Orientation Course & Grundlagen" },
+  { key: "ENROUTE_CLEARANCE", label: "IFR Clearance" },
   { key: "STARTUP_PUSHBACK", label: "Startup & Pushback" },
-  { key: "TAXI_RUNWAY", label: "Taxi to Runway" },
+  { key: "TAXI_RUNWAY", label: "Taxi zur Runway" },
   { key: "TAKEOFF", label: "Takeoff" },
   { key: "DEPARTURE", label: "Departure" },
   { key: "ENROUTE", label: "Enroute" },
-  { key: "ARRIVAL_TRANSITION", label: "Arrival/Transition" },
+  { key: "ARRIVAL_TRANSITION", label: "Standard Arrival STAR / LNAV-Transition" },
   { key: "APPROACH", label: "Approach" },
-  { key: "LANDING", label: "Landing" },
-  { key: "TAXI_PARKING", label: "Taxi to Parking" },
-  { key: "FLIGHT_PLANNING", label: "Flight Planning & Charts" },
+  { key: "LANDING", label: "Landung" },
+  { key: "TAXI_PARKING", label: "Taxi zum Gate" },
+  { key: "FLIGHT_PLANNING", label: "Flugplanung & Charts" },
   { key: "PRE_FLIGHT", label: "Pre-flight Preparation" },
-  { key: "ATC_PHRASEOLOGY", label: "ATC Phraseology" },
+  { key: "ATC_PHRASEOLOGY", label: "ATC Phraseologie" },
   { key: "OFFLINE_TRAINING", label: "Offline Training (Simulator)" },
-  { key: "ONLINE_FLIGHT", label: "Online Flight" },
-  { key: "CHECK_RIDE", label: "Check Ride" },
+  { key: "ONLINE_FLIGHT", label: "Online Flug" },
   { key: "SELF_BRIEFING", label: "Self Briefing" },
+  { key: "PRE_CHECK_RIDE", label: "Pre Check Ride" },
 ];
 
 interface SessionLog {
@@ -39,11 +39,13 @@ export default function SessionLoggingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const trainingId = searchParams.get("trainingId");
+  const whiteboardSessionId = searchParams.get("whiteboardSessionId");
 
   const [sessionDate, setSessionDate] = useState(
     new Date().toISOString().split("T")[0]
   );
   const [comments, setComments] = useState("");
+  const [whiteboardId, setWhiteboardId] = useState(whiteboardSessionId || "");
   const [checkedTopics, setCheckedTopics] = useState<Record<string, boolean>>({});
   const [previousSessions, setPreviousSessions] = useState<SessionLog[][]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +112,7 @@ export default function SessionLoggingPage() {
           trainingId,
           sessionDate,
           comments,
+          whiteboardSessionId: whiteboardId || null,
           checkedTopics: topicData,
         }),
       });
@@ -117,6 +120,7 @@ export default function SessionLoggingPage() {
       if (!res.ok) throw new Error("Failed to log session");
       setSuccess(true);
       setCheckedTopics({});
+      setWhiteboardId("");
       setComments("");
       setSessionDate(new Date().toISOString().split("T")[0]);
 
@@ -158,138 +162,145 @@ export default function SessionLoggingPage() {
 
   return (
     <PageLayout>
-      <div className="max-w-4xl mx-auto py-12">
-        <h1 className="text-3xl font-bold mb-2">Log Training Session</h1>
-        <p className="text-gray-600 mb-8">
-          Record which topics were covered in today's training.
-        </p>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 text-red-700 rounded">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-6 p-4 bg-green-100 text-green-700 rounded">
-            Session logged successfully!
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Session Date */}
-          <div>
-            <label className="block text-sm font-semibold mb-2">
-              Session Date
-            </label>
-            <input
-              type="date"
-              value={sessionDate}
-              onChange={(e) => setSessionDate(e.target.value)}
-              className="w-full max-w-xs px-4 py-2 border rounded"
-              required
-            />
-          </div>
-
-          {/* Topics */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Topics Covered</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Check the topics you discussed in this session.{" "}
-              <span className="text-green-600 font-semibold">
-                Green topics
-              </span>{" "}
-              were covered in previous sessions.
-            </p>
-
-            <div className="space-y-3">
-              {TRAINING_TOPICS.map((topic) => {
-                const isPreviouslyCovered = getCoverageStatus(topic.key);
-                return (
-                  <label
-                    key={topic.key}
-                    className={`flex items-center p-3 rounded border cursor-pointer transition ${
-                      isPreviouslyCovered
-                        ? "bg-green-50 border-green-300"
-                        : "bg-white border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checkedTopics[topic.key] || false}
-                      onChange={() => toggleTopic(topic.key)}
-                      className="w-5 h-5"
-                    />
-                    <span
-                      className={`ml-3 font-medium ${
-                        isPreviouslyCovered
-                          ? "text-green-700"
-                          : "text-gray-700"
-                      }`}
-                    >
-                      {topic.label}
-                    </span>
-                    {isPreviouslyCovered && (
-                      <span className="ml-auto text-xs bg-green-200 text-green-800 px-2 py-1 rounded">
-                        Previously covered
-                      </span>
-                    )}
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Comments */}
-          <div>
-            <label className="block text-sm font-semibold mb-2">
-              Session Comments
-            </label>
-            <p className="text-sm text-gray-600 mb-2">
-              Add reminders or notes for the trainee.
-            </p>
-            <textarea
-              value={comments}
-              onChange={(e) => setComments(e.target.value)}
-              placeholder="E.g., Good progress on approach, needs to work on speed management..."
-              className="w-full px-4 py-3 border rounded h-32 resize-none"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-blue-600 text-white font-semibold py-3 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            {submitting ? "Logging Session..." : "Log Session"}
-          </button>
-        </form>
-
-        {/* Previous Sessions Summary */}
-        {previousSessions.length > 0 && (
-          <div className="mt-12 p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">Session History</h3>
-            <p className="text-sm text-gray-600">
-              Total sessions logged: {previousSessions.length}
-            </p>
-            <p className="text-sm text-gray-600 mt-1">
-              Topics covered overall:{" "}
-              <span className="font-semibold">
-                {
-                  new Set(
-                    previousSessions
-                      .flat()
-                      .filter((t: SessionLog) => t.checked)
-                      .map((t: SessionLog) => t.topic)
-                  ).size
-                }
-                /{TRAINING_TOPICS.length}
-              </span>
-            </p>
-          </div>
-        )}
+      <div className="header-container">
+        <div className="header">
+          <h1>Log Training Session</h1>
+        </div>
       </div>
+
+      {error && <div className="info-danger"><p>{error}</p></div>}
+      {success && <div className="info-success"><p>Session erfolgreich gelogged!</p></div>}
+
+      <form onSubmit={handleSubmit} className="form-card" style={{ maxWidth: "720px" }}>
+        {/* Session Date */}
+        <label className="form-label">
+          Datum des Trainings
+          <input
+            type="date"
+            value={sessionDate}
+            onChange={(e) => setSessionDate(e.target.value)}
+            className="form-input"
+            required
+          />
+        </label>
+
+        {/* Whiteboard Session (Optional) */}
+        <label className="form-label">
+          Link zur Whiteboard-Session (Optional)
+          <input
+            type="text"
+            value={whiteboardId}
+            onChange={(e) => setWhiteboardId(e.target.value)}
+            className="form-input"
+            placeholder="z.B., abc123def456 (von /trainings/session/[id])"
+          />
+          <small style={{ display: "block", marginTop: "0.5rem", color: "var(--text-muted)" }}>
+            Falls du das Whiteboard während des Trainings genutzt hast, füge hier die Session ID ein. Es wird eine Woche lang gespeichert, damit sich dein Trainee es sich noch einmal ansehen kann.
+          </small>
+        </label>
+
+        {/* Topics */}
+        <div>
+          <h2 style={{ marginBottom: "12px" }}>Abgedeckte Themen</h2>
+          <p style={{ fontSize: "0.95em", marginBottom: "16px", color: "var(--text-color)" }}>
+            Markiere die Themen, die du in dieser Session besprochen hast.{" "}
+            <span style={{ color: "#66bb6a", fontWeight: 600 }}>
+              Grüne Themen
+            </span>{" "}
+            wurden in vorherigen Sessions behandelt.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {TRAINING_TOPICS.map((topic) => {
+              const isPreviouslyCovered = getCoverageStatus(topic.key);
+              return (
+                <label
+                  key={topic.key}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "12px 14px",
+                    borderRadius: "8px",
+                    border: `1.5px solid ${isPreviouslyCovered ? "#66bb6a" : "var(--footer-border)"}`,
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    background: isPreviouslyCovered ? "rgba(0, 95, 163, 0.06)" : "var(--container-bg)",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checkedTopics[topic.key] || false}
+                    onChange={() => toggleTopic(topic.key)}
+                  />
+                  <span
+                    style={{
+                      marginLeft: "10px",
+                      fontWeight: 500,
+                      color: isPreviouslyCovered ? "var(--accent-color)" : "var(--text-color)",
+                      flex: 1,
+                    }}
+                  >
+                    {topic.label}
+                  </span>
+                  {isPreviouslyCovered && (
+                    <span style={{ fontSize: "0.8em", background: "var(--accent-color)", color: "white", padding: "3px 8px", borderRadius: "4px" }}>
+                      Bereits behandelt
+                    </span>
+                  )}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Comments */}
+        <label className="form-label">
+          Notizen zur Session
+          <p style={{ fontSize: "0.9em", color: "var(--text-color)", margin: "4px 0 0 0" }}>
+            Füge Erinnerungen oder Notizen für den Trainee hinzu. Z.B. was gut lief oder woran noch gearbeitet werden muss. Du kannst diese später noch ändern.
+          </p>
+          <textarea
+            value={comments}
+            onChange={(e) => setComments(e.target.value)}
+            placeholder="Z.B., Gute Fortschritte beim Anflug, du musst aber noch an der Geschwindigkeitskontrolle arbeiten..."
+            className="form-textarea"
+          />
+        </label>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="button"
+          style={{ alignSelf: "flex-start", minWidth: "160px" }}
+        >
+          {submitting ? "Session wird gespeichert..." : "Session speichern"}
+        </button>
+      </form>
+
+      {/* Previous Sessions Summary */}
+      {previousSessions.length > 0 && (
+        <div className="card" style={{ marginTop: "28px" }}>
+          <h3>Session Verlauf</h3>
+          <p style={{ margin: "8px 0" }}>
+            Insgesamt erfasste Sessions: {previousSessions.length}
+          </p>
+          <p style={{ margin: "8px 0" }}>
+            Insgesamt behandelte Themen:{" "}
+            <span style={{ fontWeight: 600 }}>
+              {
+                new Set(
+                  previousSessions
+                    .flat()
+                    .filter((t: SessionLog) => t.checked)
+                    .map((t: SessionLog) => t.topic)
+                ).size
+              }
+              /{TRAINING_TOPICS.length}
+            </span>
+          </p>
+        </div>
+      )}
     </PageLayout>
   );
 }
