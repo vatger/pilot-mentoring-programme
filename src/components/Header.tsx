@@ -15,6 +15,8 @@ export default function Header() {
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [showInternal, setShowInternal] = useState(false);
+  const [isCheckrideReady, setIsCheckrideReady] = useState(false);
+  const [hasCheckrideInfo, setHasCheckrideInfo] = useState(false);
   const isManualToggleRef = useRef(isManualToggle);
 
   useEffect(() => {
@@ -23,6 +25,11 @@ export default function Header() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
+
+    const savedShowInternal = localStorage.getItem('showInternal');
+    if (savedShowInternal !== null) {
+      setShowInternal(savedShowInternal === 'true');
+    }
 
     // Set initial collapsed state for mobile
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -55,9 +62,22 @@ export default function Header() {
     };
   }, []);
 
-  if (!isHydrated || shouldRedirect) {
-    return null;
-  }
+  const toggleInternal = () => {
+    setShowInternal((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('showInternal', String(next));
+      }
+      return next;
+    });
+  };
+
+  const hideInternal = () => {
+    setShowInternal(false);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('showInternal', 'false');
+    }
+  };
   
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
@@ -78,10 +98,40 @@ export default function Header() {
   // Role-based access determination
   const isAdmin = userRole === "ADMIN";
   const isLeitung = userRole === "PMP_LEITUNG";
+  const isExaminer = userRole === "PMP_PRÜFER" || isAdmin || isLeitung;
   const isMentor = userRole === "MENTOR" || isLeitung || isAdmin;
   const isTrainee = userRole === "TRAINEE" || userRole === "PENDING_TRAINEE";
   const isPendingTrainee = userRole === "PENDING_TRAINEE";
   const isVisitor = userRole === "VISITOR";
+
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setHasCheckrideInfo(false);
+      setIsCheckrideReady(false);
+      return;
+    }
+    if (userRole === 'TRAINEE') {
+      (async () => {
+        try {
+          const res = await fetch('/api/checkrides/me', { cache: 'no-store' });
+          if (!res.ok) throw new Error('Load failed');
+          const data = await res.json();
+          setIsCheckrideReady(Boolean(data?.training?.readyForCheckride));
+          setHasCheckrideInfo(true);
+        } catch {
+          setIsCheckrideReady(false);
+          setHasCheckrideInfo(false);
+        }
+      })();
+    } else {
+      setHasCheckrideInfo(false);
+      setIsCheckrideReady(false);
+    }
+  }, [status, userRole]);
+
+  if (!isHydrated || shouldRedirect) {
+    return null;
+  }
   
   return (
     <>
@@ -109,7 +159,7 @@ export default function Header() {
           <div style={{ display: 'flex', width: '100%', justifyContent: 'flex-start', gap: '8px', paddingTop: '15px', alignItems: 'center' }}>
             <button
               className="button"
-              onClick={() => setShowInternal(true)}
+              onClick={toggleInternal}
             >
               Intern
             </button>
@@ -145,53 +195,107 @@ export default function Header() {
           <h1>Piloten-Mentoren-Programm</h1>
         </div>
         {showInternal ? (
-          <div className="nav" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
-            {status === 'loading' && <p>Lade Session...</p>}
+          <div
+            className="nav"
+            style={{
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px',
+              width: '100%',
+              padding: '12px 0',
+            }}
+          >
+            {status === 'loading' && <div className="card"><p style={{ margin: 0 }}>Lade Session...</p></div>}
+
             {status !== 'loading' && !session && (
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <p style={{ margin: 0 }}>Interner Bereich</p>
-                <button className="button" onClick={() => signIn('vatsim', { callbackUrl: '/trainings' })}>
-                  Mit VATGER anmelden
-                </button>
-                <button className="button" onClick={() => setShowInternal(false)}>Zurück zur Hauptseite</button>
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '720px', padding: '14px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <div className="stepper-progress" style={{ margin: 0 }}>Interner Bereich</div>
+                  <p style={{ margin: 0 }}>Bitte anmelden, um die internen Links zu sehen.</p>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button className="button" onClick={() => signIn('vatsim', { callbackUrl: '/trainings' })}>
+                    Mit VATGER anmelden
+                  </button>
+                  <button className="button" onClick={hideInternal}>Zurück zur Hauptseite</button>
+                </div>
               </div>
             )}
+
             {session && (
               <>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <p style={{ margin: 0 }}>Angemeldet als {session.user?.name}</p>
-                  <button className="button" onClick={() => signOut({ callbackUrl: '/' })}>Logout</button>
-                  <button className="button" onClick={() => setShowInternal(false)}>Zurück zur Hauptseite</button>
+                <div className="card" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: '900px', padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div className="stepper-progress" style={{ margin: 0 }}>Interner Bereich</div>
+                    <div style={{ fontWeight: 600 }}>{session.user?.name}</div>
+                    <div style={{ color: 'var(--text-color)', fontSize: '0.95em' }}>Rolle: {userRole || 'N/A'}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button className="button" onClick={() => signOut({ callbackUrl: '/' })}>Logout</button>
+                    <button className="button" onClick={hideInternal}>Zurück</button>
+                  </div>
                 </div>
-                
-                {/* Internal Area Navigation - Role Based */}
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  {/* Admin & Leitung Links */}
+
+                <div
+                  style={{
+                    display: 'grid',
+                    width: '100%',
+                    maxWidth: '960px',
+                    gap: '10px',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                  }}
+                >
                   {(isAdmin || isLeitung) && (
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                      <Link className="button" href="/admin">Admin Control Panel</Link>
+                    <div className="card" style={{ marginBottom: 0, padding: '12px 14px' }}>
+                      <h3 style={{ margin: '0 0 6px 0' }}>Leitung & Admin</h3>
+                      <p style={{ margin: '0 0 8px 0' }}>Schnellzugriff auf Admin-Tools.</p>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <Link className="button" href="/admin">Admin Control Panel</Link>
+                      </div>
                     </div>
                   )}
-                  
-                  {/* Mentor Links */}
+
+                  {isExaminer && (
+                    <div className="card" style={{ marginBottom: 0, padding: '12px 14px' }}>
+                      <h3 style={{ margin: '0 0 6px 0' }}>Checkride Prüfer</h3>
+                      <p style={{ margin: '0 0 8px 0' }}>Slots anlegen und Assessments öffnen.</p>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <Link className="button" href="/examiner/availability">Checkride Slots</Link>
+                      </div>
+                    </div>
+                  )}
+
                   {isMentor && (
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                      <Link className="button" href="/mentor/dashboard">Mentor Dashboard</Link>
+                    <div className="card" style={{ marginBottom: 0, padding: '12px 14px' }}>
+                      <h3 style={{ margin: '0 0 6px 0' }}>Mentor</h3>
+                      <p style={{ margin: '0 0 8px 0' }}>Trainings verwalten und Sessions loggen.</p>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <Link className="button" href="/mentor/dashboard">Mentoren Dashboard</Link>
+                      </div>
                     </div>
                   )}
-                  
-                  {/* Trainee Links */}
+
                   {isTrainee && (
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                      {!isPendingTrainee && <Link className="button" href="/trainee/progress">My Training Progress</Link>}
-                      {isPendingTrainee && <Link className="button" href="/anmeldung">Complete Registration</Link>}
+                    <div className="card" style={{ marginBottom: 0, padding: '12px 14px' }}>
+                      <h3 style={{ margin: '0 0 6px 0' }}>Trainee</h3>
+                      <p style={{ margin: '0 0 8px 0' }}>Deinen Fortschritt und Checkride verwalten.</p>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {!isPendingTrainee && <Link className="button" href="/trainee/progress">Mein Trainingsfortschritt</Link>}
+                        {isPendingTrainee && <Link className="button" href="/anmeldung">Jetzt für das PMP anmelden</Link>}
+                        {isCheckrideReady && hasCheckrideInfo && (
+                          <Link className="button" href="/trainee/checkride">Checkride buchen / Ergebnis</Link>
+                        )}
+                      </div>
                     </div>
                   )}
-                  
-                  {/* Visitor/Pending Trainee - Registration */}
+
                   {(isVisitor || isPendingTrainee) && (
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                      <Link className="button" href="/anmeldung">PMP Registration</Link>
+                    <div className="card" style={{ marginBottom: 0, padding: '12px 14px' }}>
+                      <h3 style={{ margin: '0 0 6px 0' }}>Registrierung</h3>
+                      <p style={{ margin: '0 0 8px 0' }}>Starte oder vervollständige deine Anmeldung.</p>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <Link className="button" href="/anmeldung">PMP Anmeldung</Link>
+                      </div>
                     </div>
                   )}
                 </div>
