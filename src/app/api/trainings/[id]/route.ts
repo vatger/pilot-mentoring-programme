@@ -1,14 +1,10 @@
-import { getServerSession } from "next-auth/next";
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
 
-/**
- * GET /api/training/[id]
- * Fetch a specific training record
- */
 export async function GET(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -18,13 +14,17 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const trainingId = id;
-    const userId = (session.user as any).id;
     const userRole = (session.user as any).role;
+    const userId = (session.user as any).id;
+    const isMentor =
+      userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
 
-    // Fetch training
+    if (!isMentor) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const training = await prisma.training.findUnique({
-      where: { id: trainingId },
+      where: { id },
       include: {
         trainee: {
           select: {
@@ -32,7 +32,6 @@ export async function GET(
             cid: true,
             name: true,
             email: true,
-            role: true,
           },
         },
         mentors: {
@@ -46,6 +45,17 @@ export async function GET(
             },
           },
         },
+        sessions: {
+          orderBy: { sessionDate: "desc" },
+          include: {
+            topics: {
+              select: {
+                topic: true,
+                checked: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -53,17 +63,20 @@ export async function GET(
       return NextResponse.json({ error: "Training not found" }, { status: 404 });
     }
 
-    // Check if user is trainee, mentor, or admin
-    const isMentor = training.mentors.some((m) => m.mentorId === userId);
-    const isTrainee = training.traineeId === userId;
-    const isAdmin = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
+    // Verify the user is a mentor for this training
+    const isMentorForTraining = training.mentors.some(
+      (tm) => tm.mentor.id === userId
+    );
 
-    if (!isMentor && !isTrainee && !isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!isMentorForTraining && userRole !== "PMP_LEITUNG" && userRole !== "ADMIN") {
+      return NextResponse.json(
+        { error: "You are not a mentor for this trainee" },
+        { status: 403 }
+      );
     }
 
-    return NextResponse.json(training, { status: 200 });
-  } catch (error) {
+    return NextResponse.json(training);
+  } catch (error: any) {
     console.error("Error fetching training:", error);
     return NextResponse.json(
       { error: "Internal server error" },
