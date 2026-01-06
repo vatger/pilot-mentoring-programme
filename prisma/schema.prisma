@@ -4,6 +4,7 @@
 enum UserRole {
   ADMIN
   PMP_LEITUNG
+  PMP_PRÜFER
   MENTOR
   TRAINEE
   PENDING_TRAINEE
@@ -28,8 +29,8 @@ enum TrainingTopic {
   ATC_PHRASEOLOGY
   OFFLINE_TRAINING
   ONLINE_FLIGHT
-  CHECK_RIDE
   SELF_BRIEFING
+  PRE_CHECK_RIDE
 }
 
 enum TrainingStatus {
@@ -134,6 +135,8 @@ model User {
   sessions           Session[]
   trainingsAsTrainee Training[] @relation("trainee")
   trainingsAsMentor  TrainingMentor[]
+  checkrideAvailabilities CheckrideAvailability[] @relation("examinedSessions")
+  checkrides         Checkride[] @relation("checkrides")
 
   @@index([cid])
   @@index([role])
@@ -144,12 +147,14 @@ model Training {
   id         String   @id @default(cuid())
   traineeId  String
   status     TrainingStatus @default(ACTIVE) // ACTIVE, COMPLETED, ABGEBROCHEN
+  readyForCheckride Boolean @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   trainee    User               @relation("trainee", fields: [traineeId], references: [id], onDelete: Cascade)
   mentors    TrainingMentor[]
   sessions   TrainingSession[]
+  checkrides Checkride[]
 
   @@index([traineeId])
   @@index([status])
@@ -172,12 +177,15 @@ model TrainingMentor {
 
 // Training session: records a training session with topics covered
 model TrainingSession {
-  id         String   @id @default(cuid())
-  trainingId String
-  sessionDate DateTime
-  comments   String?  @db.Text
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  trainingId          String
+  sessionDate         DateTime
+  comments            String?  @db.Text
+  isDraft             Boolean  @default(true) // Draft mode until mentor releases
+  releasedAt          DateTime? // When mentor finalized the session
+  whiteboardSessionId String?  // Link to whiteboard session (/trainings/session/[id])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   training   Training                @relation(fields: [trainingId], references: [id], onDelete: Cascade)
   topics     TrainingSessionTopic[]
@@ -198,5 +206,168 @@ model TrainingSessionTopic {
 
   @@unique([sessionId, topic])
   @@index([sessionId])
+}
+
+// Checkride/Exam System
+enum CheckrideStatus {
+  AVAILABLE
+  BOOKED
+  COMPLETED
+  CANCELLED
+}
+
+enum CheckrideResult {
+  PASSED
+  FAILED
+  INCOMPLETE
+}
+
+// Examiner availability calendar
+model CheckrideAvailability {
+  id          String   @id @default(cuid())
+  examinerId  String
+  startTime   DateTime
+  endTime     DateTime
+  status      CheckrideStatus @default(AVAILABLE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  examiner    User     @relation("examinedSessions", fields: [examinerId], references: [id], onDelete: Cascade)
+  checkride   Checkride?
+
+  @@index([examinerId])
+  @@index([startTime])
+}
+
+// Scheduled checkride (booking)
+model Checkride {
+  id              String   @id @default(cuid())
+  traineeId       String
+  trainingId      String
+  availabilityId  String   @unique
+  scheduledDate   DateTime
+  result          CheckrideResult @default(INCOMPLETE)
+  isDraft         Boolean  @default(true)
+  releasedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  trainee         User                   @relation("checkrides", fields: [traineeId], references: [id], onDelete: Cascade)
+  training        Training               @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  availability    CheckrideAvailability  @relation(fields: [availabilityId], references: [id], onDelete: Cascade)
+  assessment      CheckrideAssessment?
+
+  @@index([traineeId])
+  @@index([trainingId])
+  @@index([scheduledDate])
+}
+
+// Checkride assessment with 12 sections
+model CheckrideAssessment {
+  id          String   @id @default(cuid())
+  checkrideId String   @unique
+  
+  // 1. Flugplan
+  flightplanCallsign      String?
+  flightplanAircraft      String?
+  flightplanEquipment     String?
+  flightplanRouting       String?
+  flightplanTimes         String?
+  flightplanRemarks       String?
+  flightplanPassed        Boolean @default(false)
+  
+  // 2. Charts
+  chartsParkingDep        String?
+  chartsTaxiDep           String?
+  chartsDeparture         String?
+  chartsEnroute           String?
+  chartsArrivalTransition String?
+  chartsApproach          String?
+  chartsTaxiDest          String?
+  chartsParkingDest       String?
+  chartsPassed            Boolean @default(false)
+  
+  // 3. Self Briefing
+  briefingFrequencies     String?
+  briefingPushback        String?
+  briefingTaxiRunway      String?
+  briefingATCTakeoff      String?
+  briefingDeparture       String?
+  briefingArrival         String?
+  briefingApproach        String?
+  briefingRunwayExits     String?
+  briefingTaxiParking     String?
+  briefingPassed          Boolean @default(false)
+  
+  // 4. Enroute Clearance
+  clearanceInitialCall    String?
+  clearanceRequest        String?
+  clearanceClearedTo      String?
+  clearanceDeparture      String?
+  clearanceRoute          String?
+  clearanceClimb          String?
+  clearanceSquawk         String?
+  clearanceCallsign       String?
+  clearancePassed         Boolean @default(false)
+  
+  // 5. Startup/Pushback
+  startupStation          String?
+  startupGate             String?
+  startupReadback         String?
+  startupExecution        String?
+  startupPassed           Boolean @default(false)
+  
+  // 6. Taxi to Runway
+  taxiStation             String?
+  taxiRequest             String?
+  taxiReadback            String?
+  taxiExecution           String?
+  taxiPassed              Boolean @default(false)
+  
+  // 7. Takeoff
+  takeoffStation          String?
+  takeoffReadback         String?
+  takeoffExecution        String?
+  takeoffPassed           Boolean @default(false)
+  
+  // 8. Departure
+  departureStatement      String?
+  departureStation        String?
+  departureReadback       String?
+  departureExecution      String?
+  departurePassed         Boolean @default(false)
+  
+  // 9. Enroute
+  enrouteStation          String?
+  enrouteReadbacks        String?
+  enrouteExecution        String?
+  enroutePassed           Boolean @default(false)
+  
+  // 10. Arrival/Transition
+  arrivalStation          String?
+  arrivalClearances       String?
+  arrivalExecution        String?
+  arrivalPassed           Boolean @default(false)
+  
+  // 11. Landing
+  landingStation          String?
+  landingClearance        String?
+  landingExecution        String?
+  landingPassed           Boolean @default(false)
+  
+  // 12. Taxi to Parking
+  parkingStation          String?
+  parkingReadback         String?
+  parkingExecution        String?
+  parkingPassed           Boolean @default(false)
+  
+  overallResult           CheckrideResult @default(INCOMPLETE)
+  examinernotes           String?  @db.Text
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  checkride               Checkride @relation(fields: [checkrideId], references: [id], onDelete: Cascade)
+
+  @@index([checkrideId])
 }
 
