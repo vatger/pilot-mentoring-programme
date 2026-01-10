@@ -174,7 +174,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
     return (
       <PageLayout>
         <div className="container">
-          <p>Loading...</p>
+          <p>Lädt...</p>
         </div>
       </PageLayout>
     );
@@ -184,9 +184,9 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
     return (
       <PageLayout>
         <div className="container">
-          <p style={{ color: "var(--error-color)" }}>Error: {error}</p>
+          <p style={{ color: "var(--error-color)" }}>Fehler: {error}</p>
           <Link href="/mentor/trainee" className="button">
-            Back to Trainees
+            Zurück zu Trainees
           </Link>
         </div>
       </PageLayout>
@@ -319,9 +319,9 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Training Sessions */}
         <div className="card">
-          <h3>Training Sessions ({completedSessions} / {totalSessions} abgeschlossen)</h3>
+          <h3>Trainingssessions ({completedSessions} / {totalSessions} abgeschlossen)</h3>
           {training.sessions.length === 0 ? (
-            <p style={{ color: "var(--text-muted)" }}>Keine Sitzungen protokolliert</p>
+            <p style={{ color: "var(--text-muted)" }}>Keine Sitzungen erfasst</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               {training.sessions

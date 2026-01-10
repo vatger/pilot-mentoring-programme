@@ -156,7 +156,6 @@ function buildInitial(): Assessment {
     });
     base[`${section.key}Passed`] = false;
   });
-  base.overallResult = "INCOMPLETE";
   base.examinernotes = "";
   return base;
 }
@@ -171,6 +170,7 @@ export default function AssessmentPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [assessment, setAssessment] = useState<Assessment>(buildInitial());
   const [overallResult, setOverallResult] = useState<string>("INCOMPLETE");
+  const [isDraft, setIsDraft] = useState<boolean>(true);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -183,8 +183,10 @@ export default function AssessmentPage() {
       if (!res.ok) throw new Error(`Load failed: ${res.status}`);
       const data = await res.json();
       const existing = data?.assessment || buildInitial();
-      setAssessment(existing);
-      setOverallResult(existing.overallResult || "INCOMPLETE");
+      const { overallResult: existingResult, ...rest } = existing;
+      setAssessment(rest as Assessment);
+      setOverallResult(existingResult || "INCOMPLETE");
+      setIsDraft(Boolean(data?.isDraft ?? true));
     } catch (e: any) {
       setError(e.message || "Fehler beim Laden");
     } finally {
@@ -207,11 +209,22 @@ export default function AssessmentPage() {
       const res = await fetch(`/api/checkrides/assessment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkrideId, release: opts?.release, overallResult, ...assessment }),
+        body: JSON.stringify({ checkrideId, release: opts?.release, ...assessment, overallResult }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `Fehler: ${res.status}`);
+      }
+      const payload = await res.json().catch(() => null);
+      const savedAssessment = payload?.assessment;
+      const savedCheckride = payload?.checkride as Checkride | undefined;
+      if (savedAssessment) {
+        const { overallResult: savedResult, ...rest } = savedAssessment;
+        setAssessment(rest as Assessment);
+        setOverallResult(savedResult || overallResult);
+      }
+      if (savedCheckride && typeof savedCheckride.isDraft === "boolean") {
+        setIsDraft(savedCheckride.isDraft);
       }
       if (!opts?.silent) setSuccess(opts?.release ? "Assessment veröffentlicht" : "Gespeichert");
     } catch (e: any) {
@@ -250,6 +263,10 @@ export default function AssessmentPage() {
 
       {!loading && (
         <div className="card" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", padding: "10px", background: "#f6f6f6", borderRadius: "8px" }}>
+            <strong>Status:</strong>
+            <span>{isDraft ? "Entwurf (nicht freigegeben)" : "Freigegeben für Trainee"}</span>
+          </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
             <label className="form-label" style={{ marginBottom: 0, minWidth: "220px" }}>
               Gesamtergebnis
@@ -271,13 +288,15 @@ export default function AssessmentPage() {
               >
                 {saving ? "Speichere…" : "Zwischenspeichern"}
               </button>
-              <button
-                onClick={() => save({ release: true })}
-                disabled={saving}
-                className="button"
-              >
-                {saving ? "Veröffentliche…" : "Veröffentlichen"}
-              </button>
+              {isDraft && (
+                <button
+                  onClick={() => save({ release: true })}
+                  disabled={saving}
+                  className="button"
+                >
+                  {saving ? "Veröffentliche…" : "Veröffentlichen"}
+                </button>
+              )}
             </div>
           </div>
 

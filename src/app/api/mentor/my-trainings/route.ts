@@ -21,14 +21,22 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get trainings where this mentor is assigned
+    // Get trainings where this mentor is assigned OR where they are the trainee
+    // (the latter helps with single-account testing)
     const trainings = await prisma.training.findMany({
       where: {
-        mentors: {
-          some: {
-            mentorId: userId,
+        OR: [
+          {
+            mentors: {
+              some: {
+                mentorId: userId,
+              },
+            },
           },
-        },
+          {
+            traineeId: userId,
+          },
+        ],
       },
       include: {
         trainee: {

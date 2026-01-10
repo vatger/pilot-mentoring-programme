@@ -61,6 +61,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Update trainee userStatus to "Cancelled Trainee" and set role to VISITOR
+    await prisma.user.update({
+      where: { id: training.traineeId },
+      data: { 
+        userStatus: "Cancelled Trainee",
+        role: "VISITOR"
+      },
+    });
+
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     console.error("Error cancelling training:", error);

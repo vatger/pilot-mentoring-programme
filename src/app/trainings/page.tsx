@@ -103,52 +103,143 @@ export default function TrainingsPage() {
 
   return (
     <PageLayout>
-      <div className="header-container">
-        <div className="header">
-          <h1>Trainings</h1>
+      <div className="card" style={{ marginBottom: "1.5rem" }}>
+        <h1>Training Sessions</h1>
+        <p style={{ color: "var(--text-color)", margin: "0.5rem 0 0 0" }}>
+          Create and manage training sessions
+        </p>
+      </div>
+
+      {lastError && (
+        <div className={`card ${lastError.includes("Error") ? "info-danger" : "info-success"}`} style={{ marginBottom: "1.5rem" }}>
+          <p style={{ margin: 0 }}>{lastError}</p>
+        </div>
+      )}
+
+      {/* User Info */}
+      <div className="card" style={{ marginBottom: "1.5rem" }}>
+        <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Account Info</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem" }}>
+          <div>
+            <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>
+              Name
+            </div>
+            <div style={{ fontSize: "1em", fontWeight: 500 }}>{session.user?.name}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>
+              CID
+            </div>
+            <div style={{ fontSize: "1em", fontWeight: 500, fontFamily: "monospace" }}>
+              {(session.user as any)?.cid}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>
+              Rating
+            </div>
+            <div style={{ fontSize: "1em", fontWeight: 500 }}>
+              {(session.user as any)?.rating}
+              {(session.user as any)?.fir && ` (${(session.user as any)?.fir})`}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>
+              Status
+            </div>
+            <div style={{ fontSize: "1em", fontWeight: 500 }}>
+              {isLead ? "Program Lead" : isMentor ? "Mentor" : "Viewer"}
+            </div>
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <button
+              className="button button--danger"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              style={{ margin: 0 }}
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="card">
-        <h3>Willkommen</h3>
-        <p>Angemeldet als {session.user?.name} (CID: {(session.user as any)?.cid})</p>
-        <p>Rating: {(session.user as any)?.rating} {(session.user as any)?.fir ? `— FIR ${(session.user as any)?.fir}` : ""}</p>
-        <p>Teams: {teams.length ? teams.join(", ") : "keine Teams im Token"}</p>
-        <button className="button" onClick={() => signOut({ callbackUrl: "/" })}>
-          Logout
-        </button>
-      </div>
-
-      <div className="card">
-        <h3>Berechtigungen</h3>
-        <ul>
-          <li>Mentor (pmp-mentor): neue Sessions erstellen, Dateien hochladen (sobald CDN angebunden)</li>
-          <li>Leitung (pmp-leitung): alles wie Mentor + Dateien löschen (sobald API angebunden)</li>
+      {/* Permissions */}
+      <div className="card" style={{ marginBottom: "1.5rem" }}>
+        <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Permissions</h3>
+        <ul style={{ margin: "0 0 0 1.5rem", paddingLeft: 0 }}>
+          <li style={{ marginBottom: "0.5rem" }}>
+            <strong>Mentor:</strong> Create sessions, upload files (when CDN available)
+          </li>
+          <li style={{ marginBottom: "0.5rem" }}>
+            <strong>Program Lead:</strong> All mentor features + delete files (when API available)
+          </li>
+          {!isMentor && (
+            <li>
+              <strong>Viewer:</strong> Read-only access
+            </li>
+          )}
         </ul>
-        <p>Dein Status: {isLead ? "Leitung" : isMentor ? "Mentor" : "Kein Mentor/Leitung"}</p>
       </div>
 
-      <div className="card">
-        <h3>Neue Session</h3>
-        <p>Erzeuge einen Link und teile ihn mit dem Trainee.</p>
-        <button className="button" onClick={createSession} disabled={!isMentor}>
-          Session-Link erstellen
+      {/* Session Creation */}
+      <div className="form-card" style={{ maxWidth: "720px", marginBottom: "1.5rem" }}>
+        <div>
+          <h3 style={{ marginTop: 0, marginBottom: "0.5rem" }}>Create New Session</h3>
+          <p style={{ margin: 0, fontSize: "0.95em", color: "var(--text-color)" }}>
+            Generate a link to share with your trainee.
+          </p>
+        </div>
+        <button
+          className="button"
+          onClick={createSession}
+          disabled={!isMentor}
+          style={{ alignSelf: "flex-start", margin: 0 }}
+        >
+          {isMentor ? "Create Session Link" : "Mentors only"}
         </button>
         {newSessionLink && (
-          <div style={{ marginTop: "12px", display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-            <Link href={newSessionLink}>{newSessionLink}</Link>
-            <button className="button" onClick={() => copyLink(newSessionLink)}>Link kopieren</button>
+          <div style={{ marginTop: "1rem", padding: "1rem", backgroundColor: "var(--container-bg)", borderRadius: "8px", border: "1px solid var(--footer-border)" }}>
+            <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.5rem", fontWeight: 500 }}>
+              Session Link:
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+              <code
+                style={{
+                  flex: 1,
+                  minWidth: "200px",
+                  padding: "8px 10px",
+                  background: "var(--card-bg)",
+                  borderRadius: "4px",
+                  fontFamily: "monospace",
+                  fontSize: "0.85em",
+                  wordBreak: "break-all",
+                }}
+              >
+                {newSessionLink}
+              </code>
+              <button
+                className="button"
+                onClick={() => copyLink(newSessionLink)}
+                style={{ margin: 0, padding: "6px 12px", fontSize: "0.9em" }}
+              >
+                Copy
+              </button>
+            </div>
           </div>
         )}
-        {!isMentor && <p style={{ color: "#b91c1c", marginTop: "8px" }}>Nur Mentoren können Sessions erstellen.</p>}
       </div>
 
-      <div className="card">
-        <h3>Datei-Upload (Stub)</h3>
-        <p>CDN-Anbindung folgt. Aktuell nur lokale Prüfung:</p>
-        <ul>
-          <li>PDF bis 25 MB</li>
-          <li>JPG/PNG/SVG bis 5 MB</li>
+      {/* File Upload */}
+      <div className="form-card" style={{ maxWidth: "720px" }}>
+        <div>
+          <h3 style={{ marginTop: 0, marginBottom: "0.5rem" }}>File Upload (Stub)</h3>
+          <p style={{ margin: 0, fontSize: "0.95em", color: "var(--text-color)" }}>
+            CDN integration coming soon. Local validation only:
+          </p>
+        </div>
+        <ul style={{ margin: "1rem 0 1rem 1.5rem", paddingLeft: 0 }}>
+          <li>PDF up to 25 MB</li>
+          <li>JPG/PNG/SVG up to 5 MB</li>
         </ul>
         <input
           type="file"
@@ -156,17 +247,14 @@ export default function TrainingsPage() {
           onChange={(e) => handleFiles(e.target.files)}
           accept="application/pdf,image/jpeg,image/jpg,image/png,image/svg+xml"
           disabled={!isMentor}
-          style={{ marginTop: "8px" }}
+          style={{ marginBottom: "1rem" }}
         />
-        {!isMentor && <p style={{ color: "#b91c1c", marginTop: "8px" }}>Nur Mentoren dürfen hochladen (sobald aktiv).</p>}
+        {!isMentor && (
+          <div className="info-danger" style={{ margin: 0 }}>
+            <p style={{ margin: 0 }}>Only mentors can upload files (when available).</p>
+          </div>
+        )}
       </div>
-
-      {lastError && (
-        <div className="card">
-          <h3>Status</h3>
-          <p>{lastError}</p>
-        </div>
-      )}
     </PageLayout>
   );
 }

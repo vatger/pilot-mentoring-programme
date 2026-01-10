@@ -27,13 +27,50 @@ export default function AnmeldungPage() {
     other: ""
   });
   const [submitted, setSubmitted] = useState(false);
+  const [isCancelledTrainee, setIsCancelledTrainee] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/signin");
     }
-  }, [status, router]);
+    
+    // Check if user is a cancelled trainee
+    if (session?.user) {
+      const userStatus = (session.user as any).userStatus;
+      if (userStatus === "Cancelled Trainee") {
+        setIsCancelledTrainee(true);
+        setShowResetConfirm(true);
+      }
+    }
+  }, [status, router, session]);
+
+  const handleResetOldData = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch("/api/training/drop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetCancelledTrainee: true }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to reset old data");
+      }
+      
+      setShowResetConfirm(false);
+      setIsCancelledTrainee(false);
+      alert("Deine alten Trainingsdaten wurden zurückgesetzt. Du kannst dich jetzt erneut anmelden.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -90,9 +127,34 @@ export default function AnmeldungPage() {
               {error}
             </div>
           )}
+          
+          {showResetConfirm && (
+            <div className="info-warning" style={{ marginBottom: "20px", padding: "15px", border: "2px solid orange", borderRadius: "8px", backgroundColor: "rgba(255, 165, 0, 0.1)" }}>
+              <h3 style={{ marginTop: 0 }}>Willkommen zurück!</h3>
+              <p>Du hast bereits eine abgebrochene Anmeldung. Möchtest du deine alten Trainingsdaten zurücksetzen und dich erneut anmelden?</p>
+              <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+                <button 
+                  onClick={handleResetOldData}
+                  disabled={isLoading}
+                  className="button"
+                  style={{ margin: 0 }}
+                >
+                  {isLoading ? "Wird zurückgesetzt..." : "Ja, alte Daten löschen und neu anmelden"}
+                </button>
+                <button 
+                  onClick={() => router.push("/")}
+                  className="button"
+                  style={{ margin: 0, backgroundColor: "var(--container-bg)", color: "var(--text-color)" }}
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          )}
+          
           {submitted ? (
             <div className="form-success info-success">Vielen Dank für deine Anmeldung! Ein Mentor wird sich in Kürze über das Forum per Private Message bei dir melden, stelle also sicher, dass du einen Account besitzt. Gehe dazu einfach auf <Link href="https://board.vatsim-germany.org">diesen Link</Link> und melde dich dort einmalig an.</div>
-          ) : (
+          ) : !showResetConfirm && (
             <form onSubmit={handleSubmit} className="anmeldung-form form-card">
               <label className="form-label">
                 Flugsimulator:

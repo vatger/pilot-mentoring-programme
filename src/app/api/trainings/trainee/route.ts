@@ -3,9 +3,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-const MENTOR_ROLES = ["MENTOR", "PMP_LEITUNG", "ADMIN"];
+const TRAINEE_ROLES = ["TRAINEE", "PENDING_TRAINEE"];
 
-// GET /api/trainings/mentor - Get all trainings assigned to the current mentor
+// GET /api/trainings/trainee - Get all trainings for the current trainee
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,26 +16,26 @@ export async function GET(request: NextRequest) {
     const userId = (session.user as any).id;
     const role = (session.user as any).role;
 
-    if (!MENTOR_ROLES.includes(role)) {
-      return NextResponse.json({ error: "Forbidden - Only mentors can access this" }, { status: 403 });
+    // Allow trainees and admins to fetch
+    if (!TRAINEE_ROLES.includes(role) && role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden - Only trainees can access this" }, { status: 403 });
     }
 
-    // Find all trainings where this user is a mentor
+    // Find all trainings for this trainee
     const trainings = await prisma.training.findMany({
       where: {
-        mentors: {
-          some: {
-            mentorId: userId,
-          },
-        },
+        traineeId: userId,
       },
       include: {
-        trainee: {
-          select: {
-            id: true,
-            cid: true,
-            name: true,
-            email: true,
+        mentors: {
+          include: {
+            mentor: {
+              select: {
+                id: true,
+                name: true,
+                cid: true,
+              },
+            },
           },
         },
         sessions: {
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(trainings, { status: 200 });
   } catch (error) {
-    console.error("Error fetching mentor trainings:", error);
+    console.error("Error fetching trainee trainings:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

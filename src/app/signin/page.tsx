@@ -1,18 +1,52 @@
 "use client";
 
 import { useEffect, Suspense } from "react";
-import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+import { useSearchParams, useRouter } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
 
 function SignInContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    const callbackUrl = searchParams.get("callbackUrl") || "/trainings";
-    // Immediately trigger VATGER provider login
-    signIn("vatger", { callbackUrl });
-  }, [searchParams]);
+    // If user is already authenticated, redirect based on role
+    if (status === "authenticated" && session?.user) {
+      const role = (session.user as any).role;
+      let redirectUrl = "/trainings"; // default
+
+      // Determine redirect based on role
+      switch (role) {
+        case "VISITOR":
+          redirectUrl = "/anmeldung";
+          break;
+        case "TRAINEE":
+        case "PENDING_TRAINEE":
+        case "COMPLETED_TRAINEE":
+          redirectUrl = "/trainee/progress";
+          break;
+        case "MENTOR":
+        case "PMP_PRÜFER":
+        case "PMP_LEITUNG":
+        case "ADMIN":
+          redirectUrl = "/mentor/dashboard";
+          break;
+        default:
+          redirectUrl = "/trainings";
+      }
+
+      router.push(redirectUrl);
+      return;
+    }
+
+    // If not authenticated and not loading, trigger sign in
+    if (status === "unauthenticated") {
+      const callbackUrl = searchParams.get("callbackUrl") || "/api/auth/callback/vatger";
+      // Trigger VATGER provider login
+      signIn("vatger", { callbackUrl: `${window.location.origin}/signin?postauth=true` });
+    }
+  }, [status, session, searchParams, router]);
 
   return (
     <PageLayout>

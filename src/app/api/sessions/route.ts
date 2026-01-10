@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { TrainingTopic } from "@prisma/client";
+import { TrainingTopic, LessonType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 const db = prisma as any;
@@ -27,12 +27,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { trainingId, sessionId, sessionDate, comments, whiteboardSessionId, checkedTopics, isDraft } =
+    const { trainingId, sessionId, lessonType, sessionDate, comments, whiteboardSessionId, checkedTopics, isDraft } =
       await request.json();
 
-    if (!trainingId || !sessionDate || !Array.isArray(checkedTopics)) {
+    if (!trainingId || !lessonType || !sessionDate || !Array.isArray(checkedTopics)) {
       return NextResponse.json(
-        { error: "trainingId, sessionDate, and checkedTopics array are required" },
+        { error: "trainingId, lessonType, sessionDate, and checkedTopics array are required" },
         { status: 400 }
       );
     }
@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
       trainingSession = await db.trainingSession.update({
         where: { id: sessionId },
         data: {
+          lessonType: lessonType as LessonType,
           sessionDate: new Date(sessionDate),
           comments: comments || null,
           whiteboardSessionId: whiteboardSessionId || null,
@@ -80,9 +81,10 @@ export async function POST(request: NextRequest) {
           releasedAt: isDraft === false ? new Date() : null,
           topics: {
             create: checkedTopics.map(
-              (topic: { topic: string; checked: boolean; order: number }) => ({
+              (topic: { topic: string; checked: boolean; comment?: string; order: number }) => ({
                 topic: topic.topic as TrainingTopic,
                 checked: topic.checked,
+                comment: topic.comment || null,
                 order: topic.order,
               })
             ),
@@ -94,6 +96,7 @@ export async function POST(request: NextRequest) {
       trainingSession = await db.trainingSession.create({
         data: {
           trainingId,
+          lessonType: lessonType as LessonType,
           sessionDate: new Date(sessionDate),
           comments: comments || null,
           whiteboardSessionId: whiteboardSessionId || null,
@@ -101,9 +104,10 @@ export async function POST(request: NextRequest) {
           releasedAt: isDraft === false ? new Date() : null,
           topics: {
             create: checkedTopics.map(
-              (topic: { topic: string; checked: boolean; order: number }) => ({
+              (topic: { topic: string; checked: boolean; comment?: string; order: number }) => ({
                 topic: topic.topic as TrainingTopic,
                 checked: topic.checked,
+                comment: topic.comment || null,
                 order: topic.order,
               })
             ),
@@ -156,20 +160,34 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = (session.user as any).id;
+    const userRole = (session.user as any).role;
     const isMentor = training.mentors.some((m) => m.mentorId === userId);
     const isTrainee = training.traineeId === userId;
+    const isAdminOrLeitung = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
+    const isExaminer = userRole === "PMP_PRÜFER";
 
-    if (!isMentor && !isTrainee) {
+    let examinerHasPlannedCheckride = false;
+    if (isExaminer) {
+      const checkride = await prisma.checkride.findFirst({
+        where: {
+          trainingId,
+          availability: { examinerId: userId },
+        },
+      });
+      examinerHasPlannedCheckride = !!checkride;
+    }
+
+    if (!isMentor && !isTrainee && !isAdminOrLeitung && !examinerHasPlannedCheckride) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    const canSeeDrafts = isMentor || isAdminOrLeitung || examinerHasPlannedCheckride;
 
     // Get all sessions for this training
     const sessions = await db.trainingSession.findMany({
       where: {
         trainingId,
-        ...(isMentor || ["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER"].includes((session.user as any).role)
-          ? {}
-          : { isDraft: false }),
+        ...(canSeeDrafts ? {} : { isDraft: false }),
       },
       include: {
         topics: { orderBy: { order: "asc" } },

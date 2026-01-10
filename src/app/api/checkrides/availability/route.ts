@@ -87,6 +87,11 @@ export async function GET(request: NextRequest) {
     const slots = await db.checkrideAvailability.findMany({
       where,
       orderBy: { startTime: "asc" },
+      include: {
+        examiner: {
+          select: { id: true, name: true, cid: true },
+        },
+      },
     });
 
     return NextResponse.json(slots, { status: 200 });

@@ -53,12 +53,23 @@ export async function GET(
       return NextResponse.json({ error: "Training not found" }, { status: 404 });
     }
 
-    // Check if user is trainee, mentor, or admin
+    // Check if user is trainee, mentor, admin/leitung, or assigned examiner
     const isMentor = training.mentors.some((m) => m.mentorId === userId);
     const isTrainee = training.traineeId === userId;
     const isAdmin = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
 
-    if (!isMentor && !isTrainee && !isAdmin) {
+    let examinerHasPlannedCheckride = false;
+    if (userRole === "PMP_PRÜFER") {
+      const checkride = await prisma.checkride.findFirst({
+        where: {
+          trainingId,
+          availability: { examinerId: userId },
+        },
+      });
+      examinerHasPlannedCheckride = !!checkride;
+    }
+
+    if (!isMentor && !isTrainee && !isAdmin && !examinerHasPlannedCheckride) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

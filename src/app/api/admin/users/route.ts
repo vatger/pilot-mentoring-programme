@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
         name: true,
         email: true,
         role: true,
+        userStatus: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -62,11 +63,11 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { userId, newRole } = await request.json();
+    const { userId, newRole, newUserStatus } = await request.json();
 
-    if (!userId || !newRole) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "userId and newRole are required" },
+        { error: "userId is required" },
         { status: 400 }
       );
     }
@@ -79,15 +80,39 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const updateData: any = {};
+    
+    // Handle userStatus changes
+    if (newUserStatus !== undefined) {
+      updateData.userStatus = newUserStatus || null;
+      
+      // If setting special status, change role to VISITOR
+      const specialStatuses = ["Pausierter Mentor", "Deleted Mentor", "Cancelled Trainee", "Completed Trainee"];
+      if (specialStatuses.includes(newUserStatus)) {
+        updateData.role = "VISITOR";
+      }
+    }
+    
+    // Handle role changes
+    if (newRole !== undefined) {
+      updateData.role = newRole;
+      
+      // If assigning a new active role, clear userStatus
+      if (newRole !== "VISITOR" && newUserStatus === undefined) {
+        updateData.userStatus = null;
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { role: newRole },
+      data: updateData,
       select: {
         id: true,
         cid: true,
         name: true,
         email: true,
         role: true,
+        userStatus: true,
       },
     });
 

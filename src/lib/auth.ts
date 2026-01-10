@@ -148,6 +148,14 @@ export const authOptions: NextAuthOptions = {
       };
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // After OAuth callback, redirect to signin page for role-based routing
+      if (url.startsWith(baseUrl)) return url;
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      
+      // Default redirect to signin page which will handle role-based redirects
+      return `${baseUrl}/signin?postauth=true`;
+    },
   },
   // Default pages can be used; customize if you want a bespoke /signin route
   secret: process.env.NEXTAUTH_SECRET,

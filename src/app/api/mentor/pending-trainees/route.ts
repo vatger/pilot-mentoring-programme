@@ -15,20 +15,35 @@ export async function GET() {
     }
 
     const userRole = (session.user as any).role;
+    const userId = (session.user as any).id;
 
     if (!["MENTOR", "PMP_LEITUNG", "ADMIN"].includes(userRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get users with PENDING_TRAINEE role who don't have an active training
+    // Get users with PENDING_TRAINEE or TRAINEE role who don't have an active training
+    // Also include the current user if they have no training (for single-account testing)
     const trainees = await prisma.user.findMany({
       where: {
-        role: "PENDING_TRAINEE",
-        trainingsAsTrainee: {
-          none: {
-            status: { in: ["ACTIVE", "COMPLETED"] },
+        OR: [
+          {
+            role: { in: ["PENDING_TRAINEE", "TRAINEE"] },
+            trainingsAsTrainee: {
+              none: {
+                status: { in: ["ACTIVE", "COMPLETED"] },
+              },
+            },
           },
-        },
+          // Include current user for testing (if they have no active/completed training)
+          {
+            id: userId,
+            trainingsAsTrainee: {
+              none: {
+                status: { in: ["ACTIVE", "COMPLETED"] },
+              },
+            },
+          },
+        ],
       },
       select: {
         id: true,
@@ -39,7 +54,38 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(trainees, { status: 200 });
+    // Fetch registration data for each trainee
+    const traineesWithRegistration = await Promise.all(
+      trainees.map(async (trainee) => {
+        const registration = await prisma.registration.findUnique({
+          where: { cid: trainee.cid },
+          select: {
+            cid: true,
+            name: true,
+            rating: true,
+            fir: true,
+            simulator: true,
+            aircraft: true,
+            client: true,
+            clientSetup: true,
+            experience: true,
+            charts: true,
+            airac: true,
+            category: true,
+            topics: true,
+            schedule: true,
+            communication: true,
+            personal: true,
+          },
+        });
+        return {
+          ...trainee,
+          registration,
+        };
+      })
+    );
+
+    return NextResponse.json(traineesWithRegistration, { status: 200 });
   } catch (error) {
     console.error("Error fetching pending trainees:", error);
     return NextResponse.json(

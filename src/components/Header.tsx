@@ -99,7 +99,7 @@ export default function Header() {
   const isAdmin = userRole === "ADMIN";
   const isLeitung = userRole === "PMP_LEITUNG";
   const isExaminer = userRole === "PMP_PRÜFER" || isAdmin || isLeitung;
-  const isMentor = userRole === "MENTOR" || isLeitung || isAdmin;
+  const isMentor = userRole === "MENTOR" || userRole === "PMP_PRÜFER" || isLeitung || isAdmin;
   const isTrainee = userRole === "TRAINEE" || userRole === "PENDING_TRAINEE";
   const isPendingTrainee = userRole === "PENDING_TRAINEE";
   const isVisitor = userRole === "VISITOR";
@@ -156,44 +156,50 @@ export default function Header() {
       )}
       <div className={`header-container ${isCollapsed ? 'collapsed' : ''}`} id="header-container">
         <div className="header">
-          <div style={{ display: 'flex', width: '100%', justifyContent: 'flex-start', gap: '8px', paddingTop: '15px', alignItems: 'center' }}>
-            <button
-              className="button"
-              onClick={toggleInternal}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'auto 1fr auto',
+                alignItems: 'center',
+                gap: '8px',
+                width: '100%',
+                paddingTop: '0px'
+              }}
             >
-              Intern
-            </button>
-            <button 
-              className={`dark-mode-toggle ${theme === 'dark' ? 'dark-active' : ''}`} 
-              aria-label="Toggle Dark Mode"
-              onClick={toggleTheme}
-              style={{ marginLeft: 'auto', position: 'static', top: 'auto', right: 'auto' }}
-            >
-              <svg className="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-              </svg>
-              <svg className="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-              </svg>
-              <span className="toggle-text">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-            </button>
-          </div>
-          <Link href="/" className="logo-link">
-            <div className="logo">
-              {/* background image chosen by CSS via [data-theme] */}
-              <div className="logo-visual" role="img" aria-label="VATGer logo" />
+              <button className="button" onClick={toggleInternal} style={{ justifySelf: 'start' }}>
+                Intern
+              </button>
+              <Link href="/" className="logo-link" style={{ justifySelf: 'center' }}>
+                <div className="logo">
+                  {/* background image chosen by CSS via [data-theme] */}
+                  <div className="logo-visual" role="img" aria-label="VATGer logo" />
+                </div>
+              </Link>
+              <button
+                className={`dark-mode-toggle ${theme === 'dark' ? 'dark-active' : ''}`}
+                aria-label="Toggle Dark Mode"
+                onClick={toggleTheme}
+                style={{ justifySelf: 'end', position: 'static', top: 'auto', right: 'auto' }}
+              >
+                <svg className="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <svg className="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="5"></circle>
+                  <line x1="12" y1="1" x2="12" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="23"></line>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                  <line x1="1" y1="12" x2="3" y2="12"></line>
+                  <line x1="21" y1="12" x2="23" y2="12"></line>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <span className="toggle-text">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+              </button>
             </div>
-          </Link>
-          <h1>Piloten-Mentoren-Programm</h1>
-        </div>
+            <h1>Piloten-Mentoren-Programm</h1>
+          </div>
         {showInternal ? (
           <div
             className="nav"
@@ -251,6 +257,8 @@ export default function Header() {
                       <p style={{ margin: '0 0 8px 0' }}>Schnellzugriff auf Admin-Tools.</p>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         <Link className="button" href="/admin">Admin Control Panel</Link>
+                        <Link className="button" href="/pmp-tracking">PMP-Tracking</Link>
+                        <Link className="button" href="/mentor/trainee">Alle Trainees</Link>
                       </div>
                     </div>
                   )}

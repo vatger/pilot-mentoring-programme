@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     }
     const userId = (session.user as any).id;
     const role = (session.user as any).role;
+    console.log(`[Assessment GET] userId=${userId}, role=${role}`);
 
     const checkrideId = request.nextUrl.searchParams.get("checkrideId");
     if (!checkrideId) {
@@ -30,7 +31,9 @@ export async function GET(request: NextRequest) {
       include: {
         assessment: true,
         availability: true,
-        training: true,
+        training: {
+          include: { mentors: true },
+        },
       },
     });
     if (!checkride) {
@@ -38,20 +41,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Permission: examiner, admin/le/w PMP_PRÜFER, mentor of training, trainee (but only after release)
-    const training = await prisma.training.findUnique({
-      where: { id: checkride.trainingId },
-      include: { mentors: true },
-    });
-    const isMentor = training?.mentors.some((m) => m.mentorId === userId) ?? false;
-    const isTrainee = training?.traineeId === userId;
+    const training = checkride.training;
+    const isMentor = training.mentors?.some((m: any) => m.mentorId === userId) ?? false;
+    const isTrainee = training.traineeId === userId;
     const isExaminerUser = checkride.availability.examinerId === userId || isExaminer(role);
+    console.log(`[Assessment GET] isMentor=${isMentor}, isTrainee=${isTrainee}, isExaminerUser=${isExaminerUser}, examinerId=${checkride.availability.examinerId}`);
 
     if (!isMentor && !isTrainee && !isExaminerUser) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Trainee cannot see draft
-    if (isTrainee && checkride.isDraft) {
+    // Trainee cannot see draft (but mentors and examiners can)
+    if (isTrainee && !isMentor && !isExaminerUser && checkride.isDraft) {
       return NextResponse.json({ error: "Assessment not released yet" }, { status: 403 });
     }
 
@@ -108,15 +109,48 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const checkrideUpdate: any = {
+      result: (overallResult as any) || "INCOMPLETE",
+    };
+
+    if (release === true) {
+      checkrideUpdate.isDraft = false;
+      checkrideUpdate.releasedAt = new Date();
+    } else if (release === false) {
+      checkrideUpdate.isDraft = true;
+      checkrideUpdate.releasedAt = null;
+    }
+
     const updatedCheckride = await db.checkride.update({
       where: { id: checkrideId },
-      data: {
-        isDraft: release === true ? false : true,
-        releasedAt: release === true ? new Date() : null,
-        result: (overallResult as any) || "INCOMPLETE",
-      },
-      include: { assessment: true, availability: true },
+      data: checkrideUpdate,
+      include: { assessment: true, availability: true, training: true },
     });
+
+    // If checkride passed and released, update trainee status
+    if (release === true && overallResult === "PASSED") {
+      const training = await db.training.findUnique({
+        where: { id: checkride.trainingId },
+        select: { traineeId: true },
+      });
+      
+      if (training) {
+        // Update training status to COMPLETED
+        await db.training.update({
+          where: { id: checkride.trainingId },
+          data: { status: "COMPLETED" },
+        });
+        
+        // Update trainee userStatus and role
+        await db.user.update({
+          where: { id: training.traineeId },
+          data: { 
+            userStatus: "Completed Trainee",
+            role: "COMPLETED_TRAINEE"
+          },
+        });
+      }
+    }
 
     return NextResponse.json({ assessment, checkride: updatedCheckride }, { status: 200 });
   } catch (error) {

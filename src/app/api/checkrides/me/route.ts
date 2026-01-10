@@ -18,7 +18,11 @@ export async function GET(request: NextRequest) {
         checkrides: {
           orderBy: { createdAt: "desc" },
           include: {
-            availability: true,
+            availability: {
+              include: {
+                examiner: { select: { id: true, name: true, cid: true } },
+              },
+            },
             assessment: true,
           },
           take: 1,
@@ -36,6 +40,9 @@ export async function GET(request: NextRequest) {
         where: { status: "AVAILABLE", startTime: { gte: new Date() } },
         orderBy: { startTime: "asc" },
         take: 20,
+        include: {
+          examiner: { select: { id: true, name: true, cid: true } },
+        },
       });
     }
 

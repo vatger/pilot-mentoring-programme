@@ -12,6 +12,12 @@ enum UserRole {
   VISITOR
 }
 
+enum LessonType {
+  THEORIE_TRAINING
+  OFFLINE_FLUG
+  ONLINE_FLUG
+}
+
 enum TrainingTopic {
   NMOC_BASICS
   ENROUTE_CLEARANCE
@@ -128,6 +134,7 @@ model User {
   emailVerified DateTime?
   image         String?
   role          UserRole @default(VISITOR) // ADMIN, PMP_LEITUNG, MENTOR, TRAINEE, PENDING_TRAINEE, COMPLETED_TRAINEE, VISITOR
+  userStatus    String?  // "Pausierter Mentor", "Deleted Mentor", "Cancelled Trainee", "Completed Trainee", null for active
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -140,6 +147,7 @@ model User {
 
   @@index([cid])
   @@index([role])
+  @@index([userStatus])
 }
 
 // Training model: links mentor(s) to a trainee
@@ -177,15 +185,16 @@ model TrainingMentor {
 
 // Training session: records a training session with topics covered
 model TrainingSession {
-  id                  String   @id @default(cuid())
+  id                  String      @id @default(cuid())
   trainingId          String
+  lessonType          LessonType  // THEORIE_TRAINING, OFFLINE_FLUG, ONLINE_FLUG
   sessionDate         DateTime
-  comments            String?  @db.Text
-  isDraft             Boolean  @default(true) // Draft mode until mentor releases
-  releasedAt          DateTime? // When mentor finalized the session
-  whiteboardSessionId String?  // Link to whiteboard session (/trainings/session/[id])
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  comments            String?     @db.Text // General session comments
+  isDraft             Boolean     @default(true) // Draft mode until mentor releases
+  releasedAt          DateTime?   // When mentor finalized the session
+  whiteboardSessionId String?     // Link to whiteboard session (/trainings/session/[id])
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
   training   Training                @relation(fields: [trainingId], references: [id], onDelete: Cascade)
   topics     TrainingSessionTopic[]
@@ -200,6 +209,7 @@ model TrainingSessionTopic {
   sessionId String
   topic     TrainingTopic
   checked   Boolean  @default(false)
+  comment   String?  @db.Text // Per-topic comment from mentor
   order     Int      // Display order for topics
 
   session   TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
