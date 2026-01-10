@@ -66,7 +66,7 @@ export default function MentorDashboard() {
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
-    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
+    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
 
   useEffect(() => {
     if (status === "loading") return;
@@ -96,7 +96,7 @@ export default function MentorDashboard() {
       if (mentorsRes.ok) {
         const usersData = await mentorsRes.json();
         const mentors = usersData
-          .filter((u: any) => ["MENTOR", "PMP_LEITUNG", "ADMIN"].includes(u.role))
+          .filter((u: any) => ["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(u.role))
           .map((u: any) => ({ id: u.id, name: u.name, cid: u.cid }))
           .sort((a: Mentor, b: Mentor) => (a.name || "").localeCompare(b.name || ""));
         setAvailableMentors(mentors);

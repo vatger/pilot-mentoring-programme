@@ -60,7 +60,7 @@ export default function SessionLoggingPage() {
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
-    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
+    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
 
   useEffect(() => {
     if (status === "loading") return;

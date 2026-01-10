@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const userId = (session.user as any).id;
 
     // Only MENTOR, PMP_LEITUNG, and ADMIN can assign trainees
-    if (!["MENTOR", "PMP_LEITUNG", "ADMIN"].includes(userRole)) {
+    if (!["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(userRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

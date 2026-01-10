@@ -17,7 +17,7 @@ export async function GET() {
     const userRole = (session.user as any).role;
     const userId = (session.user as any).id;
 
-    if (!["MENTOR", "PMP_LEITUNG", "ADMIN"].includes(userRole)) {
+    if (!["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(userRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

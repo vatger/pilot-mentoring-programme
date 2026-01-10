@@ -17,7 +17,7 @@ export async function POST(
 
     const userRole = (session.user as any).role;
     const isMentor =
-      userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
+      userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
 
     if (!isMentor) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

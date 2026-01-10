@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const userId = (session.user as any).id;
 
     // Only MENTOR, PMP_LEITUNG, and ADMIN can cancel trainings
-    if (!["MENTOR", "PMP_LEITUNG", "ADMIN"].includes(userRole)) {
+    if (!["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(userRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Check if requester is a mentor or admin
     const isMentor = training.mentors.some((m) => m.mentorId === userId);
-    if (!isMentor && !["ADMIN", "PMP_LEITUNG"].includes(userRole)) {
+    if (!isMentor && !["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER"].includes(userRole)) {
       return NextResponse.json(
         { error: "Only mentors and admins can cancel trainings" },
         { status: 403 }

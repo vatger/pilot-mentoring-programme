@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-const MENTOR_ROLES = ["MENTOR", "PMP_LEITUNG", "ADMIN"];
+const MENTOR_ROLES = ["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"];
 
 // GET /api/trainings/mentor - Get all trainings assigned to the current mentor
 export async function GET(request: NextRequest) {

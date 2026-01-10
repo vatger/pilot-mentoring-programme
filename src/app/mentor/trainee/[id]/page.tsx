@@ -69,7 +69,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
-    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
+    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
 
   useEffect(() => {
     if (status === "loading") return;

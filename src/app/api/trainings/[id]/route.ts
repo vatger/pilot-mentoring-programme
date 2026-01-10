@@ -17,7 +17,7 @@ export async function GET(
     const userRole = (session.user as any).role;
     const userId = (session.user as any).id;
     const isMentor =
-      userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
+      userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
 
     if (!isMentor) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -68,7 +68,7 @@ export async function GET(
       (tm) => tm.mentor.id === userId
     );
 
-    if (!isMentorForTraining && userRole !== "PMP_LEITUNG" && userRole !== "ADMIN") {
+    if (!isMentorForTraining && userRole !== "PMP_LEITUNG" && userRole !== "ADMIN" && userRole !== "PMP_PRÜFER") {
       return NextResponse.json(
         { error: "You are not a mentor for this trainee" },
         { status: 403 }

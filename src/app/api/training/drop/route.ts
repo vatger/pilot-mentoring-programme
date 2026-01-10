@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     // Use case 1: Mentor dropping a co-mentor or trainee
     if (trainingId && !resetCancelledTrainee) {
       // Only MENTOR, PMP_LEITUNG, and ADMIN can drop trainees/mentors
-      if (!["MENTOR", "PMP_LEITUNG", "ADMIN"].includes(userRole)) {
+      if (!["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(userRole)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
       // Check if requester is a mentor or admin
       const isMentor = training.mentors.some((m) => m.mentorId === userId);
-      if (!isMentor && !["ADMIN", "PMP_LEITUNG"].includes(userRole)) {
+      if (!isMentor && !["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER"].includes(userRole)) {
         return NextResponse.json(
           { error: "Only mentors and admins can drop trainees" },
           { status: 403 }
