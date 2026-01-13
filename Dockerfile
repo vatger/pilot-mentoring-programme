@@ -10,8 +10,7 @@ COPY . .
 # Copy Prisma schema and generate client
 COPY prisma ./prisma
 # Dummy DATABASE_URL for Prisma Client generation
-ENV DATABASE_URL="mysql://user:pass@localhost:3306/dummy"
-RUN npx prisma generate
+RUN DATABASE_URL="mysql://user:pass@localhost:3306/dummy" npx prisma generate
 
 # Next.js Build
 RUN npm run build
