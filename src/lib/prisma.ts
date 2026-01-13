@@ -9,7 +9,6 @@ const adapter = new PrismaMariaDb(process.env.DATABASE_URL ?? "");
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
-    log: ["query"],
     adapter,
   });
 

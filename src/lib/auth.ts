@@ -102,36 +102,48 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         const cid = (user as any).cid;
         
-        // Check if user already exists
-        const existingUser = await prisma.user.findUnique({
-          where: { cid },
-        });
-
-        let userRecord;
-        if (existingUser) {
-          userRecord = existingUser;
-        } else {
-          // Create new user with VISITOR role (unless CID is admin)
-          const isAdmin = ADMIN_CIDS.includes(cid);
-          userRecord = await prisma.user.create({
-            data: {
-              cid,
-              name: (user as any).name,
-              email: (user as any).email,
-              image: (user as any).image,
-              role: isAdmin ? "ADMIN" : "VISITOR",
-            },
+        try {
+          // Check if user already exists
+          const existingUser = await prisma.user.findUnique({
+            where: { cid },
           });
-        }
 
-        // Persist selected fields from user into the JWT
-        token.id = userRecord.id;
-        token.cid = cid;
-        token.name = (user as any).name;
-        token.rating = (user as any).rating;
-        token.role = userRecord.role;
-        token.fir = (user as any).fir || "";
-        token.teams = (user as any).teams || [];
+          let userRecord;
+          if (existingUser) {
+            userRecord = existingUser;
+          } else {
+            // Create new user with VISITOR role (unless CID is admin)
+            const isAdmin = ADMIN_CIDS.includes(cid);
+            userRecord = await prisma.user.create({
+              data: {
+                cid,
+                name: (user as any).name,
+                email: (user as any).email,
+                image: (user as any).image,
+                role: isAdmin ? "ADMIN" : "VISITOR",
+              },
+            });
+          }
+
+          // Persist selected fields from user into the JWT
+          token.id = userRecord.id;
+          token.cid = cid;
+          token.name = (user as any).name;
+          token.rating = (user as any).rating;
+          token.role = userRecord.role;
+          token.fir = (user as any).fir || "";
+          token.teams = (user as any).teams || [];
+        } catch (error) {
+          console.error("[auth][jwt] Database error:", error);
+          // If DB fails, still create JWT with user info from OAuth provider
+          // User can still access the app, just won't be in database
+          token.cid = cid;
+          token.name = (user as any).name;
+          token.rating = (user as any).rating;
+          token.role = "VISITOR";
+          token.fir = (user as any).fir || "";
+          token.teams = (user as any).teams || [];
+        }
       }
       return token;
     },
