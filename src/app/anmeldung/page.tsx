@@ -1,21 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import PageLayout from '@/components/PageLayout';
 import { useRouter } from "next/navigation";
-
-// Only allow access if logged in (dummy check for now)
-const isLoggedIn = () => {
-  // Replace with real SSO/session check
-  if (typeof window !== "undefined") {
-    return !!localStorage.getItem("pmp_logged_in");
-  }
-  return false;
-};
+import { useSession } from "next-auth/react";
 
 export default function AnmeldungPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     simulator: "",
     aircraft: "",
@@ -32,36 +27,134 @@ export default function AnmeldungPage() {
     other: ""
   });
   const [submitted, setSubmitted] = useState(false);
+  const [isCancelledTrainee, setIsCancelledTrainee] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // SSO bypass: allow access for now
-  // Remove this block when SSO is available
-  // if (!isLoggedIn()) {
-  //   if (typeof window !== "undefined") {
-  //     window.location.href =
-  //       "https://sso.vatsim-germany.org/login?redirect=" +
-  //       encodeURIComponent(window.location.href);
-  //   }
-  //   return null;
-  // }
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/signin");
+    }
+    
+    // Check if user is a cancelled trainee
+    if (session?.user) {
+      const userStatus = (session.user as any).userStatus;
+      if (userStatus === "Cancelled Trainee") {
+        setIsCancelledTrainee(true);
+        setShowResetConfirm(true);
+      }
+    }
+  }, [status, router, session]);
+
+  const handleResetOldData = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch("/api/training/drop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetCancelledTrainee: true }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to reset old data");
+      }
+      
+      setShowResetConfirm(false);
+      setIsCancelledTrainee(false);
+      alert("Deine alten Trainingsdaten wurden zurückgesetzt. Du kannst dich jetzt erneut anmelden.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    // TODO: Send form data to backend
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/registrations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to submit registration");
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (status === "loading") {
+    return (
+      <PageLayout>
+        <div className="container">
+          <p>Laden...</p>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return null; // Will be redirected by useEffect
+  }
 
   return (
     <PageLayout>
       <div className="container">
         <div className="anmeldung-form-container">
-          <h2>Anmeldung zum Piloten-Mentoren-Programm KEIN UPSTREAM BACKEND</h2>
+          <h2>Anmeldung zum Piloten-Mentoren-Programm</h2>
+          {error && (
+            <div className="form-error info-error" style={{ marginBottom: "20px", color: "red", padding: "10px", border: "1px solid red", borderRadius: "4px" }}>
+              {error}
+            </div>
+          )}
+          
+          {showResetConfirm && (
+            <div className="info-warning" style={{ marginBottom: "20px", padding: "15px", border: "2px solid orange", borderRadius: "8px", backgroundColor: "rgba(255, 165, 0, 0.1)" }}>
+              <h3 style={{ marginTop: 0 }}>Willkommen zurück!</h3>
+              <p>Du hast bereits eine abgebrochene Anmeldung. Möchtest du deine alten Trainingsdaten zurücksetzen und dich erneut anmelden?</p>
+              <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+                <button 
+                  onClick={handleResetOldData}
+                  disabled={isLoading}
+                  className="button"
+                  style={{ margin: 0 }}
+                >
+                  {isLoading ? "Wird zurückgesetzt..." : "Ja, alte Daten löschen und neu anmelden"}
+                </button>
+                <button 
+                  onClick={() => router.push("/")}
+                  className="button"
+                  style={{ margin: 0, backgroundColor: "var(--container-bg)", color: "var(--text-color)" }}
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          )}
+          
           {submitted ? (
-            <div className="form-success info-success">Vielen Dank für deine Anmeldung! Ein Mentor wird sich in kürze über das Forum bei dir melden, stelle also sicher, dass du einen Account besitzt.</div>
-          ) : (
+            <div className="form-success info-success">Vielen Dank für deine Anmeldung! Ein Mentor wird sich in Kürze über das Forum per Private Message bei dir melden, stelle also sicher, dass du einen Account besitzt. Gehe dazu einfach auf <Link href="https://board.vatsim-germany.org">diesen Link</Link> und melde dich dort einmalig an.</div>
+          ) : !showResetConfirm && (
             <form onSubmit={handleSubmit} className="anmeldung-form form-card">
               <label className="form-label">
                 Flugsimulator:
@@ -131,7 +224,9 @@ export default function AnmeldungPage() {
                 Sonstiges:
                 <textarea className="form-textarea" name="other" value={form.other} onChange={handleChange} placeholder="Was du noch erwähnen möchtest" />
               </label>
-              <button type="submit" className="button form-submit">Absenden</button>
+              <button type="submit" className="button form-submit" disabled={isLoading}>
+                {isLoading ? "Wird abgesendet..." : "Absenden"}
+              </button>
             </form>
           )}
         </div>

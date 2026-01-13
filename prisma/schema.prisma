@@ -1,0 +1,383 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+enum UserRole {
+  ADMIN
+  PMP_LEITUNG
+  PMP_PRÜFER
+  MENTOR
+  TRAINEE
+  PENDING_TRAINEE
+  COMPLETED_TRAINEE
+  VISITOR
+}
+
+enum LessonType {
+  THEORIE_TRAINING
+  OFFLINE_FLUG
+  ONLINE_FLUG
+}
+
+enum TrainingTopic {
+  NMOC_BASICS
+  ENROUTE_CLEARANCE
+  STARTUP_PUSHBACK
+  TAXI_RUNWAY
+  TAKEOFF
+  DEPARTURE
+  ENROUTE
+  ARRIVAL_TRANSITION
+  APPROACH
+  LANDING
+  TAXI_PARKING
+  FLIGHT_PLANNING
+  PRE_FLIGHT
+  ATC_PHRASEOLOGY
+  OFFLINE_TRAINING
+  ONLINE_FLIGHT
+  SELF_BRIEFING
+  PRE_CHECK_RIDE
+}
+
+enum TrainingStatus {
+  ACTIVE
+  COMPLETED
+  ABGEBROCHEN
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Registration/Anmeldung model
+model Registration {
+  id        Int      @id @default(autoincrement())
+  
+  // User SSO Information (from NextAuth)
+  cid       String   @unique // VATSIM CID
+  name      String   // Full name from SSO
+  rating    String   // ATC Rating
+  fir       String   // FIR Code
+  email     String?  // Optional email if available
+  
+  // Form Data
+  simulator String   // Flight simulator (MSFS, X-Plane, P3D, etc.)
+  aircraft  String   // Known aircraft
+  client    String   // Pilot client (vPilot, xPilot, swift)
+  clientSetup String // Yes/No if client is set up
+  experience String  // Flight sim experience
+  charts    String   // Chart materials used
+  airac     String   // AIRAC data availability
+  category  String   // Flight category (IFR Airliner, IFR GA, VFR)
+  topics    String?  // Flight topics of interest
+  schedule  String   // Preferred times/days
+  communication String // Communication setup (TS, Discord, etc.)
+  personal  String?  // Personal info (age, profession, location)
+  other     String?  // Other notes
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  status    String   @default("pending") // pending, approved, rejected, completed
+  notes     String?  // Internal notes from mentors
+  
+  @@index([cid])
+  @@index([createdAt])
+  @@index([status])
+}
+
+// Account model for potential future SSO session management
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// Session model for NextAuth
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// User model for potential future user management
+model User {
+  id            String   @id @default(cuid())
+  cid           String?  @unique // VATSIM CID
+  name          String?
+  email         String?  @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole @default(VISITOR) // ADMIN, PMP_LEITUNG, MENTOR, TRAINEE, PENDING_TRAINEE, COMPLETED_TRAINEE, VISITOR
+  userStatus    String?  // "Pausierter Mentor", "Deleted Mentor", "Cancelled Trainee", "Completed Trainee", null for active
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts           Account[]
+  sessions           Session[]
+  trainingsAsTrainee Training[] @relation("trainee")
+  trainingsAsMentor  TrainingMentor[]
+  checkrideAvailabilities CheckrideAvailability[] @relation("examinedSessions")
+  checkrides         Checkride[] @relation("checkrides")
+
+  @@index([cid])
+  @@index([role])
+  @@index([userStatus])
+}
+
+// Training model: links mentor(s) to a trainee
+model Training {
+  id         String   @id @default(cuid())
+  traineeId  String
+  status     TrainingStatus @default(ACTIVE) // ACTIVE, COMPLETED, ABGEBROCHEN
+  readyForCheckride Boolean @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  trainee    User               @relation("trainee", fields: [traineeId], references: [id], onDelete: Cascade)
+  mentors    TrainingMentor[]
+  sessions   TrainingSession[]
+  checkrides Checkride[]
+
+  @@index([traineeId])
+  @@index([status])
+}
+
+// Mentor assignment to a training (supports multiple mentors per trainee, up to 3)
+model TrainingMentor {
+  id         String   @id @default(cuid())
+  trainingId String
+  mentorId   String
+  assignedAt DateTime @default(now())
+
+  training   Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  mentor     User     @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+
+  @@unique([trainingId, mentorId])
+  @@index([trainingId])
+  @@index([mentorId])
+}
+
+// Training session: records a training session with topics covered
+model TrainingSession {
+  id                  String      @id @default(cuid())
+  trainingId          String
+  lessonType          LessonType  // THEORIE_TRAINING, OFFLINE_FLUG, ONLINE_FLUG
+  sessionDate         DateTime
+  comments            String?     @db.Text // General session comments
+  isDraft             Boolean     @default(true) // Draft mode until mentor releases
+  releasedAt          DateTime?   // When mentor finalized the session
+  whiteboardSessionId String?     // Link to whiteboard session (/trainings/session/[id])
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  training   Training                @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  topics     TrainingSessionTopic[]
+
+  @@index([trainingId])
+  @@index([sessionDate])
+}
+
+// Topic tracking per session
+model TrainingSessionTopic {
+  id        String   @id @default(cuid())
+  sessionId String
+  topic     TrainingTopic
+  checked   Boolean  @default(false)
+  comment   String?  @db.Text // Per-topic comment from mentor
+  order     Int      // Display order for topics
+
+  session   TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, topic])
+  @@index([sessionId])
+}
+
+// Checkride/Exam System
+enum CheckrideStatus {
+  AVAILABLE
+  BOOKED
+  COMPLETED
+  CANCELLED
+}
+
+enum CheckrideResult {
+  PASSED
+  FAILED
+  INCOMPLETE
+}
+
+// Examiner availability calendar
+model CheckrideAvailability {
+  id          String   @id @default(cuid())
+  examinerId  String
+  startTime   DateTime
+  endTime     DateTime
+  status      CheckrideStatus @default(AVAILABLE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  examiner    User     @relation("examinedSessions", fields: [examinerId], references: [id], onDelete: Cascade)
+  checkride   Checkride?
+
+  @@index([examinerId])
+  @@index([startTime])
+}
+
+// Scheduled checkride (booking)
+model Checkride {
+  id              String   @id @default(cuid())
+  traineeId       String
+  trainingId      String
+  availabilityId  String   @unique
+  scheduledDate   DateTime
+  result          CheckrideResult @default(INCOMPLETE)
+  isDraft         Boolean  @default(true)
+  releasedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  trainee         User                   @relation("checkrides", fields: [traineeId], references: [id], onDelete: Cascade)
+  training        Training               @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  availability    CheckrideAvailability  @relation(fields: [availabilityId], references: [id], onDelete: Cascade)
+  assessment      CheckrideAssessment?
+
+  @@index([traineeId])
+  @@index([trainingId])
+  @@index([scheduledDate])
+}
+
+// Checkride assessment with 12 sections
+model CheckrideAssessment {
+  id          String   @id @default(cuid())
+  checkrideId String   @unique
+  
+  // 1. Flugplan
+  flightplanCallsign      String?
+  flightplanAircraft      String?
+  flightplanEquipment     String?
+  flightplanRouting       String?
+  flightplanTimes         String?
+  flightplanRemarks       String?
+  flightplanPassed        Boolean @default(false)
+  
+  // 2. Charts
+  chartsParkingDep        String?
+  chartsTaxiDep           String?
+  chartsDeparture         String?
+  chartsEnroute           String?
+  chartsArrivalTransition String?
+  chartsApproach          String?
+  chartsTaxiDest          String?
+  chartsParkingDest       String?
+  chartsPassed            Boolean @default(false)
+  
+  // 3. Self Briefing
+  briefingFrequencies     String?
+  briefingPushback        String?
+  briefingTaxiRunway      String?
+  briefingATCTakeoff      String?
+  briefingDeparture       String?
+  briefingArrival         String?
+  briefingApproach        String?
+  briefingRunwayExits     String?
+  briefingTaxiParking     String?
+  briefingPassed          Boolean @default(false)
+  
+  // 4. Enroute Clearance
+  clearanceInitialCall    String?
+  clearanceRequest        String?
+  clearanceClearedTo      String?
+  clearanceDeparture      String?
+  clearanceRoute          String?
+  clearanceClimb          String?
+  clearanceSquawk         String?
+  clearanceCallsign       String?
+  clearancePassed         Boolean @default(false)
+  
+  // 5. Startup/Pushback
+  startupStation          String?
+  startupGate             String?
+  startupReadback         String?
+  startupExecution        String?
+  startupPassed           Boolean @default(false)
+  
+  // 6. Taxi to Runway
+  taxiStation             String?
+  taxiRequest             String?
+  taxiReadback            String?
+  taxiExecution           String?
+  taxiPassed              Boolean @default(false)
+  
+  // 7. Takeoff
+  takeoffStation          String?
+  takeoffReadback         String?
+  takeoffExecution        String?
+  takeoffPassed           Boolean @default(false)
+  
+  // 8. Departure
+  departureStatement      String?
+  departureStation        String?
+  departureReadback       String?
+  departureExecution      String?
+  departurePassed         Boolean @default(false)
+  
+  // 9. Enroute
+  enrouteStation          String?
+  enrouteReadbacks        String?
+  enrouteExecution        String?
+  enroutePassed           Boolean @default(false)
+  
+  // 10. Arrival/Transition
+  arrivalStation          String?
+  arrivalClearances       String?
+  arrivalExecution        String?
+  arrivalPassed           Boolean @default(false)
+  
+  // 11. Landing
+  landingStation          String?
+  landingClearance        String?
+  landingExecution        String?
+  landingPassed           Boolean @default(false)
+  
+  // 12. Taxi to Parking
+  parkingStation          String?
+  parkingReadback         String?
+  parkingExecution        String?
+  parkingPassed           Boolean @default(false)
+  
+  overallResult           CheckrideResult @default(INCOMPLETE)
+  examinernotes           String?  @db.Text
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  checkride               Checkride @relation(fields: [checkrideId], references: [id], onDelete: Cascade)
+
+  @@index([checkrideId])
+}
+
