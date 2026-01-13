@@ -52,7 +52,7 @@ export const VatgerProvider: OAuthConfig<VatsimProfile> = {
   type: "oauth",
   authorization: {
     url: AUTHORIZATION_URL,
-    params: { scope: "name rating legacy assignment", response_type: "code" },
+    params: { scope: "name rating legacy assignment" },
   },
   token: TOKEN_URL,
   userinfo: USERINFO_URL,
