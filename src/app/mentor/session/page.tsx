@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import PageLayout from "@/components/PageLayout";
 
 // Training topics extracted from the draft
@@ -37,7 +37,7 @@ interface TopicComment {
   [key: string]: string;
 }
 
-export default function SessionLoggingPage() {
+function SessionLoggingContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -352,5 +352,17 @@ export default function SessionLoggingPage() {
         </div>
       )}
     </PageLayout>
+  );
+}
+
+export default function SessionLoggingPage() {
+  return (
+    <Suspense fallback={
+      <PageLayout>
+        <div className="text-center py-12">Loading...</div>
+      </PageLayout>
+    }>
+      <SessionLoggingContent />
+    </Suspense>
   );
 }

@@ -57,7 +57,7 @@ export async function GET() {
     // Fetch registration data for each trainee
     const traineesWithRegistration = await Promise.all(
       trainees.map(async (trainee) => {
-        const registration = await prisma.registration.findUnique({
+        const registration = trainee.cid ? await prisma.registration.findUnique({
           where: { cid: trainee.cid },
           select: {
             cid: true,
@@ -77,7 +77,7 @@ export async function GET() {
             communication: true,
             personal: true,
           },
-        });
+        }) : null;
         return {
           ...trainee,
           registration,

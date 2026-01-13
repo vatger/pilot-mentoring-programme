@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import PageLayout from "@/components/PageLayout";
 
 const TRAINING_TOPICS = [
@@ -58,7 +58,7 @@ interface Training {
   mentors: Mentor[];
 }
 
-export default function TraineeProgressPage() {
+function TraineeProgressContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -470,5 +470,17 @@ export default function TraineeProgressPage() {
         </>
       )}
     </PageLayout>
+  );
+}
+
+export default function TraineeProgressPage() {
+  return (
+    <Suspense fallback={
+      <PageLayout>
+        <div className="text-center py-12">Loading...</div>
+      </PageLayout>
+    }>
+      <TraineeProgressContent />
+    </Suspense>
   );
 }

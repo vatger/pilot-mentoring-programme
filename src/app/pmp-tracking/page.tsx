@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
 
@@ -36,7 +36,7 @@ interface TrainingCoverageRow {
   lastSessionDate: string | null;
 }
 
-export default function PmpTrackingPage() {
+function PmpTrackingContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -328,5 +328,17 @@ export default function PmpTrackingPage() {
         </div>
       )}
     </PageLayout>
+  );
+}
+
+export default function PmpTrackingPage() {
+  return (
+    <Suspense fallback={
+      <PageLayout>
+        <div className="text-center py-12">Loading...</div>
+      </PageLayout>
+    }>
+      <PmpTrackingContent />
+    </Suspense>
   );
 }

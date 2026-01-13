@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { TrainingTopic } from "@prisma/client";
+import { TrainingTopic, TrainingStatus } from "@prisma/client";
 
 // GET /api/admin/tracking
 // Returns coverage per trainee (topics covered) for ADMIN and PMP_LEITUNG
@@ -14,11 +14,13 @@ export async function GET(request: NextRequest) {
     }
 
     const role = (session.user as any).role;
-    if (!{"ADMIN": true, "PMP_LEITUNG": true}[role]) {
+    const allowedRoles = ["ADMIN", "PMP_LEITUNG"];
+    if (!allowedRoles.includes(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const status = request.nextUrl.searchParams.get("status") || undefined;
+    const statusParam = request.nextUrl.searchParams.get("status");
+    const status = statusParam as TrainingStatus | null;
 
     const trainings = await prisma.training.findMany({
       where: {
