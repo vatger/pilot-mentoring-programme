@@ -3,6 +3,9 @@ FROM node:20-bookworm AS builder
 
 WORKDIR /app
 
+# Install OpenSSL which Prisma requires
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 # 1. Package.json + Lockfile kopieren
 COPY package.json package-lock.json ./
 
@@ -25,6 +28,9 @@ RUN npm run build
 # ---- RUNNER ----
 FROM node:20-bookworm-slim AS runner
 
+# Install OpenSSL in runtime image as well
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+  
 WORKDIR /app
 
 # 1. Next.js Standalone Build kopieren
