@@ -11,7 +11,7 @@ RUN npm install
 # Prisma only needs a valid URL format to generate types, actual connection happens at runtime
 ARG DATABASE_URL=mysql://placeholder:placeholder@localhost:3306/placeholder
 ENV DATABASE_URL=$DATABASE_URL
-RUN npx prisma generate || true
+RUN npx prisma generate
 RUN npm run build
 
 FROM node:20-alpine AS runner
