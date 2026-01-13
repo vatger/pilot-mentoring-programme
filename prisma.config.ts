@@ -10,8 +10,7 @@ if (!databaseUrl) {
 }
 
 export default defineConfig({
-  schema: "prisma/schema.prisma",
-  datasource: {
-    url: databaseUrl,
+  migrate: {
+    datasourceUrl: process.env.DATABASE_URL,
   },
 });
