@@ -42,9 +42,9 @@ export interface VatsimProfile {
 }
 
 const AUTHORIZATION_URL = process.env.VATGER_CONNECT_URL || "https://vatsim-germany.org/oauth/authorize";
-// Use internal endpoints for token and userinfo
-const TOKEN_URL = process.env.VATGER_TOKEN_URL || "http://hp.vatsim-germany.org/oauth/token";
-const USERINFO_URL = process.env.VATGER_USER_INFO || "http://hp.vatsim-germany.org/oauth/userinfo";
+// Use public endpoints for token and userinfo
+const TOKEN_URL = process.env.VATGER_TOKEN_URL || "https://hp.vatsim-germany.org/oauth/token";
+const USERINFO_URL = process.env.VATGER_USER_INFO || "https://hp.vatsim-germany.org/oauth/userinfo";
 
 export const VatgerProvider: OAuthConfig<VatsimProfile> = {
   id: "vatger",
@@ -52,7 +52,7 @@ export const VatgerProvider: OAuthConfig<VatsimProfile> = {
   type: "oauth",
   authorization: {
     url: AUTHORIZATION_URL,
-    params: { scope: "name rating assignment", response_type: "code" },
+    params: { scope: "name rating legacy assignment", response_type: "code" },
   },
   token: TOKEN_URL,
   userinfo: USERINFO_URL,
@@ -102,48 +102,36 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         const cid = (user as any).cid;
         
-        try {
-          // Check if user already exists
-          const existingUser = await prisma.user.findUnique({
-            where: { cid },
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { cid },
+        });
+
+        let userRecord;
+        if (existingUser) {
+          userRecord = existingUser;
+        } else {
+          // Create new user with VISITOR role (unless CID is admin)
+          const isAdmin = ADMIN_CIDS.includes(cid);
+          userRecord = await prisma.user.create({
+            data: {
+              cid,
+              name: (user as any).name,
+              email: (user as any).email,
+              image: (user as any).image,
+              role: isAdmin ? "ADMIN" : "VISITOR",
+            },
           });
-
-          let userRecord;
-          if (existingUser) {
-            userRecord = existingUser;
-          } else {
-            // Create new user with VISITOR role (unless CID is admin)
-            const isAdmin = ADMIN_CIDS.includes(cid);
-            userRecord = await prisma.user.create({
-              data: {
-                cid,
-                name: (user as any).name,
-                email: (user as any).email,
-                image: (user as any).image,
-                role: isAdmin ? "ADMIN" : "VISITOR",
-              },
-            });
-          }
-
-          // Persist selected fields from user into the JWT
-          token.id = userRecord.id;
-          token.cid = cid;
-          token.name = (user as any).name;
-          token.rating = (user as any).rating;
-          token.role = userRecord.role;
-          token.fir = (user as any).fir || "";
-          token.teams = (user as any).teams || [];
-        } catch (error) {
-          console.error("[auth][jwt] Database error:", error);
-          // If DB fails, still create JWT with user info from OAuth provider
-          // User can still access the app, just won't be in database
-          token.cid = cid;
-          token.name = (user as any).name;
-          token.rating = (user as any).rating;
-          token.role = "VISITOR";
-          token.fir = (user as any).fir || "";
-          token.teams = (user as any).teams || [];
         }
+
+        // Persist selected fields from user into the JWT
+        token.id = userRecord.id;
+        token.cid = cid;
+        token.name = (user as any).name;
+        token.rating = (user as any).rating;
+        token.role = userRecord.role;
+        token.fir = (user as any).fir || "";
+        token.teams = (user as any).teams || [];
       }
       return token;
     },
