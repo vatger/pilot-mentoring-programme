@@ -1,31 +1,37 @@
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+FROM node:20-bookworm AS builder
 
-FROM node:20-alpine AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+
+COPY package.json package-lock.json ./
 RUN npm install
-# Prisma only needs a valid URL format to generate types, actual connection happens at runtime
-ARG DATABASE_URL=mysql://placeholder:placeholder@localhost:3306/placeholder
-ENV DATABASE_URL=$DATABASE_URL
+
+COPY . .
+
+# Copy Prisma schema and generate client
+COPY prisma ./prisma
+# Dummy DATABASE_URL for Prisma Client generation
+ENV DATABASE_URL="mysql://user:pass@localhost:3306/dummy"
 RUN npx prisma generate
+
+# Next.js Build
 RUN npm run build
 
-FROM node:20-alpine AS runner
+# Build artefacts are located in .next/standalone
+# https://nextjs.org/docs/app/api-reference/config/next-config-js/output
+
+# ---- RUNNER ----
+FROM node:20-bookworm-slim AS runner
+  
 WORKDIR /app
-ENV NODE_ENV=production
+
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/public ./public
+
 ENV PORT=8000
 ENV HOSTNAME=0.0.0.0
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
-
+# Port and start command
 EXPOSE 8000
-
-CMD sh -c "npx prisma db push && npx prisma generate && node server.js"
+CMD ["node", "server.js"]
