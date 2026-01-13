@@ -42,9 +42,9 @@ export interface VatsimProfile {
 }
 
 const AUTHORIZATION_URL = process.env.VATGER_CONNECT_URL || "https://vatsim-germany.org/oauth/authorize";
-// Use public endpoints for token and userinfo
-const TOKEN_URL = process.env.VATGER_TOKEN_URL || "https://vatsim-germany.org/oauth/token";
-const USERINFO_URL = process.env.VATGER_USER_INFO || "https://vatsim-germany.org/oauth/userinfo";
+// Use internal endpoints for token and userinfo
+const TOKEN_URL = process.env.VATGER_TOKEN_URL || "http://hp.vatsim-germany.org/oauth/token";
+const USERINFO_URL = process.env.VATGER_USER_INFO || "http://hp.vatsim-germany.org/oauth/userinfo";
 
 export const VatgerProvider: OAuthConfig<VatsimProfile> = {
   id: "vatger",
