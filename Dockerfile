@@ -13,7 +13,8 @@ RUN npm install
 COPY prisma ./prisma
 
 # 4. Prisma Client generieren (Dummy DATABASE_URL)
-RUN DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy" npx prisma generate
+ENV DATABASE_URL="mysql://user:pass@localhost:3306/dummy"
+RUN npx prisma generate
 
 # 5. Restlichen Code kopieren
 COPY . .
