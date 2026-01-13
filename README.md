@@ -30,8 +30,8 @@ Production:
 - [x] Dark/light mode
 
 ### Phase 2: Enhanced Features (Next)
-- [(x)] Signup System via VATSIM-Germany SSO (PMP-V2)
-- [(X)] Move PMP-Signup from Forum to website (PMP-V2)
+- [x] Signup System via VATSIM-Germany SSO (PMP-V2)
+- [X] Move PMP-Signup from Forum to website (PMP-V2)
 
 ## Development Tasks
 - [x] Implement styling for/and forms
