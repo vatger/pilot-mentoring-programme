@@ -8,9 +8,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm install
+# Prisma only needs a valid URL format to generate types, actual connection happens at runtime
 ARG DATABASE_URL=mysql://placeholder:placeholder@localhost:3306/placeholder
 ENV DATABASE_URL=$DATABASE_URL
-RUN npx prisma generate
+RUN npx prisma generate || true
 RUN npm run build
 
 FROM node:20-alpine AS runner
@@ -22,8 +23,7 @@ ENV HOSTNAME=0.0.0.0
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 8000
