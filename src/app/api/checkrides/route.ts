@@ -23,11 +23,15 @@ export async function GET(req: NextRequest) {
     const checkride = await prisma.checkride.findFirst({
       where: { trainingId },
       include: {
-        examiner: {
+        availability: {
           select: {
-            id: true,
-            name: true,
-            cid: true,
+            examiner: {
+              select: {
+                id: true,
+                name: true,
+                cid: true,
+              },
+            },
           },
         },
         assessment: {
