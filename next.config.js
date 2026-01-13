@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  trailingSlash: true,
   output: 'standalone',
   reactStrictMode: true,
+  skipTrailingSlashRedirect: true,
 }
 
 module.exports = nextConfig
