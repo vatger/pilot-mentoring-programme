@@ -39,6 +39,7 @@ enum TrainingTopic {
   PRE_CHECK_RIDE
 }
 
+
 enum TrainingStatus {
   ACTIVE
   COMPLETED
