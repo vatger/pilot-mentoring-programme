@@ -52,7 +52,7 @@ export const VatgerProvider: OAuthConfig<VatsimProfile> = {
   type: "oauth",
   authorization: {
     url: AUTHORIZATION_URL,
-    params: { scope: "name rating assignment" },
+    params: { scope: "name rating assignment teams" },
   },
   token: TOKEN_URL,
   userinfo: USERINFO_URL,
@@ -60,7 +60,8 @@ export const VatgerProvider: OAuthConfig<VatsimProfile> = {
   clientSecret: process.env.VATGER_CLIENT_SECRET!,
   profile(profile: VatsimProfile) {
     const data = profile?.data || profile;
-    const cid = Number(data?.cid);
+    // CID can be in data.cid or data.id (new API response format)
+    const cid = Number(data?.cid || data?.id || profile?.id);
 
     let fullName: string = "Unknown User";
     if (data && data.personal?.name_full) {
@@ -101,6 +102,16 @@ export const authOptions: NextAuthOptions = {
       // On sign-in, create or update user in DB with VISITOR role (unless already set)
       if (user) {
         const cid = (user as any).cid;
+        const teams = (user as any).teams || [];
+
+        // Determine role based on team membership
+        let roleFromTeams = "VISITOR";
+        if (teams.includes("PMP Mentor")) {
+          roleFromTeams = "MENTOR";
+        }
+        if (teams.includes("Developer")) {
+          roleFromTeams = "ADMIN";
+        }
         
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
@@ -109,17 +120,25 @@ export const authOptions: NextAuthOptions = {
 
         let userRecord;
         if (existingUser) {
-          userRecord = existingUser;
+          // Update user with new team-based role and other info
+          userRecord = await prisma.user.update({
+            where: { cid },
+            data: {
+              name: (user as any).name,
+              role: roleFromTeams as any,
+            },
+          });
         } else {
-          // Create new user with VISITOR role (unless CID is admin)
+          // Create new user with role based on teams or admin CID
           const isAdmin = ADMIN_CIDS.includes(cid);
+          const finalRole = isAdmin ? "ADMIN" : roleFromTeams;
           userRecord = await prisma.user.create({
             data: {
               cid,
               name: (user as any).name,
               email: (user as any).email,
               image: (user as any).image,
-              role: isAdmin ? "ADMIN" : "VISITOR",
+              role: finalRole as any,
             },
           });
         }
@@ -131,12 +150,30 @@ export const authOptions: NextAuthOptions = {
         token.rating = (user as any).rating;
         token.role = userRecord.role;
         token.fir = (user as any).fir || "";
-        token.teams = (user as any).teams || [];
+        token.teams = teams;
       }
       return token;
     },
     async session({ session, token }) {
       // Expose JWT fields to the session
+      const sessionUser = {
+        id: token.id,
+        cid: token.cid,
+        name: token.name,
+        rating: token.rating,
+        role: token.role || "VISITOR",
+        fir: token.fir || "",
+        teams: token.teams || [],
+      };
+      (session as any).user = sessionUser;
+
+      console.log("[SSO] Session created:", sessionUser);
+
+      return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // After OAuth callback, redirect to signin page for role-based routing
+      if (url.startsWith(baseUrl)) return url;
       (session as any).user = {
         id: token.id,
         cid: token.cid,
@@ -146,17 +183,3 @@ export const authOptions: NextAuthOptions = {
         fir: token.fir || "",
         teams: token.teams || [],
       };
-      return session;
-    },
-    async redirect({ url, baseUrl }) {
-      // After OAuth callback, redirect to signin page for role-based routing
-      if (url.startsWith(baseUrl)) return url;
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      
-      // Default redirect to signin page which will handle role-based redirects
-      return `${baseUrl}/signin?postauth=true`;
-    },
-  },
-  // Default pages can be used; customize if you want a bespoke /signin route
-  secret: process.env.NEXTAUTH_SECRET,
-};
