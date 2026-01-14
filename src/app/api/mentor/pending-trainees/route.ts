@@ -15,35 +15,20 @@ export async function GET() {
     }
 
     const userRole = (session.user as any).role;
-    const userId = (session.user as any).id;
 
     if (!["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(userRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Get users with PENDING_TRAINEE or TRAINEE role who don't have an active training
-    // Also include the current user if they have no training (for single-account testing)
     const trainees = await prisma.user.findMany({
       where: {
-        OR: [
-          {
-            role: { in: ["PENDING_TRAINEE", "TRAINEE"] },
-            trainingsAsTrainee: {
-              none: {
-                status: { in: ["ACTIVE", "COMPLETED"] },
-              },
-            },
+        role: { in: ["PENDING_TRAINEE", "TRAINEE"] },
+        trainingsAsTrainee: {
+          none: {
+            status: { in: ["ACTIVE", "COMPLETED"] },
           },
-          // Include current user for testing (if they have no active/completed training)
-          {
-            id: userId,
-            trainingsAsTrainee: {
-              none: {
-                status: { in: ["ACTIVE", "COMPLETED"] },
-              },
-            },
-          },
-        ],
+        },
       },
       select: {
         id: true,
