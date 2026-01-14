@@ -167,19 +167,17 @@ export const authOptions: NextAuthOptions = {
       };
       (session as any).user = sessionUser;
 
-      console.log("[SSO] Session created:", sessionUser);
-
       return session;
     },
     async redirect({ url, baseUrl }) {
       // After OAuth callback, redirect to signin page for role-based routing
       if (url.startsWith(baseUrl)) return url;
-      (session as any).user = {
-        id: token.id,
-        cid: token.cid,
-        name: token.name,
-        rating: token.rating,
-        role: token.role || "VISITOR",
-        fir: token.fir || "",
-        teams: token.teams || [],
-      };
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      
+      // Default redirect to signin page which will handle role-based redirects
+      return `${baseUrl}/signin?postauth=true`;
+    },
+  },
+  // Default pages can be used; customize if you want a bespoke /signin route
+  secret: process.env.NEXTAUTH_SECRET,
+};
