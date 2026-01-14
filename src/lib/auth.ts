@@ -110,8 +110,8 @@ export const authOptions: NextAuthOptions = {
         if (teams.includes("PMP Mentor")) {
           roleFromTeams = "MENTOR";
         }
-        if (teams.includes("Developer")) {
-          roleFromTeams = "ADMIN";
+        if (teams.includes("PMP Leitung")) {
+          roleFromTeams = "LEITUNG";
         }
         
         // Check if user already exists
@@ -121,16 +121,14 @@ export const authOptions: NextAuthOptions = {
 
         let userRecord;
         if (existingUser) {
-          // Update user with new team-based role and other info
           userRecord = await prisma.user.update({
             where: { cid },
             data: {
               name: (user as any).name,
-              role: roleFromTeams as any,
+              role: existingUser.role === "VISITOR" ? (roleFromTeams as any) : undefined,
             },
           });
         } else {
-          // Create new user with role based on teams or admin CID
           const isAdmin = ADMIN_CIDS.includes(cid);
           const finalRole = isAdmin ? "ADMIN" : roleFromTeams;
           userRecord = await prisma.user.create({
