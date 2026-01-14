@@ -61,7 +61,8 @@ export const VatgerProvider: OAuthConfig<VatsimProfile> = {
   profile(profile: VatsimProfile) {
     const data = profile?.data || profile;
     // CID can be in data.cid or data.id (new API response format)
-    const cid = Number(data?.cid || data?.id || profile?.id);
+    const cidRaw = (data as any)?.cid ?? (data as any)?.id ?? profile?.id;
+    const cid = Number(cidRaw);
 
     let fullName: string = "Unknown User";
     if (data && data.personal?.name_full) {
