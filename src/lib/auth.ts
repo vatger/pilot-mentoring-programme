@@ -156,13 +156,18 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      // Expose JWT fields to the session
+      // Fetch latest user data from database to check for role changes
+      const currentUser = await prisma.user.findUnique({
+        where: { id: token.id as string },
+        select: { role: true },
+      });
+
       const sessionUser = {
         id: token.id,
         cid: token.cid,
         name: token.name,
         rating: token.rating,
-        role: token.role || "VISITOR",
+        role: currentUser?.role || token.role || "VISITOR",
         fir: token.fir || "",
         teams: token.teams || [],
       };
