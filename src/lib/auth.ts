@@ -111,7 +111,7 @@ export const authOptions: NextAuthOptions = {
           roleFromTeams = "MENTOR";
         }
         if (teams.includes("PMP Leitung")) {
-          roleFromTeams = "LEITUNG";
+          roleFromTeams = "PMP_LEITUNG";
         }
         
         // Check if user already exists
