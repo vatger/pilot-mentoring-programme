@@ -147,13 +147,14 @@ function TraineeProgressContent() {
 
   const coveredTopics = getTopicProgress();
 
-  // Only trainee or their mentors can view this
+  // Only trainee, their mentors, or leadership (Leitung/Admin/Examiner) can view this
   const isMentor = training ? training.mentors.some((m) => m.mentorId === userId) : false;
-  if (training && !isTrainee && !isMentor && userRole !== "ADMIN") {
+  const isLeadership = ["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER"].includes(userRole);
+  if (training && !isTrainee && !isMentor && !isLeadership) {
     return (
       <PageLayout>
         <div className="info-danger">
-          <p>Zugriff verweigert. Nur der Trainees und Mentoren können diese Seite anzeigen.</p>
+          <p>Zugriff verweigert. Nur der Trainees, Mentoren und PMP-Leitung können diese Seite anzeigen.</p>
         </div>
       </PageLayout>
     );
