@@ -125,21 +125,37 @@ export default function MentorDashboard() {
     }
   };
 
-  const cancelTraining = async (trainingId: string) => {
-    if (!window.confirm("Bist du sicher, dass du dieses Training abbrechen möchtest?")) {
-      return;
-    }
+  const [cancelDialogFor, setCancelDialogFor] = useState<string | null>(null);
 
+  const handleDropTraining = async (trainingId: string) => {
     try {
-      const res = await fetch("/api/training/cancel", {
+      const res = await fetch("/api/training/drop", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ trainingId }),
       });
-      if (!res.ok) throw new Error("Fehler beim Abbrechen des Trainings");
+      if (!res.ok) throw new Error("Fehler beim Löschen des Trainings");
       await fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setCancelDialogFor(null);
+    }
+  };
+
+  const handleRemoveSelfAsMentor = async (trainingId: string) => {
+    try {
+      const res = await fetch("/api/training/drop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainingId, mentorId: (session?.user as any)?.id }),
+      });
+      if (!res.ok) throw new Error("Fehler beim Entfernen als Mentor");
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setCancelDialogFor(null);
     }
   };
 
@@ -315,12 +331,33 @@ export default function MentorDashboard() {
                           Fortschritt ansehen
                         </button>
                         <button
-                          onClick={() => cancelTraining(training.id)}
+                          onClick={() => setCancelDialogFor(training.id)}
                           className="button button--danger"
                           style={{ margin: 0 }}
                         >
                           Abbrechen
                         </button>
+                        {cancelDialogFor === training.id && (
+                          <div className="card" style={{ margin: 0, padding: "10px 12px", background: "var(--container-bg)" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                              <div style={{ fontWeight: 600, color: "var(--text-color)" }}>Training verwalten</div>
+                              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                                <button className="button button--danger" onClick={() => handleDropTraining(training.id)}>
+                                  Training Abbrechen (löscht alle Daten)
+                                </button>
+                                <button className="button" onClick={() => handleRemoveSelfAsMentor(training.id)}>
+                                  Entferne mich als Mentor
+                                </button>
+                                <button className="button" onClick={() => setCancelDialogFor(null)}>
+                                  Abbrechen
+                                </button>
+                              </div>
+                              <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
+                                Hinweis: Wenn kein Mentor übrig bleibt, bleibt das Training erhalten und der Trainee wird wieder auf PENDING_TRAINEE gesetzt.
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

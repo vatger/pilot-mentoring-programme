@@ -147,7 +147,7 @@ export default function HomePage() {
           Fliegen auf Vatsim ist ein Zusammenspiel zweier Teams. Ein Spiel, das nach bestimmten, komplexen Regeln
           funktioniert und nur dann Spaß macht, wenn alle diese Regeln kennen und sie auch befolgen. Lotsen auf Vatsim
           müssen eine aufwändige und langwierige Ausbildung durchlaufen und Prüfungen bestehen, um bei uns lotsen zu
-          können. Als Pilot werden auch von dir bestimmte Kenntnisse und Fähigekeiten gefordert - wie du im New Member
+          können. Als Pilot werden auch von dir bestimmte Kenntnisse und Fähigkeiten gefordert - wie du im New Member
           Orientation Course entweder schon erfahren hast oder noch erfahren wirst. Aber was bedeutet das jetzt genau?
           Was solltest du wissen und können, um erfolgreich und mit Spaß an der Sache unser schönes Hobby betreiben zu
           können? Dabei unterstützen wir dich!

@@ -288,8 +288,12 @@ export default function Header() {
                       <h3 style={{ margin: '0 0 6px 0' }}>Trainee</h3>
                       <p style={{ margin: '0 0 8px 0' }}>Deinen Fortschritt und Checkride verwalten.</p>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        {!isPendingTrainee && <Link className="button" href="/trainee/progress">Mein Trainingsfortschritt</Link>}
-                        {isPendingTrainee && <Link className="button" href="/anmeldung">Jetzt für das PMP anmelden</Link>}
+                        {!isPendingTrainee && (
+                          <Link className="button" href="/trainee/progress">Mein Trainingsfortschritt</Link>
+                        )}
+                        {isPendingTrainee && (
+                          <div className="stepper-progress" style={{ margin: 0 }}>Anmeldung eingegangen – wartet auf Zuweisung</div>
+                        )}
                         {isCheckrideReady && hasCheckrideInfo && (
                           <Link className="button" href="/trainee/checkride">Checkride buchen / Ergebnis</Link>
                         )}
@@ -297,7 +301,7 @@ export default function Header() {
                     </div>
                   )}
 
-                  {(isVisitor || isPendingTrainee) && (
+                  {isVisitor && (
                     <div className="card" style={{ marginBottom: 0, padding: '12px 14px' }}>
                       <h3 style={{ margin: '0 0 6px 0' }}>Registrierung</h3>
                       <p style={{ margin: '0 0 8px 0' }}>Starte oder vervollständige deine Anmeldung.</p>
