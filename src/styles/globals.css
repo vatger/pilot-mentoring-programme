@@ -266,10 +266,16 @@ p { margin-bottom: 20px; }
     font-weight: 500;
     margin-bottom: 18px;
     color: var(--accent-color);
-    background: rgba(0,95,163,0.06);
+    /* Improve light-mode contrast for readability */
+    background: #eaf4fb; /* subtle but distinct from card bg */
+    border: 1px solid rgba(0,95,163,0.25);
     padding: 8px 12px;
     border-radius: 8px;
     display: inline-block;
+}
+[data-theme="dark"] .stepper-progress {
+    background: rgba(77,142,219,0.18);
+    border: 1px solid rgba(77,142,219,0.35);
 }
 .step {
     display: flex;
