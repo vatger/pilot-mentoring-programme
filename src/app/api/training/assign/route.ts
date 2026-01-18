@@ -45,7 +45,39 @@ export async function POST(request: NextRequest) {
         traineeId,
         status: { not: "ABGEBROCHEN" },
       },
+      include: {
+        mentors: true,
+      },
     });
+
+    // If training exists but has no mentors, reuse it (orphaned after last mentor removed)
+    if (existingTraining && existingTraining.mentors.length === 0) {
+      const training = await prisma.training.update({
+        where: { id: existingTraining.id },
+        data: {
+          mentors: {
+            create: {
+              mentorId: userId,
+            },
+          },
+        },
+        include: {
+          mentors: {
+            include: { mentor: { select: { id: true, name: true, cid: true } } },
+          },
+        },
+      });
+
+      // Update trainee role to TRAINEE if they were PENDING_TRAINEE
+      if (trainee.role === "PENDING_TRAINEE") {
+        await prisma.user.update({
+          where: { id: traineeId },
+          data: { role: "TRAINEE" },
+        });
+      }
+
+      return NextResponse.json(training, { status: 200 });
+    }
 
     if (existingTraining) {
       return NextResponse.json(

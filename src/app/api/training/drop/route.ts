@@ -28,10 +28,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      // Get the training
+      // Get the training with mentors and traineeId
       const training = await prisma.training.findUnique({
         where: { id: trainingId },
-        include: { mentors: true },
+        include: { mentors: true, trainee: { select: { id: true, role: true } } },
       });
 
       if (!training) {
@@ -53,15 +53,39 @@ export async function POST(request: NextRequest) {
           where: { trainingId, mentorId },
         });
         
+        // If no mentors remain, delete the training to avoid orphaned records
+        const remainingMentors = await prisma.trainingMentor.count({ where: { trainingId } });
+        if (remainingMentors === 0) {
+          // Delete training (preserves sessions/data via soft-delete if configured)
+          await prisma.training.delete({ where: { id: trainingId } });
+          
+          // Set trainee back to PENDING_TRAINEE so they can be reassigned
+          await prisma.user.update({
+            where: { id: training.trainee.id },
+            data: { role: "PENDING_TRAINEE" },
+          });
+        }
+        
         return NextResponse.json(
           { success: true, message: "Mentor removed successfully" },
           { status: 200 }
         );
       } else {
         // No mentorId specified, delete the entire training
-        await prisma.training.delete({
+        const deleted = await prisma.training.delete({
           where: { id: trainingId },
         });
+        
+        // If trainee has no other active trainings, set role to VISITOR
+        const activeTrainings = await prisma.training.count({
+          where: { traineeId: training.trainee.id, status: { not: "ABGEBROCHEN" } },
+        });
+        if (activeTrainings === 0) {
+          await prisma.user.update({
+            where: { id: training.trainee.id },
+            data: { role: "VISITOR" },
+          });
+        }
         
         return NextResponse.json(
           { success: true, message: "Training dropped successfully" },
