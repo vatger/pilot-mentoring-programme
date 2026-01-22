@@ -53,6 +53,7 @@ function SessionLoggingContent() {
   const [checkedTopics, setCheckedTopics] = useState<Record<string, boolean>>({});
   const [topicComments, setTopicComments] = useState<TopicComment>({});
   const [previousSessions, setPreviousSessions] = useState<SessionLog[][]>([]);
+  const [traineeId, setTraineeId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -74,8 +75,20 @@ function SessionLoggingContent() {
       return;
     }
 
+    fetchTrainingDetails();
     fetchPreviousSessions();
   }, [status, isMentor, trainingId, router]);
+
+  const fetchTrainingDetails = async () => {
+    try {
+      const res = await fetch(`/api/trainings/${trainingId}`);
+      if (!res.ok) throw new Error("Failed to fetch training details");
+      const data = await res.json();
+      setTraineeId(data.trainee?.cid || "");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    }
+  };
 
   const fetchPreviousSessions = async () => {
     try {
@@ -132,18 +145,17 @@ function SessionLoggingContent() {
       });
 
       if (!res.ok) throw new Error("Failed to log session");
-      setSuccess(true);
-      setCheckedTopics({});
-      setTopicComments({});
-      setWhiteboardId("");
-      setComments("");
-      setSessionDate(new Date().toISOString().split("T")[0]);
-      setLessonType("THEORIE_TRAINING");
-
-      // Refresh previous sessions
-      setTimeout(() => {
-        fetchPreviousSessions();
-      }, 500);
+      
+      // Redirect to trainee page to activate the session
+      if (traineeId) {
+        router.push(`/mentor/trainee/${traineeId}?trainingId=${trainingId}`);
+      } else {
+        setSuccess(true);
+        // Refresh previous sessions if redirect fails
+        setTimeout(() => {
+          fetchPreviousSessions();
+        }, 500);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
