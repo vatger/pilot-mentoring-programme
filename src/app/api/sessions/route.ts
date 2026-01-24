@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { trainingTopicKeys } from "@/lib/trainingTopics";
+import { trainingTopicKeys, TrainingTopicKey } from "@/lib/trainingTopics";
 import { TrainingTopic, LessonType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Sanitize topics to allowed enum values
     const normalizedTopics = (Array.isArray(checkedTopics) ? checkedTopics : []).filter(
-      (topic: { topic: string }) => trainingTopicKeys.includes(topic.topic as TrainingTopic)
+      (topic: { topic: string }) => trainingTopicKeys.includes(topic.topic as TrainingTopicKey)
     );
 
     // If sessionId provided, update existing; else create new

@@ -21,15 +21,20 @@ export default function ForPilotsPage() {
         <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
           <div className="card card-link" style={{ margin: 0 }}>
             <h4>Vollständiges Training</h4>
-            <p>Komplette PMP-Begleitung durch unsere Mentoren.</p>
+            <p>Komplette PMP-Begleitung durch unsere Mentoren. Das ist unser klassisches PMP-Training. Über den Verlauf mehrerer Wochen lernst du alle Netzwerkprozeduren und das funken, sodass du sicher im virtuellen Himmel unterwegs bist. Wenn das etwas für dich ist, so fülle doch bitte das 
+              Anmeldeformular aus und es kann sehr bald losgehen!
+            </p>
             <Link className="button" href="/anmeldung" style={{ marginTop: "8px" }}>
               Jetzt vollständig anmelden
             </Link>
           </div>
           <div className="card card-link" style={{ margin: 0 }}>
             <h4>Mentor als Ansprechpartner für Online-Fliegen</h4>
-            <p>Du möchtest primär einen Mentor für Fragen zum Online-Fliegen.</p>
-            <Link className="button" href="/anmeldung" style={{ marginTop: "8px" }}>
+            <p>Du möchtest primär einen Mentor für Fragen zum Online-Fliegen. Du kennst dich schon gut mit dem Netzwerk und der Fliegerei aus, hast aber noch ein paar Fragen?
+               Dann kannst du im Forum einen Mentor anschreiben, mit dem du dich dann vielleicht 1 oder 2 Mal austauschen kannst. Du kannst anschließend immer noch 
+              das reguläre PMP-Training anfangen, wenn du möchtest.
+            </p>
+            <Link className="button" href="/anmeldung-forum" style={{ marginTop: "8px" }}>
               Mentor anfragen
             </Link>
           </div>

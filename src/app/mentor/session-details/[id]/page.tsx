@@ -94,7 +94,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
         <div className="container">
           <p style={{ color: "var(--error-color)" }}>Fehler: {error}</p>
           {trainingId && (
-            <Link href={`/mentor/trainee/${sessionDetails?.training.trainee.id}?trainingId=${trainingId}`} className="button">
+            <Link href={`/mentor/trainee?trainingId=${trainingId}`} className="button">
               Zurück zum Trainee
             </Link>
           )}
@@ -109,7 +109,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
         <div className="container">
           <p>Session nicht gefunden</p>
           {trainingId && (
-            <Link href={`/mentor/trainee/${sessionDetails?.training.trainee.id}?trainingId=${trainingId}`} className="button">
+            <Link href={`/mentor/trainee?trainingId=${trainingId}`} className="button">
               Zurück zum Trainee
             </Link>
           )}
