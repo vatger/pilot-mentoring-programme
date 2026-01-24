@@ -62,7 +62,7 @@ Denn: „Mein Flugzeug macht nicht was es soll“ gilt bei uns nicht. DU als Pil
 - Was bedeutet „fly published missed approach"?
 `,
     ctas: [
-      { text: 'Du weißt das alles? Schließen und Fliegen.', href: '/howto' },
+      { text: 'Du weißt das alles? Weiter zu For Pilots.', href: '/for-pilots' },
       { text: 'Da fehlt dir doch noch was? Weiter zum PMP!', href: '/pmp' },
     ],
   },
@@ -196,8 +196,8 @@ export default function HomePage() {
               parseContent(details[open as CardKey].content)
             )}
             {details[open as CardKey].ctas?.map((cta, i) => (
-              <p className="modal-cta" key={i}><Link href={cta.href}>{cta.text}</Link></p>
-            ))}
+                    <p className="modal-cta" key={i}><Link href={cta.href}>{cta.text}</Link></p>
+                  ))}
           </>
         ) : null}
       </Modal>
