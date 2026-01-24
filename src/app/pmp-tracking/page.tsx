@@ -5,25 +5,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
-
-const TRAINING_TOPICS = [
-  { key: "NMOC_BASICS", label: "Wiederholung Elemente New Member Orientation Course & Grundlagen" },
-  { key: "FLIGHT_PLANNING", label: "Flugplanung & Charts" },
-  { key: "ATC_PHRASEOLOGY", label: "ATC Phraseologie" },
-  { key: "SELF_BRIEFING", label: "Self Briefing" },
-  { key: "PRE_FLIGHT", label: "Flugvorbereitung" },
-  { key: "ENROUTE_CLEARANCE", label: "IFR Clearance" },
-  { key: "STARTUP_PUSHBACK", label: "Startup & Pushback" },
-  { key: "TAXI_RUNWAY", label: "Taxi zur Runway" },
-  { key: "TAKEOFF", label: "Takeoff" },
-  { key: "DEPARTURE", label: "Departure" },
-  { key: "ENROUTE", label: "Enroute" },
-  { key: "ARRIVAL_TRANSITION", label: "Standard Arrival STAR / LNAV-Transition" },
-  { key: "APPROACH", label: "Approach" },
-  { key: "LANDING", label: "Landung" },
-  { key: "TAXI_PARKING", label: "Taxi zum Gate" },
-  { key: "PRE_CHECK_RIDE", label: "Pre Check Ride" },
-];
+import { trainingTopicLabelMap, trainingTopics } from "@/lib/trainingTopics";
 
 interface TrainingCoverageRow {
   trainingId: string;
@@ -75,13 +57,9 @@ function PmpTrackingContent() {
     }
   };
 
-  const topicLabel = useMemo(() => {
-    const map: Record<string, string> = {};
-    TRAINING_TOPICS.forEach((t) => (map[t.key] = t.label));
-    return map;
-  }, []);
+  const topicLabel = useMemo(() => trainingTopicLabelMap, []);
 
-  const totalTopics = TRAINING_TOPICS.length;
+  const totalTopics = trainingTopics.length;
 
   if (status === "loading" || loading) {
     return (

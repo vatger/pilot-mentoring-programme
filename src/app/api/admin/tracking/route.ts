@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { TrainingTopic, TrainingStatus } from "@prisma/client";
+import { trainingTopicKeys } from "@/lib/trainingTopics";
+import { TrainingStatus } from "@prisma/client";
 
 // GET /api/admin/tracking
 // Returns coverage per trainee (topics covered) for ADMIN and PMP_LEITUNG
@@ -46,13 +47,15 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "asc" },
     });
 
-    const topicKeys = Object.values(TrainingTopic);
+    const topicKeys = trainingTopicKeys;
 
     const result = trainings.map((training) => {
       const covered = new Set<string>();
       training.sessions.forEach((s) => {
         s.topics.forEach((t) => {
-          if (t.checked) covered.add(t.topic);
+          if (t.checked && topicKeys.includes(t.topic as (typeof topicKeys)[number])) {
+            covered.add(t.topic);
+          }
         });
       });
 

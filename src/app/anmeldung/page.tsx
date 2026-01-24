@@ -26,6 +26,12 @@ export default function AnmeldungPage() {
     personal: "",
     other: ""
   });
+  const [simChoice, setSimChoice] = useState("");
+  const [simOther, setSimOther] = useState("");
+  const [chartsChoice, setChartsChoice] = useState("");
+  const [chartsOther, setChartsOther] = useState("");
+  const [discordStatus, setDiscordStatus] = useState("");
+  const [trafficStatus, setTrafficStatus] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isCancelledTrainee, setIsCancelledTrainee] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -82,12 +88,21 @@ export default function AnmeldungPage() {
     setIsLoading(true);
 
     try {
+      const payload = {
+        ...form,
+        simulator: simChoice === "OTHER" ? simOther.trim() : simChoice,
+        charts: chartsChoice === "OTHER" ? chartsOther.trim() : chartsChoice,
+        other: [form.other, discordStatus ? `VATSIM Germany Discord: ${discordStatus}` : "", trafficStatus ? `Online Traffic: ${trafficStatus}` : ""]
+          .filter(Boolean)
+          .join("\n"),
+      };
+
       const response = await fetch("/api/registrations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -157,73 +172,228 @@ export default function AnmeldungPage() {
           ) : !showResetConfirm && (
             <form onSubmit={handleSubmit} className="anmeldung-form form-card">
               <label className="form-label">
-                Flugsimulator:
-                <input className="form-input" name="simulator" value={form.simulator} onChange={handleChange} required placeholder="z.B. MSFS, X-Plane, P3D" />
-              </label>
-              <label className="form-label">
-                Flugzeug:
-                <textarea className="form-textarea" name="aircraft" value={form.aircraft} onChange={handleChange} required placeholder="Welche Flugzeuge kennst du, welches möchtest du nutzen?" />
-              </label>
-              <label className="form-label">
-                Pilotenclient:
-                <input className="form-input" name="client" value={form.client} onChange={handleChange} required placeholder="z.B. vPilot, xPilot, swift" />
-              </label>
-              <label className="form-label">
-                Client eingerichtet?
-                <select className="form-select" name="clientSetup" value={form.clientSetup} onChange={handleChange} required>
+                Flugregel und Kategorie
+                <select
+                  className="form-select"
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  required
+                >
                   <option value="">Bitte wählen</option>
-                  <option value="ja">Ja</option>
-                  <option value="nein">Nein</option>
+                  <option value="IFR Airliner">IFR Airliner</option>
+                  <option value="IFR General Aviation">IFR General Aviation</option>
+                  <option value="VFR">VFR</option>
                 </select>
               </label>
+
               <label className="form-label">
-                Erfahrungen:
-                <textarea className="form-textarea" name="experience" value={form.experience} onChange={handleChange} required placeholder="Wie lange Flugsimulation, schon online geflogen?" />
-              </label>
-              <label className="form-label">
-                Kartenmaterial:
-                <input className="form-input" name="charts" value={form.charts} onChange={handleChange} required placeholder="Navigraph, Chartfox, AIP, andere?" />
-              </label>
-              <label className="form-label">
-                AIRAC-Daten vorhanden?
-                <select className="form-select" name="airac" value={form.airac} onChange={handleChange} required>
+                Flugsimulator
+                <select
+                  className="form-select"
+                  value={simChoice}
+                  onChange={(e) => setSimChoice(e.target.value)}
+                  required
+                >
                   <option value="">Bitte wählen</option>
-                  <option value="ja-navigraph">Ja, Navigraph subscription</option>
-                  <option value="ja-simbrief">Ja, Simbrief (AIRAC 2403)</option>
-                  <option value="ja-andere">Ja, andere</option>
-                  <option value="nein">Nein</option>
-                  <option value="nicht relevant">Nicht relevant</option>
+                  <option value="MSFS 2024">MSFS 2024</option>
+                  <option value="MSFS 2020">MSFS 2020</option>
+                  <option value="XP12">XP12</option>
+                  <option value="XP11">XP11</option>
+                  <option value="OTHER">Andere (bitte angeben)</option>
+                </select>
+                {simChoice === "OTHER" && (
+                  <input
+                    className="form-input"
+                    name="simulator"
+                    value={simOther}
+                    onChange={(e) => setSimOther(e.target.value)}
+                    placeholder="Welcher Simulator?"
+                    required
+                  />
+                )}
+              </label>
+
+              <label className="form-label">
+                Navigraph Abonnement
+                <select
+                  className="form-select"
+                  name="airac"
+                  value={form.airac}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Bitte wählen</option>
+                  <option value="Full">Full</option>
+                  <option value="Navigation Data">Navigation Data</option>
+                  <option value="Nein">Nein</option>
                 </select>
               </label>
+
               <label className="form-label">
-                Flugregeln und Ziele:
-                <select className="form-select" name="category" value={form.category} onChange={handleChange} required>
+                Charts
+                <select
+                  className="form-select"
+                  value={chartsChoice}
+                  onChange={(e) => setChartsChoice(e.target.value)}
+                  required
+                >
                   <option value="">Bitte wählen</option>
-                  <option value="if_airliner">IFR mit Airliner</option>
-                  <option value="if_ga">IFR mit GA-Flugzeug</option>
-                  <option value="vfr">VFR</option>
+                  <option value="Navigraph">Navigraph</option>
+                  <option value="MSFS Flight Planner">MSFS Flight Planner</option>
+                  <option value="Chartfox">Chartfox</option>
+                  <option value="OTHER">Andere (bitte angeben)</option>
+                </select>
+                {chartsChoice === "OTHER" && (
+                  <input
+                    className="form-input"
+                    name="charts"
+                    value={chartsOther}
+                    onChange={(e) => setChartsOther(e.target.value)}
+                    placeholder="Welche Charts nutzt du?"
+                    required
+                  />
+                )}
+              </label>
+
+              <label className="form-label">
+                Erfahrungen mit der Flugsimulation
+                <textarea
+                  className="form-textarea"
+                  name="experience"
+                  value={form.experience}
+                  onChange={handleChange}
+                  required
+                  placeholder={"Wie lange machst du Flugsimulation? Seit wann bei VATSIM? Schon als Observer zugehört? Schon online geflogen? Was hast du sonst unternommen?"}
+                />
+              </label>
+
+              <label className="form-label">
+                Flugzeug
+                <textarea
+                  className="form-textarea"
+                  name="aircraft"
+                  value={form.aircraft}
+                  onChange={handleChange}
+                  required
+                  placeholder={"Mit welchem Flugzeug willst du trainieren? Wie gut kommst du damit zurecht (Geht so / Meistens unfallfrei / Fortgeschritten)?"}
+                />
+              </label>
+
+              <label className="form-label">
+                Deine Hardware-Ausstattung
+                <textarea
+                  className="form-textarea"
+                  name="communication"
+                  value={form.communication}
+                  onChange={handleChange}
+                  required
+                  placeholder={"Monitore? Steuerhardware? Headset?"}
+                />
+              </label>
+
+              <label className="form-label">
+                Persönliches
+                <textarea
+                  className="form-textarea"
+                  name="personal"
+                  value={form.personal}
+                  onChange={handleChange}
+                  placeholder={"Alter, Beruf/Schule, Wohnort/Gegend"}
+                />
+              </label>
+
+              <label className="form-label">
+                Fliegerische Themen
+                <textarea
+                  className="form-textarea"
+                  name="topics"
+                  value={form.topics}
+                  onChange={handleChange}
+                  placeholder={"Was möchtest du in unserem Training lernen?"}
+                />
+              </label>
+
+              <label className="form-label">
+                Terminvorstellung
+                <input
+                  className="form-input"
+                  name="schedule"
+                  value={form.schedule}
+                  onChange={handleChange}
+                  required
+                  placeholder="Wochentage, Zeiträume"
+                />
+              </label>
+
+              <label className="form-label">
+                Was du uns sonst noch mitteilen möchtest
+                <textarea
+                  className="form-textarea"
+                  name="other"
+                  value={form.other}
+                  onChange={handleChange}
+                  placeholder={"Alter, Beruf/Schule, Wohnort/Gegend, weitere Hobbies, sonstige Anmerkungen"}
+                />
+              </label>
+
+              <label className="form-label">
+                Piloten-Client
+                <input
+                  className="form-input"
+                  name="client"
+                  value={form.client}
+                  onChange={handleChange}
+                  required
+                  placeholder="vPilot, xPilot, swift, …"
+                />
+              </label>
+
+              <label className="form-label">
+                Piloten-Client Status
+                <select
+                  className="form-select"
+                  name="clientSetup"
+                  value={form.clientSetup}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Bitte wählen</option>
+                  <option value="Eingerichtet und läuft">Eingerichtet und läuft</option>
+                  <option value="Brauche noch Hilfe beim Einrichten">Brauche noch Hilfe beim Einrichten</option>
+                  <option value="Was ist das?">Was ist das?</option>
                 </select>
               </label>
+
               <label className="form-label">
-                Fliegerische Themen:
-                <textarea className="form-textarea" name="topics" value={form.topics} onChange={handleChange} placeholder="Flugplanung, Durchführung, besondere Verfahren etc." />
+                Vatsim Germany Discord
+                <select
+                  className="form-select"
+                  value={discordStatus}
+                  onChange={(e) => setDiscordStatus(e.target.value)}
+                  required
+                >
+                  <option value="">Bitte wählen</option>
+                  <option value="Ich bin registriert und kann alle Channels sehen">Ich bin registriert und kann alle Channels sehen</option>
+                  <option value="Bin mir nicht sicher">Bin mir nicht sicher</option>
+                </select>
               </label>
+
               <label className="form-label">
-                Terminvorstellung:
-                <input className="form-input" name="schedule" value={form.schedule} onChange={handleChange} required placeholder="Wochentage, Zeiträume" />
+                Online Traffic im Simulator
+                <select
+                  className="form-select"
+                  value={trafficStatus}
+                  onChange={(e) => setTrafficStatus(e.target.value)}
+                  required
+                >
+                  <option value="">Bitte wählen</option>
+                  <option value="Ich sehe Online Traffic und er ist realistisch">Ich sehe Online Traffic und er ist realistisch</option>
+                  <option value="Ich sehe alle möglichen Flugzeuge">Ich sehe alle möglichen Flugzeuge</option>
+                  <option value="Ich sehe keine anderen Flugzeuge">Ich sehe keine anderen Flugzeuge</option>
+                </select>
               </label>
-              <label className="form-label">
-                Kommunikation:
-                <textarea className="form-textarea" name="communication" value={form.communication} onChange={handleChange} required placeholder="Teamspeak, Discord, Zugang vorhanden?" />
-              </label>
-              <label className="form-label">
-                Persönliches:
-                <textarea className="form-textarea" name="personal" value={form.personal} onChange={handleChange} placeholder="Alter, Beruf, Wohnort (optional)" />
-              </label>
-              <label className="form-label">
-                Sonstiges:
-                <textarea className="form-textarea" name="other" value={form.other} onChange={handleChange} placeholder="Was du noch erwähnen möchtest" />
-              </label>
+
               <button type="submit" className="button form-submit" disabled={isLoading}>
                 {isLoading ? "Wird abgesendet..." : "Absenden"}
               </button>
