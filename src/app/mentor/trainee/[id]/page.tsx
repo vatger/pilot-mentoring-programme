@@ -170,6 +170,24 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const deleteSession = async (sessionId: string) => {
+    if (!confirm("Möchten Sie diese Entwurfssitzung wirklich löschen?")) {
+      return;
+    }
+    setSavingSession(true);
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete session");
+      await fetchTrainingDetails();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSavingSession(false);
+    }
+  };
+
   if (status === "loading" || loading) {
     return (
       <PageLayout>
@@ -387,6 +405,14 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                                   style={{ fontSize: "0.75rem" }}
                                 >
                                   {savingSession ? "Freigeben..." : "Freigeben"}
+                                </button>
+                                <button
+                                  onClick={() => deleteSession(sess.id)}
+                                  disabled={savingSession}
+                                  className="button"
+                                  style={{ fontSize: "0.75rem", backgroundColor: "var(--danger-bg)", color: "white" }}
+                                >
+                                  {savingSession ? "Löschen..." : "Löschen"}
                                 </button>
                               </>
                             )}

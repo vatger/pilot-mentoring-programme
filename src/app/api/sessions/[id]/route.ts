@@ -53,3 +53,54 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userRole = (session.user as any).role;
+    const isMentor =
+      userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
+
+    if (!isMentor) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const sessionRecord = await prisma.trainingSession.findUnique({
+      where: { id },
+    });
+
+    if (!sessionRecord) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    // Only allow deletion of draft sessions
+    if (!sessionRecord.isDraft) {
+      return NextResponse.json(
+        { error: "Cannot delete published sessions" },
+        { status: 403 }
+      );
+    }
+
+    // Delete the session (topics will be cascade deleted)
+    await prisma.trainingSession.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error: any) {
+    console.error("Error deleting session:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
