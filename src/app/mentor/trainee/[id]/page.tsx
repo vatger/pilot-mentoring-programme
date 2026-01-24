@@ -63,8 +63,6 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingCheckride, setUpdatingCheckride] = useState(false);
-  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
-  const [editingComments, setEditingComments] = useState("");
   const [savingSession, setSavingSession] = useState(false);
 
   const userRole = (session?.user as any)?.role;
@@ -121,37 +119,6 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       setError(err.message);
     } finally {
       setUpdatingCheckride(false);
-    }
-  };
-
-  const startEditSession = (sessionId: string, currentComments: string | null) => {
-    setEditingSessionId(sessionId);
-    setEditingComments(currentComments || "");
-  };
-
-  const saveSessionEdit = async (sessionId: string) => {
-    setSavingSession(true);
-    try {
-      const res = await fetch(`/api/sessions/${sessionId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comments: editingComments }),
-      });
-      if (!res.ok) throw new Error("Failed to save session");
-      
-      // Update training data
-      if (training) {
-        const updatedSessions = training.sessions.map(s =>
-          s.id === sessionId ? { ...s, comments: editingComments } : s
-        );
-        setTraining({ ...training, sessions: updatedSessions });
-      }
-      setEditingSessionId(null);
-      setEditingComments("");
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSavingSession(false);
     }
   };
 
@@ -341,144 +308,79 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
           {training.sessions.length === 0 ? (
             <p style={{ color: "var(--text-muted)" }}>Keine Sitzungen erfasst</p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               {training.sessions
                 .sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime())
                 .map((sess) => (
                   <div
                     key={sess.id}
-                    className="form-card"
                     style={{
-                      opacity: sess.isDraft ? 0.7 : 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      border: "1px solid var(--footer-border)",
                       borderLeft: `4px solid ${sess.isDraft ? "var(--warning-color)" : "var(--success-color)"}`,
+                      opacity: sess.isDraft ? 0.7 : 1,
+                      gap: "1rem",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-                      <div>
-                        <p>
-                          <strong>Datum:</strong> {new Date(sess.sessionDate).toLocaleDateString()}
-                        </p>
-                        {sess.isDraft ? (
-                          <span style={{ color: "var(--warning-color)", fontSize: "0.875rem" }}>
-                            🔧 Entwurf
-                          </span>
-                        ) : (
-                          <span style={{ color: "var(--success-color)", fontSize: "0.875rem" }}>
-                            ✓ Freigegeben: {sess.releasedAt ? new Date(sess.releasedAt).toLocaleDateString() : "N/A"}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                        {editingSessionId === sess.id ? (
-                          <>
-                            <button
-                              onClick={() => saveSessionEdit(sess.id)}
-                              disabled={savingSession}
-                              className="button"
-                              style={{ fontSize: "0.75rem" }}
-                            >
-                              {savingSession ? "Speichern..." : "Speichern"}
-                            </button>
-                            <button
-                              onClick={() => setEditingSessionId(null)}
-                              className="button"
-                              style={{ fontSize: "0.75rem", opacity: 0.7 }}
-                            >
-                              Abbrechen
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            {sess.isDraft && (
-                              <>
-                                <button
-                                  onClick={() => startEditSession(sess.id, sess.comments)}
-                                  className="button"
-                                  style={{ fontSize: "0.75rem" }}
-                                >
-                                  Notizen Bearbeiten
-                                </button>
-                                <button
-                                  onClick={() => releaseSession(sess.id)}
-                                  disabled={savingSession}
-                                  className="button"
-                                  style={{ fontSize: "0.75rem" }}
-                                >
-                                  {savingSession ? "Freigeben..." : "Freigeben"}
-                                </button>
-                                <button
-                                  onClick={() => deleteSession(sess.id)}
-                                  disabled={savingSession}
-                                  className="button"
-                                  style={{ fontSize: "0.75rem", backgroundColor: "var(--danger-bg)", color: "white" }}
-                                >
-                                  {savingSession ? "Löschen..." : "Löschen"}
-                                </button>
-                              </>
-                            )}
-                            <Link
-                              href={`/trainings/session/${sess.id}?trainingId=${training.id}`}
-                              className="button"
-                              style={{ fontSize: "0.75rem" }}
-                            >
-                              {sess.isDraft ? "Whiteboard hinzufügen" : "Ansehen"}
-                            </Link>
-                          </>
-                        )}
-                      </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1 }}>
+                      <span style={{ fontWeight: 600, minWidth: "100px" }}>
+                        {new Date(sess.sessionDate).toLocaleDateString()}
+                      </span>
+                      <span style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                        {sess.topics.filter(t => t.checked).length} Themen
+                      </span>
+                      {sess.isDraft ? (
+                        <span style={{ color: "var(--warning-color)", fontSize: "0.875rem" }}>
+                          🔧 Entwurf
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--success-color)", fontSize: "0.875rem" }}>
+                          ✓ Freigegeben
+                        </span>
+                      )}
                     </div>
-
-                    {editingSessionId === sess.id ? (
-                      <div style={{ marginBottom: "1rem" }}>
-                        <label>
-                          <strong>Kommentare:</strong>
-                          <textarea
-                            value={editingComments}
-                            onChange={(e) => setEditingComments(e.target.value)}
-                            style={{
-                              width: "100%",
-                              minHeight: "100px",
-                              padding: "0.5rem",
-                              marginTop: "0.5rem",
-                              border: "1px solid var(--border-color)",
-                              borderRadius: "4px",
-                              fontFamily: "inherit",
-                            }}
-                          />
-                        </label>
-                      </div>
-                    ) : (
-                      <>
-                        {sess.topics.length > 0 && (
-                          <div style={{ marginBottom: "0.5rem" }}>
-                            <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
-                              Abgedeckte Themen: {sess.topics.filter(t => t.checked).length} / {sess.topics.length}
-                            </p>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                              {sess.topics.filter(t => t.checked).map((topic, idx) => (
-                                <span
-                                  key={idx}
-                                  style={{
-                                    backgroundColor: "var(--accent-color)",
-                                    color: "white",
-                                    padding: "0.25rem 0.5rem",
-                                    borderRadius: "0.5rem",
-                                    fontSize: "0.75rem",
-                                  }}
-                                >
-                                  {topic.topic}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {sess.comments && (
-                          <p style={{ marginTop: "0.5rem", fontSize: "0.875rem", fontStyle: "italic", color: "var(--text-color)" }}>
-                            "{sess.comments}"
-                          </p>
-                        )}
-                      </>
-                    )}
+                    <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+                      {sess.isDraft && (
+                        <>
+                          <button
+                            onClick={() => releaseSession(sess.id)}
+                            disabled={savingSession}
+                            className="button"
+                            style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                          >
+                            {savingSession ? "..." : "Freigeben"}
+                          </button>
+                          <button
+                            onClick={() => deleteSession(sess.id)}
+                            disabled={savingSession}
+                            className="button"
+                            style={{ fontSize: "0.75rem", padding: "4px 10px", backgroundColor: "var(--danger-bg)", color: "white" }}
+                          >
+                            {savingSession ? "..." : "Löschen"}
+                          </button>
+                        </>
+                      )}
+                      <Link
+                        href={`/mentor/session-details/${sess.id}?trainingId=${training.id}`}
+                        className="button"
+                        style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                      >
+                        Details
+                      </Link>
+                      {sess.isDraft && (
+                        <Link
+                          href={`/trainings/session/${sess.id}?trainingId=${training.id}`}
+                          className="button"
+                          style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                        >
+                          Whiteboard
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 ))}
             </div>
