@@ -237,7 +237,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                 disabled={updatingCheckride}
                 style={{ width: "1.2rem", height: "1.2rem", cursor: "pointer" }}
               />
-              <strong>Bereit für den Prüfungsflug</strong>
+              <strong>Bereit für den Check Ride</strong>
             </label>
           </p>
         </div>
@@ -261,7 +261,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
         {/* Checkride Info */}
         {checkride && (
           <div className="card" style={{ marginBottom: "2rem" }}>
-            <h3>Prüfungsflug</h3>
+            <h3>Check Ride</h3>
             <p>
               <strong>Status:</strong>{" "}
               <span

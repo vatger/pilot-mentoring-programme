@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { trainingTopicKeys } from "@/lib/trainingTopics";
 import { TrainingTopic, LessonType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -55,6 +56,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Sanitize topics to allowed enum values
+    const normalizedTopics = (Array.isArray(checkedTopics) ? checkedTopics : []).filter(
+      (topic: { topic: string }) => trainingTopicKeys.includes(topic.topic as TrainingTopic)
+    );
+
     // If sessionId provided, update existing; else create new
     let trainingSession;
     if (sessionId) {
@@ -80,7 +86,7 @@ export async function POST(request: NextRequest) {
           isDraft: isDraft !== false, // default true if undefined
           releasedAt: isDraft === false ? new Date() : null,
           topics: {
-            create: checkedTopics.map(
+            create: normalizedTopics.map(
               (topic: { topic: string; checked: boolean; comment?: string; order: number }) => ({
                 topic: topic.topic as TrainingTopic,
                 checked: topic.checked,
@@ -103,7 +109,7 @@ export async function POST(request: NextRequest) {
           isDraft: isDraft !== false, // default true if undefined
           releasedAt: isDraft === false ? new Date() : null,
           topics: {
-            create: checkedTopics.map(
+            create: normalizedTopics.map(
               (topic: { topic: string; checked: boolean; comment?: string; order: number }) => ({
                 topic: topic.topic as TrainingTopic,
                 checked: topic.checked,

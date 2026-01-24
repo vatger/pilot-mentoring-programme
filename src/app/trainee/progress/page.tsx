@@ -4,25 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import PageLayout from "@/components/PageLayout";
-
-const TRAINING_TOPICS = [
-  { key: "NMOC_BASICS", label: "Wiederholung Elemente New Member Orientation Course & Grundlagen" },
-  { key: "FLIGHT_PLANNING", label: "Flugplanung & Charts" },
-  { key: "ATC_PHRASEOLOGY", label: "ATC Phraseologie" },
-  { key: "SELF_BRIEFING", label: "Self Briefing" },
-  { key: "PRE_FLIGHT", label: "Flugvorbereitung" },
-  { key: "ENROUTE_CLEARANCE", label: "IFR Clearance" },
-  { key: "STARTUP_PUSHBACK", label: "Startup & Pushback" },
-  { key: "TAXI_RUNWAY", label: "Taxi zur Runway" },
-  { key: "TAKEOFF", label: "Takeoff" },
-  { key: "DEPARTURE", label: "Departure" },
-  { key: "ENROUTE", label: "Enroute" },
-  { key: "ARRIVAL_TRANSITION", label: "Standard Arrival STAR / LNAV-Transition" },
-  { key: "APPROACH", label: "Approach" },
-  { key: "LANDING", label: "Landung" },
-  { key: "TAXI_PARKING", label: "Taxi zum Gate" },
-  { key: "PRE_CHECK_RIDE", label: "Pre Check Ride" },
-];
+import { trainingTopics } from "@/lib/trainingTopics";
 
 interface Mentor {
   mentorId: string;
@@ -161,7 +143,7 @@ function TraineeProgressContent() {
   }
 
   const progressPercent = training ? Math.round(
-    (coveredTopics.size / TRAINING_TOPICS.length) * 100
+    (coveredTopics.size / trainingTopics.length) * 100
   ) : 0;
 
   return (
@@ -241,7 +223,7 @@ function TraineeProgressContent() {
                   {progressPercent}%
                 </div>
                 <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
-                  {coveredTopics.size} / {TRAINING_TOPICS.length} Themen
+                  {coveredTopics.size} / {trainingTopics.length} Themen
                 </div>
               </div>
               <div>
@@ -272,7 +254,7 @@ function TraineeProgressContent() {
           <div className="card" style={{ marginBottom: "1.5rem" }}>
             <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Trainingsthemen</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "8px" }}>
-              {TRAINING_TOPICS.map((topic) => {
+              {trainingTopics.map((topic) => {
                 const isCovered = coveredTopics.has(topic.key);
                 return (
                   <div
@@ -432,7 +414,7 @@ function TraineeProgressContent() {
                                     <div style={{ fontSize: "0.9em" }}>
                                       <div style={{ fontWeight: 500, marginBottom: topic.comment ? "0.25rem" : "0" }}>
                                         {
-                                          TRAINING_TOPICS.find(
+                                          trainingTopics.find(
                                             (t) => t.key === topic.topic
                                           )?.label
                                         }

@@ -4,26 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import PageLayout from "@/components/PageLayout";
-
-// Training topics extracted from the draft
-const TRAINING_TOPICS = [
-  { key: "NMOC_BASICS", label: "Wiederholung Elemente New Member Orientation Course & Grundlagen" },
-  { key: "FLIGHT_PLANNING", label: "Flugplanung & Charts" },
-  { key: "ATC_PHRASEOLOGY", label: "ATC Phraseologie" },
-  { key: "SELF_BRIEFING", label: "Self Briefing" },
-  { key: "PRE_FLIGHT", label: "Flugvorbereitung" },
-  { key: "ENROUTE_CLEARANCE", label: "IFR Clearance" },
-  { key: "STARTUP_PUSHBACK", label: "Startup & Pushback" },
-  { key: "TAXI_RUNWAY", label: "Taxi zur Runway" },
-  { key: "TAKEOFF", label: "Takeoff" },
-  { key: "DEPARTURE", label: "Departure" },
-  { key: "ENROUTE", label: "Enroute" },
-  { key: "ARRIVAL_TRANSITION", label: "Standard Arrival STAR / LNAV-Transition" },
-  { key: "APPROACH", label: "Approach" },
-  { key: "LANDING", label: "Landung" },
-  { key: "TAXI_PARKING", label: "Taxi zum Gate" },
-  { key: "PRE_CHECK_RIDE", label: "Pre Check Ride" },
-];
+import { trainingTopics } from "@/lib/trainingTopics";
 
 interface SessionLog {
   id: string;
@@ -124,7 +105,7 @@ function SessionLoggingContent() {
     setSuccess(false);
 
     try {
-      const topicData = TRAINING_TOPICS.map((t, idx) => ({
+      const topicData = trainingTopics.map((t, idx) => ({
         topic: t.key,
         checked: checkedTopics[t.key] || false,
         comment: topicComments[t.key] || null,
@@ -214,7 +195,7 @@ function SessionLoggingContent() {
             <option value="ONLINE_FLUG">Online Flug</option>
           </select>
           <small style={{ display: "block", marginTop: "0.5rem", color: "var(--text-muted)" }}>
-            Pre-Check Ride ist eine Form von Online Flug.
+            Der Status "Bereit für Check Ride" wird separat im Training gesetzt.
           </small>
         </label>
 
@@ -257,7 +238,7 @@ function SessionLoggingContent() {
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {TRAINING_TOPICS.map((topic) => {
+            {trainingTopics.map((topic) => {
               const isPreviouslyCovered = getCoverageStatus(topic.key);
               const isChecked = checkedTopics[topic.key] || false;
               return (
@@ -358,7 +339,7 @@ function SessionLoggingContent() {
                     .map((t: SessionLog) => t.topic)
                 ).size
               }
-              /{TRAINING_TOPICS.length}
+              /{trainingTopics.length}
             </span>
           </p>
         </div>

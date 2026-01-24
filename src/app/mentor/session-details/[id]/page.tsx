@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 import Link from "next/link";
+import { trainingTopicLabelMap } from "@/lib/trainingTopics";
 
 type SessionDetails = {
   id: string;
@@ -29,25 +30,6 @@ type SessionDetails = {
       email: string | null;
     };
   };
-};
-
-const TRAINING_TOPICS_LABELS: Record<string, string> = {
-  NMOC_BASICS: "Wiederholung Elemente New Member Orientation Course & Grundlagen",
-  FLIGHT_PLANNING: "Flugplanung & Charts",
-  ATC_PHRASEOLOGY: "ATC Phraseologie",
-  SELF_BRIEFING: "Self Briefing",
-  PRE_FLIGHT: "Flugvorbereitung",
-  ENROUTE_CLEARANCE: "IFR Clearance",
-  STARTUP_PUSHBACK: "Startup & Pushback",
-  TAXI_RUNWAY: "Taxi zur Runway",
-  TAKEOFF: "Takeoff",
-  DEPARTURE: "Departure",
-  ENROUTE: "Enroute",
-  ARRIVAL_TRANSITION: "Standard Arrival STAR / LNAV-Transition",
-  APPROACH: "Approach",
-  LANDING: "Landung",
-  TAXI_PARKING: "Taxi zum Gate",
-  PRE_CHECK_RIDE: "Pre Check Ride",
 };
 
 const LESSON_TYPE_LABELS: Record<string, string> = {
@@ -193,7 +175,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
                     }}
                   >
                     <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
-                      {TRAINING_TOPICS_LABELS[topic.topic] || topic.topic}
+                      {trainingTopicLabelMap[topic.topic] || topic.topic}
                     </div>
                     {topic.comment && (
                       <div style={{ fontSize: "0.875rem", fontStyle: "italic", color: "var(--text-muted)" }}>

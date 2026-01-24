@@ -5,25 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 import Link from "next/link";
-
-const TRAINING_TOPICS = [
-  { key: "NMOC_BASICS", label: "Wiederholung Elemente New Member Orientation Course & Grundlagen" },
-  { key: "FLIGHT_PLANNING", label: "Flugplanung & Charts" },
-  { key: "ATC_PHRASEOLOGY", label: "ATC Phraseologie" },
-  { key: "SELF_BRIEFING", label: "Self Briefing" },
-  { key: "PRE_FLIGHT", label: "Flugvorbereitung" },
-  { key: "ENROUTE_CLEARANCE", label: "IFR Clearance" },
-  { key: "STARTUP_PUSHBACK", label: "Startup & Pushback" },
-  { key: "TAXI_RUNWAY", label: "Taxi zur Runway" },
-  { key: "TAKEOFF", label: "Takeoff" },
-  { key: "DEPARTURE", label: "Departure" },
-  { key: "ENROUTE", label: "Enroute" },
-  { key: "ARRIVAL_TRANSITION", label: "Standard Arrival STAR / LNAV-Transition" },
-  { key: "APPROACH", label: "Approach" },
-  { key: "LANDING", label: "Landung" },
-  { key: "TAXI_PARKING", label: "Taxi zum Gate" },
-  { key: "PRE_CHECK_RIDE", label: "Pre Check Ride" },
-];
+import { trainingTopics } from "@/lib/trainingTopics";
 
 type Trainee = {
   id: string;
@@ -139,7 +121,7 @@ export default function MentorTraineePage() {
                 .map((t) => t.topic)
             );
             const coveragePercent = Math.round(
-              (covered.size / TRAINING_TOPICS.length) * 100
+              (covered.size / trainingTopics.length) * 100
             );
 
             return (
@@ -206,7 +188,7 @@ export default function MentorTraineePage() {
                         />
                       </div>
                       <div style={{ fontSize: "0.8em", fontWeight: 600, minWidth: "35px" }}>
-                        {covered.size}/{TRAINING_TOPICS.length}
+                        {covered.size}/{trainingTopics.length}
                       </div>
                     </div>
                   </div>
@@ -222,7 +204,7 @@ export default function MentorTraineePage() {
 
                   <div>
                     <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
-                      Bereit für Checkride
+                      Bereit für Check Ride
                     </div>
                     <div
                       style={{
