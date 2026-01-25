@@ -168,7 +168,7 @@ export default function AnmeldungPage() {
           )}
           
           {submitted ? (
-            <div className="form-success info-success">Vielen Dank für deine Anmeldung! Ein Mentor wird sich in Kürze über das Forum per Private Message bei dir melden, stelle also sicher, dass du einen Account besitzt. Gehe dazu einfach auf <Link href="https://board.vatsim-germany.org">diesen Link</Link> und melde dich dort einmalig an.</div>
+            <div className="form-success info-success">Vielen Dank für deine Anmeldung! Ein Mentor wird sich in Kürze über das Forum per Private Message bei dir melden, stelle also sicher, dass du einen Account besitzt. Gehe dazu einfach auf <Link href="https://board.vatsim-germany.org">diesen Link</Link> und melde dich dort einmalig an. Expertentipp: Geh im Forum auf Einstellungen -- E-Mail-Einstellungen und aktiviere "Receive email when a new direct message is received" umd die Nachricht nicht zu verpassen.</div>
           ) : !showResetConfirm && (
             <form onSubmit={handleSubmit} className="anmeldung-form form-card">
               <label className="form-label">

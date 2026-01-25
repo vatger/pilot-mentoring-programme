@@ -258,7 +258,6 @@ export default function Header() {
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         <Link className="button" href="/admin">Admin Control Panel</Link>
                         <Link className="button" href="/pmp-tracking">PMP-Tracking</Link>
-                        <Link className="button" href="/mentor/trainee">Alle Trainees</Link>
                       </div>
                     </div>
                   )}
