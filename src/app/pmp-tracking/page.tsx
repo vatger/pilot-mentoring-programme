@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
-import { trainingTopicLabelMap, trainingTopics } from "@/lib/trainingTopics";
+import { trainingTopics } from "@/lib/trainingTopics";
 
 interface TrainingCoverageRow {
   trainingId: string;
@@ -56,8 +56,6 @@ function PmpTrackingContent() {
       setLoading(false);
     }
   };
-
-  const topicLabel = useMemo(() => trainingTopicLabelMap, []);
 
   const totalTopics = trainingTopics.length;
 
@@ -151,65 +149,32 @@ function PmpTrackingContent() {
               (row.topicsCoveredCount / totalTopics) * 100
             );
             return (
-              <div key={row.trainingId} className="card">
+              <div
+                key={row.trainingId}
+                className="card"
+                style={{ padding: "0.85rem 1rem", display: "grid", gap: "0.65rem" }}
+              >
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr auto",
-                    gap: "1.5rem",
-                    alignItems: "start",
+                    gridTemplateColumns: "1.1fr 1fr auto",
+                    gap: "0.75rem",
+                    alignItems: "center",
                   }}
                 >
-                  <div>
-                    <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.15em" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+                    <h3 style={{ margin: 0, fontSize: "1.05em", fontWeight: 700, whiteSpace: "nowrap" }}>
                       {row.trainee.name || "Unbekannt"}
                     </h3>
-                    <div
-                      style={{
-                        display: "grid",
-                        gap: "4px",
-                        fontSize: "0.9em",
-                        color: "var(--text-color)",
-                      }}
-                    >
-                      <div>
-                        <span style={{ fontWeight: 500 }}>CID:</span>{" "}
-                        <span style={{ fontFamily: "monospace" }}>
-                          {row.trainee.cid || "N/A"}
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ fontWeight: 500 }}>Status:</span> {row.status}
-                      </div>
-                      <div>
-                        <span style={{ fontWeight: 500 }}>Sessions:</span>{" "}
-                        {row.sessionsCount}
-                      </div>
-                      {row.lastSessionDate && (
-                        <div>
-                          <span style={{ fontWeight: 500 }}>Letztes Training:</span>{" "}
-                          {new Date(row.lastSessionDate).toLocaleDateString()}
-                        </div>
-                      )}
-                      {row.mentors.length > 0 && (
-                        <div>
-                          <span style={{ fontWeight: 500 }}>Mentoren:</span>{" "}
-                          {row.mentors.map((m) => m.name || m.cid).join(", ")}
-                        </div>
-                      )}
-                    </div>
+                    <span style={{ color: "var(--text-color)", fontFamily: "monospace", fontSize: "0.9em" }}>
+                      ({row.trainee.cid || "N/A"})
+                    </span>
                   </div>
 
-                  <div style={{ textAlign: "right", minWidth: "220px" }}>
-                    <div
-                      style={{
-                        fontSize: "1.05em",
-                        fontWeight: 600,
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      {row.topicsCoveredCount} / {totalTopics} Themen
-                    </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", width: "100%" }}>
+                    <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+                      {row.topicsCoveredCount} / {totalTopics}
+                    </span>
                     <div
                       style={{
                         width: "100%",
@@ -217,7 +182,6 @@ function PmpTrackingContent() {
                         background: "var(--footer-border)",
                         borderRadius: "999px",
                         overflow: "hidden",
-                        marginBottom: "0.75rem",
                       }}
                     >
                       <div
@@ -229,76 +193,34 @@ function PmpTrackingContent() {
                         }}
                       />
                     </div>
-                    <div
-                      style={{
-                        fontSize: "0.85em",
-                        color: "var(--text-color)",
-                        marginBottom: "0.75rem",
-                      }}
-                    >
-                      {coveragePercent}% Abgeschlossen
-                    </div>
-                    <Link
-                      href={`/trainee/progress?trainingId=${row.trainingId}`}
-                      className="button"
-                      style={{
-                        padding: "6px 12px",
-                        fontSize: "0.85em",
-                        margin: 0,
-                        display: "inline-block",
-                      }}
-                    >
-                      Details ansehen
-                    </Link>
+                    <span style={{ fontSize: "0.9em", color: "var(--text-color)", whiteSpace: "nowrap" }}>
+                      {coveragePercent}%
+                    </span>
                   </div>
+
+                  <Link
+                    href={`/trainee/progress?trainingId=${row.trainingId}`}
+                    className="button"
+                    style={{ padding: "6px 12px", fontSize: "0.9em", margin: 0, justifySelf: "end" }}
+                  >
+                    Details
+                  </Link>
                 </div>
 
                 <div
                   style={{
-                    marginTop: "1rem",
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-                    gap: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "1.25rem",
+                    flexWrap: "wrap",
+                    color: "var(--text-color)",
+                    fontSize: "0.95em",
                   }}
                 >
-                  {row.topicsCoverage.map((topic) => {
-                    const label = topicLabel[topic.topic] || topic.topic;
-                    return (
-                      <div
-                        key={topic.topic}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          padding: "6px 10px",
-                          borderRadius: "6px",
-                          border: `1px solid ${
-                            topic.covered
-                              ? "var(--accent-color)"
-                              : "var(--footer-border)"
-                          }`,
-                          background: topic.covered
-                            ? "rgba(0, 95, 163, 0.06)"
-                            : "transparent",
-                          fontSize: "0.85em",
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            background: topic.covered
-                              ? "var(--accent-color)"
-                              : "var(--footer-border)",
-                            display: "inline-block",
-                            flexShrink: 0,
-                          }}
-                        />
-                        <span>{label}</span>
-                      </div>
-                    );
-                  })}
+                  <span style={{ whiteSpace: "nowrap" }}>
+                    Mentor: {row.mentors.length > 0 ? row.mentors.map((m) => m.name || m.cid).join(", ") : "—"}
+                  </span>
+                  <span style={{ whiteSpace: "nowrap" }}>Sessions: {row.sessionsCount}</span>
                 </div>
               </div>
             );

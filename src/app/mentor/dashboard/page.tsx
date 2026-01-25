@@ -409,10 +409,6 @@ export default function MentorDashboard() {
                               {trainee.registration.simulator} / {trainee.registration.aircraft}
                             </div>
                           )}
-                          <div>
-                            <span style={{ color: "var(--text-color)" }}>Email:</span>{" "}
-                            {trainee.email || "N/A"}
-                          </div>
                         </div>
                       </div>
                       <button
