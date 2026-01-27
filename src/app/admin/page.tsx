@@ -192,10 +192,21 @@ export default function AdminPage() {
   return (
     <PageLayout>
       <div className="card" style={{ marginBottom: "1.5rem" }}>
-        <h1>Admin Control Panel</h1>
-        <p style={{ color: "var(--text-color)", margin: "0.5rem 0 0 0" }}>
-          Benutzer verwalten und Rollen zuweisen
-        </p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+          <div>
+            <h1>Admin Control Panel</h1>
+            <p style={{ color: "var(--text-color)", margin: "0.5rem 0 0 0" }}>
+              Benutzer verwalten und Rollen zuweisen
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/mentors-activity")}
+            className="button"
+            style={{ whiteSpace: "nowrap" }}
+          >
+            📊 Mentoren Aktivität
+          </button>
+        </div>
       </div>
 
       {error && (
