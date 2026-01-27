@@ -468,7 +468,8 @@ export default function MentorDashboard() {
               maxWidth: "800px",
               width: "100%",
               maxHeight: "90vh",
-              overflow: "auto",
+              overflowY: "auto",
+              overflowX: "hidden",
               position: "relative",
             }}
             onClick={(e) => e.stopPropagation()}

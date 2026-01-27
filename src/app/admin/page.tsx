@@ -202,7 +202,7 @@ export default function AdminPage() {
               </span>
             </div>
           </div>
-          <div className="card" style={{ overflowX: "auto", marginBottom: "1.5rem" }}>
+          <div className="card" style={{ overflowX: "auto", overflowY: "hidden", marginBottom: "1.5rem" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "2px solid var(--footer-border)" }}>
