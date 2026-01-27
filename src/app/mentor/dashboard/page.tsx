@@ -64,6 +64,10 @@ export default function MentorDashboard() {
   const [addingMentor, setAddingMentor] = useState<string | null>(null);
   const [selectedTrainee, setSelectedTrainee] = useState<TraineeInfo | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [cancelDialogFor, setCancelDialogFor] = useState<string | null>(null);
+  const [showCancellationReasonModal, setShowCancellationReasonModal] = useState<string | null>(null);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
@@ -126,8 +130,6 @@ export default function MentorDashboard() {
     }
   };
 
-  const [cancelDialogFor, setCancelDialogFor] = useState<string | null>(null);
-
   const handleDropTraining = async (trainingId: string) => {
     try {
       const res = await fetch("/api/training/drop", {
@@ -157,6 +159,35 @@ export default function MentorDashboard() {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setCancelDialogFor(null);
+    }
+  };
+
+  const handleCancelTraining = async (trainingId: string) => {
+    if (!cancellationReason.trim()) {
+      setError("Bitte geben Sie einen Grund für den Abbruch an");
+      return;
+    }
+
+    setCancelSubmitting(true);
+    try {
+      const res = await fetch("/api/training/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainingId, cancellationReason: cancellationReason.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Fehler beim Abbrechen des Trainings");
+      }
+      setCancellationReason("");
+      setShowCancellationReasonModal(null);
+      setCancelDialogFor(null);
+      await fetchData();
+      alert("Training erfolgreich zur Genehmigung eingereicht!");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setCancelSubmitting(false);
     }
   };
 
@@ -343,25 +374,29 @@ export default function MentorDashboard() {
                             Details ansehen
                           </button>
                           <button
-                            onClick={() => setCancelDialogFor(training.id)}
+                            onClick={() => setShowCancellationReasonModal(training.id)}
                             className="button button--danger"
                             style={{ margin: 0 }}
                           >
-                            Abbrechen
+                            Training Abbrechen
+                          </button>
+                          <button
+                            onClick={() => setCancelDialogFor(training.id)}
+                            className="button"
+                            style={{ margin: 0 }}
+                          >
+                            Weitere Optionen
                           </button>
                           {cancelDialogFor === training.id && (
                             <div className="card" style={{ margin: 0, padding: "10px 12px", background: "var(--container-bg)" }}>
                               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                 <div style={{ fontWeight: 600, color: "var(--text-color)" }}>Training verwalten</div>
                                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                                  <button className="button button--danger" onClick={() => handleDropTraining(training.id)}>
-                                    Training Abbrechen (löscht alle Daten)
-                                  </button>
                                   <button className="button" onClick={() => handleRemoveSelfAsMentor(training.id)}>
                                     Entferne mich als Mentor
                                   </button>
                                   <button className="button" onClick={() => setCancelDialogFor(null)}>
-                                    Abbrechen
+                                    Schließen
                                   </button>
                                 </div>
                                 <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
@@ -608,6 +643,88 @@ export default function MentorDashboard() {
               )}
               <button onClick={closeModal} className="button">
                 Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancellation Reason Modal */}
+      {showCancellationReasonModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+            padding: "24px",
+          }}
+          onClick={() => {
+            setShowCancellationReasonModal(null);
+            setCancellationReason("");
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              maxWidth: "500px",
+              width: "100%",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              overflowX: "hidden",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>Training Abbrechen</h2>
+            <p style={{ marginBottom: "1rem", color: "var(--text-color)" }}>
+              Bitte geben Sie einen Grund für den Abbruch des Trainings an. Die Leitung wird Ihre Anfrage überprüfen und kann dann entweder:
+            </p>
+            <ul style={{ marginBottom: "1rem", color: "var(--text-color)" }}>
+              <li>Den Traineeeintrag komplett löschen</li>
+              <li>Den Traineeeintrag als wartenden Trainee wieder freigeben</li>
+            </ul>
+            
+            <div style={{ marginBottom: "1.5rem" }}>
+              <label className="form-label" style={{ marginBottom: "0.5rem" }}>
+                Grund für Abbruch:
+              </label>
+              <textarea
+                className="form-textarea"
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                placeholder="z.B. Keine Zeit für Training, Trainingsziele erreicht, Trainee nicht erreichbar, etc."
+                style={{ minHeight: "120px", width: "100%", boxSizing: "border-box" }}
+              />
+            </div>
+
+            {error && (
+              <div style={{ backgroundColor: "#ffcccc", color: "#cc0000", padding: "0.75rem", borderRadius: "6px", marginBottom: "1rem" }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => {
+                  setShowCancellationReasonModal(null);
+                  setCancellationReason("");
+                  setError("");
+                }}
+                className="button"
+                disabled={cancelSubmitting}
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => handleCancelTraining(showCancellationReasonModal)}
+                className="button button--danger"
+                disabled={cancelSubmitting || !cancellationReason.trim()}
+              >
+                {cancelSubmitting ? "Wird eingereicht..." : "Training Abbrechen"}
               </button>
             </div>
           </div>

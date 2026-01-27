@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/training/cancel
- * Cancel a training (set status to ABGEBROCHEN)
+ * Initiate cancellation of a training (mentor provides reason, PMP_LEITUNG approves)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -17,16 +17,23 @@ export async function POST(request: NextRequest) {
     const userRole = (session.user as any).role;
     const userId = (session.user as any).id;
 
-    // Only MENTOR, PMP_LEITUNG, and ADMIN can cancel trainings
+    // Only MENTOR, PMP_LEITUNG, and ADMIN can initiate cancellation
     if (!["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(userRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { trainingId } = await request.json();
+    const { trainingId, cancellationReason } = await request.json();
 
     if (!trainingId) {
       return NextResponse.json(
         { error: "trainingId is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!cancellationReason || cancellationReason.trim().length === 0) {
+      return NextResponse.json(
+        { error: "cancellationReason is required" },
         { status: 400 }
       );
     }
@@ -50,25 +57,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update training status
+    // Update training status to ABGEBROCHEN and store cancellation reason
     const updated = await prisma.training.update({
       where: { id: trainingId },
-      data: { status: "ABGEBROCHEN" },
+      data: { 
+        status: "ABGEBROCHEN",
+        cancellationReason: cancellationReason.trim(),
+        cancellationAt: new Date(),
+      } as any,
       include: {
         mentors: {
           include: { mentor: { select: { id: true, name: true } } },
         },
+        trainee: true,
       },
     });
 
-    // Update trainee userStatus to "Cancelled Trainee" and set role to VISITOR
-    await prisma.user.update({
-      where: { id: training.traineeId },
-      data: { 
-        userStatus: "Cancelled Trainee",
-        role: "VISITOR"
-      },
-    });
+    // DO NOT update trainee status here - let PMP_LEITUNG decide in approval route
+    // The trainee remains in their current state until PMP_LEITUNG takes action
 
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {

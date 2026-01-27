@@ -15,6 +15,14 @@ interface User {
   createdAt: string;
 }
 
+interface PendingCancellation {
+  id: string;
+  traineeId: string;
+  trainee: { id: string; name: string; cid: string };
+  cancellationReason: string;
+  cancellationAt: string;
+}
+
 type UserRole = "ADMIN" | "PMP_LEITUNG" | "PMP_PRÜFER" | "MENTOR" | "TRAINEE" | "PENDING_TRAINEE" | "COMPLETED_TRAINEE" | "VISITOR";
 type UserStatus = "" | "Pausierter Mentor" | "Deleted Mentor" | "Cancelled Trainee" | "Completed Trainee";
 
@@ -25,8 +33,10 @@ export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
+  const [pendingCancellations, setPendingCancellations] = useState<PendingCancellation[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [approvingCancellation, setApprovingCancellation] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -52,6 +62,13 @@ export default function AdminPage() {
       if (!res.ok) throw new Error("Failed to fetch users");
       const data = await res.json();
       setUsers(data);
+
+      // Also fetch pending cancellations
+      const cancellationsRes = await fetch("/api/training/pending-cancellations");
+      if (cancellationsRes.ok) {
+        const cancellationsData = await cancellationsRes.json();
+        setPendingCancellations(cancellationsData);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -90,6 +107,31 @@ export default function AdminPage() {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const approveCancellation = async (trainingId: string, action: "delete" | "reactivate") => {
+    setApprovingCancellation(trainingId);
+    try {
+      const res = await fetch("/api/training/cancel/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainingId, action }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to approve cancellation");
+      }
+      await fetchUsers();
+      alert(
+        action === "delete"
+          ? "Trainee und alle Daten wurden gelöscht"
+          : "Trainee wurde als wartender Trainee zurück aktiviert"
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setApprovingCancellation(null);
     }
   };
 
@@ -168,6 +210,64 @@ export default function AdminPage() {
         </div>
       ) : (
         <>
+          {/* Pending Cancellations Section */}
+          {pendingCancellations.length > 0 && (
+            <div style={{ marginBottom: "2rem" }}>
+              <div className="card" style={{ marginBottom: "1rem", borderLeft: "4px solid var(--accent-color)" }}>
+                <h2 style={{ marginTop: 0, marginBottom: "1rem", color: "var(--text-color)" }}>
+                  Wartende Trainingsabbrüche ({pendingCancellations.length})
+                </h2>
+                <p style={{ color: "var(--text-color)", marginBottom: "1rem" }}>
+                  Die folgenden Trainings wurden von Mentoren zur Genehmigung eingereicht:
+                </p>
+                <div style={{ display: "grid", gap: "1rem" }}>
+                  {pendingCancellations.map((cancellation) => (
+                    <div key={cancellation.id} className="card" style={{ backgroundColor: "var(--card-bg)" }}>
+                      <div style={{ marginBottom: "1rem" }}>
+                        <h3 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "1.1em" }}>
+                          {cancellation.trainee.name}
+                        </h3>
+                        <div style={{ display: "grid", gap: "0.5rem", fontSize: "0.9em", color: "var(--text-color)" }}>
+                          <div><strong>CID:</strong> {cancellation.trainee.cid}</div>
+                          <div><strong>Grund für Abbruch:</strong></div>
+                          <div style={{ 
+                            backgroundColor: "rgba(0, 0, 0, 0.05)", 
+                            padding: "0.75rem", 
+                            borderRadius: "6px", 
+                            whiteSpace: "pre-wrap",
+                            color: "var(--text-color)"
+                          }}>
+                            {cancellation.cancellationReason}
+                          </div>
+                          <div><strong>Angefordert am:</strong> {new Date(cancellation.cancellationAt).toLocaleString("de-DE")}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                        <button
+                          onClick={() => approveCancellation(cancellation.id, "delete")}
+                          disabled={approvingCancellation === cancellation.id}
+                          className="button button--danger"
+                          style={{ margin: 0 }}
+                        >
+                          {approvingCancellation === cancellation.id ? "Wird bearbeitet..." : "Trainee löschen"}
+                        </button>
+                        <button
+                          onClick={() => approveCancellation(cancellation.id, "reactivate")}
+                          disabled={approvingCancellation === cancellation.id}
+                          className="button"
+                          style={{ margin: 0 }}
+                        >
+                          {approvingCancellation === cancellation.id ? "Wird bearbeitet..." : "Wieder aktivieren"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* User Management Section */}
           <div className="card" style={{ marginBottom: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <label htmlFor="search" style={{ fontWeight: 600, fontSize: "0.95em" }}>
