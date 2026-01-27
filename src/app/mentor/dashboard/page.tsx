@@ -22,6 +22,7 @@ interface RegistrationData {
   schedule: string;
   communication: string;
   personal: string | null;
+  other: string | null;
 }
 
 interface TraineeInfo {
@@ -215,223 +216,235 @@ export default function MentorDashboard() {
   }
 
   return (
-    <PageLayout>
-      <div className="card" style={{ marginBottom: "1.5rem" }}>
-        <h1>Mentoren Dashboard</h1>
-        <p style={{ color: "var(--text-color)", margin: "0.5rem 0 0 0" }}>
-          Verwalte deine Trainings und Trainees
-        </p>
-      </div>
-
-      {error && (
-        <div className="info-danger" style={{ marginBottom: "1.5rem" }}>
-          <p>{error}</p>
+    <>
+      <PageLayout>
+        <div className="card" style={{ marginBottom: "1.5rem" }}>
+          <h1>Mentoren Dashboard</h1>
+          <p style={{ color: "var(--text-color)", margin: "0.5rem 0 0 0" }}>
+            Verwalte deine Trainings und Trainees
+          </p>
         </div>
-      )}
 
-      {loading ? (
-        <div className="card"><p style={{ margin: 0 }}>Lädt...</p></div>
-      ) : !isMentor ? (
-        <div className="info-danger">
-          <p>Zugriff verweigert. Nur Mentoren können diese Seite ansehen.</p>
-        </div>
-      ) : (
-        <>
-          {/* Current Trainings */}
-          <section style={{ marginBottom: "2.5rem" }}>
-            <h2 style={{ marginBottom: "1rem", fontSize: "1.3em", fontWeight: 600 }}>
-              Meine aktuellen Trainees
-            </h2>
-            {currentTrainings.length === 0 ? (
-              <div className="card">
-                <p style={{ margin: 0 }}>Noch keine aktiven Trainees.</p>
-              </div>
-            ) : (
-              <div style={{ display: "grid", gap: "1rem" }}>
-                {currentTrainings.map((training) => (
-                  <div key={training.id} className="card">
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "1.5rem", alignItems: "start" }}>
-                      <div>
-                        <h3 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "1.15em" }}>
-                          {training.trainee.name}
-                        </h3>
-                        <div style={{ display: "grid", gap: "4px", fontSize: "0.95em" }}>
-                          <div>
-                            <span style={{ color: "var(--text-color)" }}>CID:</span>{" "}
-                            <span style={{ fontFamily: "monospace", fontWeight: 500 }}>
-                              {training.trainee.cid}
-                            </span>
-                          </div>
-                          <div>
-                            <span style={{ color: "var(--text-color)" }}>Rolle:</span> {training.trainee.role}
-                          </div>
-                          <div>
-                            <span style={{ color: "var(--text-color)" }}>Co-Mentoren:</span>{" "}
-                            {training.mentors.length} / 3
-                          </div>
-                          {training.mentors.length > 0 && (
-                            <div style={{ fontSize: "0.85em", marginTop: "4px", paddingLeft: "8px" }}>
-                              {training.mentors.map((tm) => (
-                                <div key={tm.mentorId} style={{ color: "var(--text-color)" }}>
-                                  • {tm.mentor.name} ({tm.mentor.cid})
-                                </div>
-                              ))}
+        {error && (
+          <div className="info-danger" style={{ marginBottom: "1.5rem" }}>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="card"><p style={{ margin: 0 }}>Lädt...</p></div>
+        ) : !isMentor ? (
+          <div className="info-danger">
+            <p>Zugriff verweigert. Nur Mentoren können diese Seite ansehen.</p>
+          </div>
+        ) : (
+          <>
+            {/* Current Trainings */}
+            <section style={{ marginBottom: "2.5rem" }}>
+              <h2 style={{ marginBottom: "1rem", fontSize: "1.3em", fontWeight: 600 }}>
+                Meine aktuellen Trainees
+              </h2>
+              {currentTrainings.length === 0 ? (
+                <div className="card">
+                  <p style={{ margin: 0 }}>Noch keine aktiven Trainees.</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: "1rem" }}>
+                  {currentTrainings.map((training) => (
+                    <div key={training.id} className="card">
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "1.5rem", alignItems: "start" }}>
+                        <div>
+                          <h3 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "1.15em" }}>
+                            {training.trainee.name}
+                          </h3>
+                          <div style={{ display: "grid", gap: "4px", fontSize: "0.95em" }}>
+                            <div>
+                              <span style={{ color: "var(--text-color)" }}>CID:</span>{" "}
+                              <span style={{ fontFamily: "monospace", fontWeight: 500 }}>
+                                {training.trainee.cid}
+                              </span>
                             </div>
-                          )}
-                          {training.mentors.length < 3 && availableMentors.length > 0 && (
-                            <div style={{ marginTop: "8px" }}>
-                              <select
-                                onChange={(e) => {
-                                  if (e.target.value) {
-                                    addCoMentor(training.id, e.target.value);
-                                    e.target.value = "";
-                                  }
-                                }}
-                                disabled={addingMentor === training.id}
-                                className="form-select"
-                                style={{ fontSize: "0.85em", padding: "6px 8px", maxWidth: "250px" }}
-                              >
-                                <option value="">+ Co-Mentor hinzufügen</option>
-                                {availableMentors
-                                  .filter((m) => !training.mentors.some((tm) => tm.mentorId === m.id))
-                                  .map((mentor) => (
-                                    <option key={mentor.id} value={mentor.id}>
-                                      {mentor.name} ({mentor.cid})
-                                    </option>
-                                  ))}
-                              </select>
+                            <div>
+                              <span style={{ color: "var(--text-color)" }}>Rolle:</span> {training.trainee.role}
+                            </div>
+                            <div>
+                              <span style={{ color: "var(--text-color)" }}>Co-Mentoren:</span>{" "}
+                              {training.mentors.length} / 3
+                            </div>
+                            {training.mentors.length > 0 && (
+                              <div style={{ fontSize: "0.85em", marginTop: "4px", paddingLeft: "8px" }}>
+                                {training.mentors.map((tm) => (
+                                  <div key={tm.mentorId} style={{ color: "var(--text-color)" }}>
+                                    • {tm.mentor.name} ({tm.mentor.cid})
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {training.mentors.length < 3 && availableMentors.length > 0 && (
+                              <div style={{ marginTop: "8px" }}>
+                                <select
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      addCoMentor(training.id, e.target.value);
+                                      e.target.value = "";
+                                    }
+                                  }}
+                                  disabled={addingMentor === training.id}
+                                  className="form-select"
+                                  style={{ fontSize: "0.85em", padding: "6px 8px", maxWidth: "250px" }}
+                                >
+                                  <option value="">+ Co-Mentor hinzufügen</option>
+                                  {availableMentors
+                                    .filter((m) => !training.mentors.some((tm) => tm.mentorId === m.id))
+                                    .map((mentor) => (
+                                      <option key={mentor.id} value={mentor.id}>
+                                        {mentor.name} ({mentor.cid})
+                                      </option>
+                                    ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            flexDirection: "column",
+                            minWidth: "180px",
+                          }}
+                        >
+                          <button
+                            onClick={() => logSession(training.id)}
+                            className="button"
+                            style={{ margin: 0 }}
+                          >
+                            Log Session
+                          </button>
+                          <button
+                            onClick={() =>
+                              router.push(
+                                `/mentor/trainee/${training.trainee.id}?trainingId=${training.id}`
+                              )
+                            }
+                            className="button"
+                            style={{ margin: 0 }}
+                          >
+                            Fortschritt ansehen
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openTraineeDetails(training.trainee);
+                            }}
+                            className="button"
+                            style={{ margin: 0 }}
+                          >
+                            Details ansehen
+                          </button>
+                          <button
+                            onClick={() => setCancelDialogFor(training.id)}
+                            className="button button--danger"
+                            style={{ margin: 0 }}
+                          >
+                            Abbrechen
+                          </button>
+                          {cancelDialogFor === training.id && (
+                            <div className="card" style={{ margin: 0, padding: "10px 12px", background: "var(--container-bg)" }}>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                <div style={{ fontWeight: 600, color: "var(--text-color)" }}>Training verwalten</div>
+                                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                                  <button className="button button--danger" onClick={() => handleDropTraining(training.id)}>
+                                    Training Abbrechen (löscht alle Daten)
+                                  </button>
+                                  <button className="button" onClick={() => handleRemoveSelfAsMentor(training.id)}>
+                                    Entferne mich als Mentor
+                                  </button>
+                                  <button className="button" onClick={() => setCancelDialogFor(null)}>
+                                    Abbrechen
+                                  </button>
+                                </div>
+                                <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
+                                  Hinweis: Wenn kein Mentor übrig bleibt, bleibt das Training erhalten und der Trainee wird wieder auf PENDING_TRAINEE gesetzt.
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Pending Trainees */}
+            <section>
+              <h2 style={{ marginBottom: "1rem", fontSize: "1.3em", fontWeight: 600 }}>
+                Nicht zugewiesene Trainees
+              </h2>
+              {pendingTrainees.length === 0 ? (
+                <div className="card">
+                  <p style={{ margin: 0 }}>Keine nicht zugewiesenen Trainees verfügbar.</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: "1rem" }}>
+                  {pendingTrainees.map((trainee) => (
+                    <div 
+                      key={trainee.id} 
+                      className="card"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => openTraineeDetails(trainee)}
+                    >
                       <div
                         style={{
-                          display: "flex",
-                          gap: "8px",
-                          flexDirection: "column",
-                          minWidth: "180px",
+                          display: "grid",
+                          gridTemplateColumns: "1fr auto",
+                          gap: "1.5rem",
+                          alignItems: "center",
                         }}
                       >
-                        <button
-                          onClick={() => logSession(training.id)}
-                          className="button"
-                          style={{ margin: 0 }}
-                        >
-                          Log Session
-                        </button>
-                        <button
-                          onClick={() =>
-                            router.push(
-                              `/mentor/trainee/${training.trainee.id}?trainingId=${training.id}`
-                            )
-                          }
-                          className="button"
-                          style={{ margin: 0 }}
-                        >
-                          Fortschritt ansehen
-                        </button>
-                        <button
-                          onClick={() => setCancelDialogFor(training.id)}
-                          className="button button--danger"
-                          style={{ margin: 0 }}
-                        >
-                          Abbrechen
-                        </button>
-                        {cancelDialogFor === training.id && (
-                          <div className="card" style={{ margin: 0, padding: "10px 12px", background: "var(--container-bg)" }}>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                              <div style={{ fontWeight: 600, color: "var(--text-color)" }}>Training verwalten</div>
-                              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                                <button className="button button--danger" onClick={() => handleDropTraining(training.id)}>
-                                  Training Abbrechen (löscht alle Daten)
-                                </button>
-                                <button className="button" onClick={() => handleRemoveSelfAsMentor(training.id)}>
-                                  Entferne mich als Mentor
-                                </button>
-                                <button className="button" onClick={() => setCancelDialogFor(null)}>
-                                  Abbrechen
-                                </button>
-                              </div>
-                              <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
-                                Hinweis: Wenn kein Mentor übrig bleibt, bleibt das Training erhalten und der Trainee wird wieder auf PENDING_TRAINEE gesetzt.
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Pending Trainees */}
-          <section>
-            <h2 style={{ marginBottom: "1rem", fontSize: "1.3em", fontWeight: 600 }}>
-              Nicht zugewiesene Trainees
-            </h2>
-            {pendingTrainees.length === 0 ? (
-              <div className="card">
-                <p style={{ margin: 0 }}>Keine nicht zugewiesenen Trainees verfügbar.</p>
-              </div>
-            ) : (
-              <div style={{ display: "grid", gap: "1rem" }}>
-                {pendingTrainees.map((trainee) => (
-                  <div 
-                    key={trainee.id} 
-                    className="card"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => openTraineeDetails(trainee)}
-                  >
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr auto",
-                        gap: "1.5rem",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div>
-                        <h3 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "1.15em" }}>
-                          {trainee.name}
-                        </h3>
-                        <div style={{ display: "grid", gap: "4px", fontSize: "0.95em" }}>
-                          <div>
-                            <span style={{ color: "var(--text-color)" }}>CID:</span>{" "}
-                            <span style={{ fontFamily: "monospace", fontWeight: 500 }}>
-                              {trainee.cid}
-                            </span>
-                          </div>
-                          {trainee.registration && (
+                        <div>
+                          <h3 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "1.15em" }}>
+                            {trainee.name}
+                          </h3>
+                          <div style={{ display: "grid", gap: "4px", fontSize: "0.95em" }}>
                             <div>
-                              <span style={{ color: "var(--text-color)" }}>SIM/ACFT:</span>{" "}
-                              {trainee.registration.simulator} / {trainee.registration.aircraft}
+                              <span style={{ color: "var(--text-color)" }}>CID:</span>{" "}
+                              <span style={{ fontFamily: "monospace", fontWeight: 500 }}>
+                                {trainee.cid}
+                              </span>
                             </div>
-                          )}
+                            {trainee.registration && (
+                              <div>
+                                <span style={{ color: "var(--text-color)" }}>SIM/ACFT:</span>{" "}
+                                {trainee.registration.simulator} / {trainee.registration.aircraft}
+                              </div>
+                            )}
+                          </div>
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            assignTrainee(trainee.id);
+                          }}
+                          disabled={assigning === trainee.id}
+                          className="button"
+                          style={{ margin: 0, minWidth: "140px" }}
+                        >
+                          {assigning === trainee.id ? "Zuweisen…" : "Mir zuweisen"}
+                        </button>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          assignTrainee(trainee.id);
-                        }}
-                        disabled={assigning === trainee.id}
-                        className="button"
-                        style={{ margin: 0, minWidth: "140px" }}
-                      >
-                        {assigning === trainee.id ? "Zuweisen…" : "Mir zuweisen"}
-                      </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </>
-      )}
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
+      </PageLayout>
 
-      {/* Registration Details Modal */}
+      {/* Registration Details Modal - Outside PageLayout */}
       {showModal && selectedTrainee && selectedTrainee.registration && (
         <div
           style={{
@@ -444,7 +457,7 @@ export default function MentorDashboard() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 1000,
+            zIndex: 9999,
             padding: "20px",
           }}
           onClick={closeModal}
@@ -517,11 +530,6 @@ export default function MentorDashboard() {
               </div>
 
               <div>
-                <strong style={{ color: "var(--text-color)" }}>Client Setup:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.clientSetup}</p>
-              </div>
-
-              <div>
                 <strong style={{ color: "var(--text-color)" }}>Flugsimulator-Erfahrung:</strong>
                 <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
                   {selectedTrainee.registration.experience}
@@ -572,20 +580,31 @@ export default function MentorDashboard() {
                   </p>
                 </div>
               )}
+
+              {selectedTrainee.registration.other && (
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Sonstiges:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                    {selectedTrainee.registration.other}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeModal();
-                  assignTrainee(selectedTrainee.id);
-                }}
-                className="button"
-                disabled={assigning === selectedTrainee.id}
-              >
-                {assigning === selectedTrainee.id ? "Zuweisen…" : "Mir zuweisen"}
-              </button>
+              {selectedTrainee.role === "PENDING_TRAINEE" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeModal();
+                    assignTrainee(selectedTrainee.id);
+                  }}
+                  className="button"
+                  disabled={assigning === selectedTrainee.id}
+                >
+                  {assigning === selectedTrainee.id ? "Zuweisen…" : "Mir zuweisen"}
+                </button>
+              )}
               <button onClick={closeModal} className="button">
                 Schließen
               </button>
@@ -593,6 +612,6 @@ export default function MentorDashboard() {
           </div>
         </div>
       )}
-    </PageLayout>
+    </>
   );
 }
