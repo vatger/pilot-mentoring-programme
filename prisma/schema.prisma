@@ -152,12 +152,14 @@ model User {
 
 // Training model: links mentor(s) to a trainee
 model Training {
-  id         String   @id @default(cuid())
-  traineeId  String
-  status     TrainingStatus @default(ACTIVE) // ACTIVE, COMPLETED, ABGEBROCHEN
-  readyForCheckride Boolean @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  traineeId           String
+  status              TrainingStatus @default(ACTIVE) // ACTIVE, COMPLETED, ABGEBROCHEN
+  readyForCheckride   Boolean @default(false)
+  cancellationReason  String?  @db.Text // Reason for cancellation (filled by mentor)
+  cancellationAt      DateTime? // When the cancellation was initiated
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   trainee    User               @relation("trainee", fields: [traineeId], references: [id], onDelete: Cascade)
   mentors    TrainingMentor[]
