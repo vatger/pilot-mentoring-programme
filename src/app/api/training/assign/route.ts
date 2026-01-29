@@ -3,6 +3,40 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
+async function sendMentorAssignedNotification(traineeCid: string | null) {
+  const token = process.env.VATGER_NOTIFICATION_TOKEN;
+  if (!token || !traineeCid) {
+    return;
+  }
+
+  const apiBaseUrl = process.env.VATGER_NOTIFICATION_API_BASE_URL || "https://vatsim-germany.org/api";
+  const url = `${apiBaseUrl}/user/${traineeCid}/send_notification`;
+
+  const payload = {
+    title: "Mentor gefunden",
+    message:
+      "Wir haben einen Mentor für dich gefunden. Bitte prüfe regelmäßig das Forum – dein Mentor wird dich dort kontaktieren und die weitere Abstimmung findet über das Forum statt.",
+    source_name: "PMP",
+    link_text: "Forum",
+    link_url: "https://board.vatger.de",
+    via: "",
+  };
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.error("Failed to send mentor assigned notification:", error);
+  }
+}
+
 /**
  * POST /api/training/assign
  * Mentor picks a pending trainee to mentor
@@ -76,6 +110,8 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      await sendMentorAssignedNotification(trainee.cid);
+
       return NextResponse.json(training, { status: 200 });
     }
 
@@ -110,6 +146,8 @@ export async function POST(request: NextRequest) {
         data: { role: "TRAINEE" },
       });
     }
+
+    await sendMentorAssignedNotification(trainee.cid);
 
     return NextResponse.json(training, { status: 201 });
   } catch (error) {
