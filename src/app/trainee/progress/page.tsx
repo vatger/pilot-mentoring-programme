@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import PageLayout from "@/components/PageLayout";
 import { trainingTopics } from "@/lib/trainingTopics";
+import { Link } from "lucide-react";
 
 interface Mentor {
   mentorId: string;
@@ -129,6 +130,10 @@ function TraineeProgressContent() {
 
   const coveredTopics = getTopicProgress();
 
+  const showPendingForumMessage = userRole === "PENDING_TRAINEE";
+  const showNoSessionForumMessage =
+    userRole === "TRAINEE" && !loading && training && sessions.length === 0;
+
   // Only trainee, their mentors, or leadership (Leitung/Admin/Examiner) can view this
   const isMentor = training ? training.mentors.some((m) => m.mentorId === userId) : false;
   const isLeadership = ["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER"].includes(userRole);
@@ -154,6 +159,16 @@ function TraineeProgressContent() {
           Verfolge deinen Trainingsfortschritt
         </p>
       </div>
+
+      {(showPendingForumMessage || showNoSessionForumMessage) && (
+        <div className="card" style={{ marginBottom: "1.5rem" }}>
+          <h3 style={{ marginTop: 0, marginBottom: "0.5rem" }}>Wichtige Information</h3>
+          <p style={{ margin: 0, color: "var(--danger-color)" }}>
+            Bitte prüfe regelmäßig das Forum. Dein Mentor wird dich dort kontaktieren und die
+            weitere Abstimmung findet über das Forum statt.
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="info-danger" style={{ marginBottom: "1.5rem" }}>
