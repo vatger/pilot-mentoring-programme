@@ -71,6 +71,25 @@ export default function ExaminerAvailabilityPage() {
     }
   };
 
+  const deleteSlot = async (slotId: string) => {
+    if (!confirm("Möchtest du diesen Slot wirklich löschen?")) return;
+    setError(null);
+    try {
+      const res = await fetch("/api/checkrides/availability", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ availabilityId: slotId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Fehler: ${res.status}`);
+      }
+      await load();
+    } catch (e: any) {
+      setError(e.message || "Fehler beim Löschen");
+    }
+  };
+
   return (
     <PageLayout>
       <div className="card" style={{ marginBottom: "1.5rem" }}>
@@ -141,16 +160,35 @@ export default function ExaminerAvailabilityPage() {
                           {s.status}
                         </div>
                       </div>
-                      <div
-                        className="stepper-progress"
-                        style={{
-                          margin: 0,
-                          padding: "4px 10px",
-                          fontSize: "0.8em",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {s.status}
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <div
+                          className="stepper-progress"
+                          style={{
+                            margin: 0,
+                            padding: "4px 10px",
+                            fontSize: "0.8em",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {s.status}
+                        </div>
+                        {s.status === "AVAILABLE" && (
+                          <button
+                            onClick={() => deleteSlot(s.id)}
+                            className="button"
+                            style={{
+                              padding: "4px 10px",
+                              fontSize: "0.8em",
+                              margin: 0,
+                              backgroundColor: "var(--danger-color, #d32f2f)",
+                              color: "white",
+                              border: "none",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Löschen
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

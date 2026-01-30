@@ -100,3 +100,77 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/checkrides/availability
+ * Body: { availabilityId: string }
+ * Removes a planned checkride slot (only if still AVAILABLE, not booked)
+ * Only the examining PMP_PRÜFER can delete their own slots
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const role = (session.user as any).role;
+    const examinerId = (session.user as any).id;
+
+    // Only examiners can delete availability slots
+    if (!isExaminer(role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { availabilityId } = await request.json();
+    if (!availabilityId) {
+      return NextResponse.json(
+        { error: "availabilityId is required" },
+        { status: 400 }
+      );
+    }
+
+    // Get the availability slot
+    const slot = await db.checkrideAvailability.findUnique({
+      where: { id: availabilityId },
+    });
+
+    if (!slot) {
+      return NextResponse.json(
+        { error: "Availability slot not found" },
+        { status: 404 }
+      );
+    }
+
+    // Verify ownership: examiner can only delete their own slots
+    if (slot.examinerId !== examinerId && role !== "ADMIN" && role !== "PMP_LEITUNG") {
+      return NextResponse.json(
+        { error: "You can only delete your own availability slots" },
+        { status: 403 }
+      );
+    }
+
+    // Check if slot is still available (not booked)
+    if (slot.status !== "AVAILABLE") {
+      return NextResponse.json(
+        { error: `Cannot delete slot with status '${slot.status}'. Only AVAILABLE slots can be removed.` },
+        { status: 409 }
+      );
+    }
+
+    // Delete the availability slot
+    const deleted = await db.checkrideAvailability.delete({
+      where: { id: availabilityId },
+    });
+
+    return NextResponse.json(
+      { success: true, message: "Availability slot deleted", deletedSlot: deleted },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error deleting availability slot:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
