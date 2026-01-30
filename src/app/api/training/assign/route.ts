@@ -6,24 +6,24 @@ import { NextRequest, NextResponse } from "next/server";
 async function sendMentorAssignedNotification(traineeCid: string | null) {
   const token = process.env.VATGER_NOTIFICATION_TOKEN;
   if (!token || !traineeCid) {
+    console.warn("Missing VATGER_NOTIFICATION_TOKEN or trainee CID, skipping notification");
     return;
   }
 
-  const apiBaseUrl = process.env.VATGER_NOTIFICATION_API_BASE_URL || "https://vatsim-germany.org/api";
-  const url = `${apiBaseUrl}/user/${traineeCid}/send_notification`;
+  const url = `https://vatsim-germany.org/api/user/${traineeCid}/send_notification`;
 
   const payload = {
-    "title": "Mentor gefunden",
-    "message":
+    title: "Mentor gefunden",
+    message:
       "Wir haben einen Mentor für dich gefunden. Bitte prüfe regelmäßig das Forum – dein Mentor wird dich dort kontaktieren und die weitere Abstimmung findet über das Forum statt.",
-    "source_name": "PMP",
-    "link_text": "Forum",
-    "link_url": "https://board.vatger.de",
-    "via": ""
+    source_name: "PMP",
+    link_text: "Forum",
+    link_url: "https://board.vatger.de",
+    via: "",
   };
 
   try {
-    await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -32,8 +32,19 @@ async function sendMentorAssignedNotification(traineeCid: string | null) {
       },
       body: JSON.stringify(payload),
     });
+
+    if (!response.ok) {
+      console.error(
+        `Failed to send mentor assigned notification to ${traineeCid}:`,
+        response.status,
+        await response.text()
+      );
+    }
   } catch (error) {
-    console.error("Failed to send mentor assigned notification:", error);
+    console.error(
+      `Error sending mentor assigned notification to ${traineeCid}:`,
+      error
+    );
   }
 }
 
