@@ -10,7 +10,7 @@ async function sendMentorAssignedNotification(traineeCid: string | null) {
     return;
   }
 
-  const url = `https://vatsim-germany.org/api/user/${traineeCid}/send_notification`;
+  const url = `http://hp.vatsim-germany.org/api/user/${traineeCid}/send_notification`;
 
   const options = {
     method: "POST",
