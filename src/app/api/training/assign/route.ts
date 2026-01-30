@@ -12,34 +12,20 @@ async function sendMentorAssignedNotification(traineeCid: string | null) {
 
   const url = `https://vatsim-germany.org/api/user/${traineeCid}/send_notification`;
 
-  const payload = {
-    title: "Mentor gefunden",
-    message:
-      "Wir haben einen Mentor für dich gefunden. Bitte prüfe regelmäßig das Forum – dein Mentor wird dich dort kontaktieren und die weitere Abstimmung findet über das Forum statt.",
-    source_name: "PMP",
-    link_text: "Forum",
-    link_url: "https://board.vatger.de",
-    via: "",
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: `{"title":"Mentor gefunden","message":"Wir haben einen Mentor für dich gefunden. Bitte prüfe regelmäßig das Forum – dein Mentor wird dich dort kontaktieren und die weitere Abstimmung findet über das Forum statt.","source_name":"PMP","link_text":"Forum","link_url":"https://board.vatsim-germany.org","via":""}`,
   };
 
   try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      console.error(
-        `Failed to send mentor assigned notification to ${traineeCid}:`,
-        response.status,
-        await response.text()
-      );
-    }
+    const response = await fetch(url, options);
+    const data = await response.json();
+    console.log(`Notification response for ${traineeCid}:`, data);
   } catch (error) {
     console.error(
       `Error sending mentor assigned notification to ${traineeCid}:`,
