@@ -13,13 +13,13 @@ async function sendMentorAssignedNotification(traineeCid: string | null) {
   const url = `${apiBaseUrl}/user/${traineeCid}/send_notification`;
 
   const payload = {
-    title: "Mentor gefunden",
-    message:
+    "title": "Mentor gefunden",
+    "message":
       "Wir haben einen Mentor für dich gefunden. Bitte prüfe regelmäßig das Forum – dein Mentor wird dich dort kontaktieren und die weitere Abstimmung findet über das Forum statt.",
-    source_name: "PMP",
-    link_text: "Forum",
-    link_url: "https://board.vatger.de",
-    via: "",
+    "source_name": "PMP",
+    "link_text": "Forum",
+    "link_url": "https://board.vatger.de",
+    "via": ""
   };
 
   try {
