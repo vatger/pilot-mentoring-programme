@@ -27,7 +27,6 @@ type SessionDetails = {
       id: string;
       cid: string | null;
       name: string | null;
-      email: string | null;
     };
   };
 };

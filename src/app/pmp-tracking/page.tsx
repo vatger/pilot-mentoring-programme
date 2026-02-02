@@ -10,7 +10,7 @@ import { trainingTopics } from "@/lib/trainingTopics";
 interface TrainingCoverageRow {
   trainingId: string;
   status: string;
-  trainee: { id: string; name: string | null; cid: string | null; email: string | null };
+  trainee: { id: string; name: string | null; cid: string | null };
   mentors: { id: string; name: string | null; cid: string | null }[];
   sessionsCount: number;
   topicsCoveredCount: number;
@@ -79,7 +79,7 @@ function PmpTrackingContent() {
 
   return (
     <PageLayout>
-      <div className="card" style={{ marginBottom: "1.5rem" }}>
+      <div className="card" style={{ marginBottom: "1rem" }}>
         <h1>PMP-Tracking</h1>
         <p style={{ color: "var(--text-color)", margin: "0.5rem 0 0 0" }}>
           Übersicht der Trainingsabdeckung nach Thema für jeden Trainee
@@ -87,13 +87,13 @@ function PmpTrackingContent() {
       </div>
 
       {error && (
-        <div className="info-danger" style={{ marginBottom: "1.5rem" }}>
+        <div className="info-danger" style={{ marginBottom: "1rem" }}>
           <p>{error}</p>
         </div>
       )}
 
-      <div className="card" style={{ marginBottom: "1.5rem", padding: "1rem 1.25rem" }}>
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
+      <div className="card" style={{ marginBottom: "1rem", padding: "0.75rem 1rem" }}>
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
           <span style={{ fontWeight: 600 }}>Filter:</span>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
             {["ACTIVE", "COMPLETED", "ABGEBROCHEN"].map((value) => {
@@ -143,7 +143,7 @@ function PmpTrackingContent() {
           <p style={{ color: "var(--text-color)", margin: 0 }}>Keine Trainings gefunden.</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gap: "1.25rem" }}>
+        <div style={{ display: "grid", gap: "0.85rem" }}>
           {trainings.map((row) => {
             const coveragePercent = Math.round(
               (row.topicsCoveredCount / totalTopics) * 100
@@ -152,13 +152,13 @@ function PmpTrackingContent() {
               <div
                 key={row.trainingId}
                 className="card"
-                style={{ padding: "0.85rem 1rem", display: "grid", gap: "0.65rem" }}
+                style={{ padding: "0.65rem 0.85rem", display: "grid", gap: "0.5rem" }}
               >
                 <div
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1.1fr 1fr auto",
-                    gap: "0.75rem",
+                    gap: "0.65rem",
                     alignItems: "center",
                   }}
                 >
@@ -211,7 +211,7 @@ function PmpTrackingContent() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "1.25rem",
+                    gap: "0.85rem",
                     flexWrap: "wrap",
                     color: "var(--text-color)",
                     fontSize: "0.95em",

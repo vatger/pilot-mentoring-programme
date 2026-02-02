@@ -9,7 +9,6 @@ interface User {
   id: string;
   cid: string;
   name: string;
-  email: string | null;
   role: string;
   userStatus: string | null;
   createdAt: string;
@@ -319,7 +318,6 @@ export default function AdminPage() {
                 <tr style={{ borderBottom: "2px solid var(--footer-border)" }}>
                   <th style={{ padding: "12px 8px", textAlign: "left", fontWeight: 600 }}>CID</th>
                   <th style={{ padding: "12px 8px", textAlign: "left", fontWeight: 600 }}>Name</th>
-                  <th style={{ padding: "12px 8px", textAlign: "left", fontWeight: 600 }}>Email</th>
                   <th style={{ padding: "12px 8px", textAlign: "left", fontWeight: 600 }}>Role</th>
                   <th style={{ padding: "12px 8px", textAlign: "left", fontWeight: 600 }}>Status</th>
                   <th style={{ padding: "12px 8px", textAlign: "left", fontWeight: 600 }}>Joined</th>
@@ -333,9 +331,6 @@ export default function AdminPage() {
                       {user.cid}
                     </td>
                     <td style={{ padding: "10px 8px", fontSize: "0.9em" }}>{user.name}</td>
-                    <td style={{ padding: "10px 8px", fontSize: "0.9em" }}>
-                      {user.email || "-"}
-                    </td>
                     <td style={{ padding: "10px 8px", fontSize: "0.9em" }}>
                       {userRole === "ADMIN" || userRole === "PMP_LEITUNG" ? (
                         <select
@@ -381,8 +376,8 @@ export default function AdminPage() {
                     <td style={{ padding: "10px 8px", fontSize: "0.9em" }}>
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
-                    <td style={{ padding: "10px 8px" }}>
-                      {userRole === "ADMIN" && user.role !== "ADMIN" && (
+                    <td style={{ padding: "10px 8px", fontSize: "0.9em" }}>
+                      {userRole === "ADMIN" && user.cid !== userCid && (
                         <button
                           onClick={() => promoteToAdmin(user.id)}
                           disabled={updating === user.id}

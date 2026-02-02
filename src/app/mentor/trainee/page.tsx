@@ -11,7 +11,27 @@ type Trainee = {
   id: string;
   cid: string | null;
   name: string | null;
-  email: string | null;
+  registration?: RegistrationData | null;
+};
+
+type RegistrationData = {
+  cid: string;
+  name: string;
+  rating: string;
+  fir: string;
+  simulator: string;
+  aircraft: string;
+  client: string;
+  clientSetup: string;
+  experience: string;
+  charts: string;
+  airac: string;
+  category: string;
+  topics: string | null;
+  schedule: string;
+  communication: string;
+  personal: string | null;
+  other: string | null;
 };
 
 type Training = {
@@ -29,6 +49,8 @@ export default function MentorTraineePage() {
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedTrainee, setSelectedTrainee] = useState<Trainee | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
@@ -59,6 +81,22 @@ export default function MentorTraineePage() {
     }
   };
 
+  const openRegistrationDetails = (trainee: Trainee) => {
+    setSelectedTrainee(trainee);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedTrainee(null);
+  };
+
+  const getDiscordStatus = (other?: string | null) => {
+    if (!other) return null;
+    const line = other.split("\n").find((entry) => entry.startsWith("VATSIM Germany Discord:"));
+    return line ? line.replace("VATSIM Germany Discord:", "").trim() : null;
+  };
+
   if (status === "loading" || loading) {
     return (
       <PageLayout>
@@ -78,6 +116,7 @@ export default function MentorTraineePage() {
   }
 
   return (
+    <>
     <PageLayout>
       <div className="card" style={{ marginBottom: "1.5rem" }}>
         <h1>{isLeitung ? "Alle Trainees" : "Meine Trainees"}</h1>
@@ -126,131 +165,156 @@ export default function MentorTraineePage() {
 
             return (
               <div key={training.id} className="card">
-                <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.15em" }}>
-                  {training.trainee.name || "Trainee"}
-                </h3>
-
-                <div style={{ display: "grid", gap: "8px", marginBottom: "1rem" }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr auto",
+                    gap: "1.5rem",
+                    alignItems: "start",
+                  }}
+                >
                   <div>
-                    <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
-                      CID
-                    </div>
-                    <div style={{ fontFamily: "monospace", fontSize: "0.95em" }}>
-                      {training.trainee.cid || "N/A"}
-                    </div>
-                  </div>
+                    <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.15em" }}>
+                      {training.trainee.name || "Trainee"}
+                    </h3>
 
-                  <div>
-                    <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
-                      Status
-                    </div>
-                    <div
-                      className="stepper-progress"
-                      style={{
-                        display: "inline-block",
-                        margin: "0.25rem 0 0 0",
-                        padding: "4px 10px",
-                        fontSize: "0.85em",
-                      }}
-                    >
-                      {training.status}
-                    </div>
-                  </div>
+                    <div style={{ display: "grid", gap: "8px", marginBottom: "1rem" }}>
+                      <div>
+                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
+                          CID
+                        </div>
+                        <div style={{ fontFamily: "monospace", fontSize: "0.95em" }}>
+                          {training.trainee.cid || "N/A"}
+                        </div>
+                      </div>
 
-                  <div>
-                    <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
-                      Progress
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr auto",
-                        gap: "0.5rem",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "100%",
-                          height: "8px",
-                          background: "var(--footer-border)",
-                          borderRadius: "999px",
-                          overflow: "hidden",
-                        }}
-                      >
+                      <div>
+                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
+                          Status
+                        </div>
+                        <div
+                          className="stepper-progress"
+                          style={{
+                            display: "inline-block",
+                            margin: "0.25rem 0 0 0",
+                            padding: "4px 10px",
+                            fontSize: "0.85em",
+                          }}
+                        >
+                          {training.status}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
+                          Progress
+                        </div>
                         <div
                           style={{
-                            width: `${coveragePercent}%`,
-                            height: "100%",
-                            background: "var(--accent-color)",
-                            transition: "width 0.3s ease",
+                            display: "grid",
+                            gridTemplateColumns: "1fr auto",
+                            gap: "0.5rem",
+                            alignItems: "center",
                           }}
-                        />
+                        >
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "8px",
+                              background: "var(--footer-border)",
+                              borderRadius: "999px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${coveragePercent}%`,
+                                height: "100%",
+                                background: "var(--accent-color)",
+                                transition: "width 0.3s ease",
+                              }}
+                            />
+                          </div>
+                          <div style={{ fontSize: "0.8em", fontWeight: 600, minWidth: "35px" }}>
+                            {covered.size}/{trainingTopics.length}
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: "0.8em", fontWeight: 600, minWidth: "35px" }}>
-                        {covered.size}/{trainingTopics.length}
+
+                      <div>
+                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
+                          Sessions
+                        </div>
+                        <div style={{ fontSize: "0.95em" }}>
+                          {training.sessions.length} gelogged
+                        </div>
                       </div>
+
+                      <div>
+                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
+                          Bereit für Check Ride
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "0.95em",
+                            fontWeight: 600,
+                            color: training.readyForCheckride
+                              ? "var(--accent-color)"
+                              : "var(--text-color)",
+                          }}
+                        >
+                          {training.readyForCheckride ? "✓ Yes" : "Not yet"}
+                        </div>
+                      </div>
+
+                      {isLeitung && (training as any).mentors && (
+                        <div>
+                          <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
+                            Mentoren
+                          </div>
+                          <div style={{ fontSize: "0.9em" }}>
+                            {(training as any).mentors
+                              .map(
+                                (m: any) =>
+                                  m.mentor?.name || m.mentor?.cid || "Unbekannt"
+                              )
+                              .join(", ") || "-"}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div>
-                    <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
-                      Sessions
-                    </div>
-                    <div style={{ fontSize: "0.95em" }}>
-                      {training.sessions.length} gelogged
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
-                      Bereit für Check Ride
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "0.95em",
-                        fontWeight: 600,
-                        color: training.readyForCheckride
-                          ? "var(--accent-color)"
-                          : "var(--text-color)",
-                      }}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                      minWidth: "180px",
+                    }}
+                  >
+                    <Link
+                      href={`/mentor/session?trainingId=${training.id}`}
+                      className="button"
+                      style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
                     >
-                      {training.readyForCheckride ? "✓ Yes" : "Not yet"}
-                    </div>
+                      Log Session
+                    </Link>
+                    <Link
+                      href={`/trainee/progress?trainingId=${training.id}`}
+                      className="button"
+                      style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
+                    >
+                      Fortschritt ansehen
+                    </Link>
+                    <button
+                      onClick={() => openRegistrationDetails(training.trainee)}
+                      className="button"
+                      style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
+                    >
+                      Anmeldung ansehen
+                    </button>
                   </div>
-
-                  {isLeitung && (training as any).mentors && (
-                    <div>
-                      <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
-                        Mentoren
-                      </div>
-                      <div style={{ fontSize: "0.9em" }}>
-                        {(training as any).mentors
-                          .map(
-                            (m: any) =>
-                              m.mentor?.name || m.mentor?.cid || "Unbekannt"
-                          )
-                          .join(", ") || "-"}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: "grid", gap: "8px", gridTemplateColumns: "1fr 1fr" }}>
-                  <Link
-                    href={`/mentor/session?trainingId=${training.id}`}
-                    className="button"
-                    style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
-                  >
-                    Log Session
-                  </Link>
-                  <Link
-                    href={`/trainee/progress?trainingId=${training.id}`}
-                    className="button"
-                    style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
-                  >
-                    Fortschritt ansehen
-                  </Link>
                 </div>
               </div>
             );
@@ -258,5 +322,171 @@ export default function MentorTraineePage() {
         </div>
       )}
     </PageLayout>
+    
+    {showModal && selectedTrainee && (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999,
+          padding: "20px",
+        }}
+        onClick={closeModal}
+      >
+        <div
+          className="card"
+          style={{
+            maxWidth: "800px",
+            width: "100%",
+            maxHeight: "90vh",
+            overflowY: "auto",
+            overflowX: "hidden",
+            position: "relative",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={closeModal}
+            style={{
+              position: "absolute",
+              top: "1rem",
+              right: "1rem",
+              background: "none",
+              border: "none",
+              fontSize: "1.5rem",
+              cursor: "pointer",
+              color: "var(--text-color)",
+            }}
+          >
+            ×
+          </button>
+
+          <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
+            Anmeldungsinformationen: {selectedTrainee.name}
+          </h2>
+
+          {selectedTrainee.registration ? (
+            <div style={{ display: "grid", gap: "1rem" }}>
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>CID:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.cid}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Name:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.name}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Rating:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.rating}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>FIR:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.fir}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Simulator:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.simulator}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Flugzeug:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.aircraft}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Pilot Client:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.client}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Flugsimulator-Erfahrung:</strong>
+                <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                  {selectedTrainee.registration.experience}
+                </p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Charts / Navigationsmaterial:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.charts}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>AIRAC Daten:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.airac}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Kategorie:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.category}</p>
+              </div>
+
+              {selectedTrainee.registration.topics && (
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Interessengebiete:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                    {selectedTrainee.registration.topics}
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Verfügbarkeit:</strong>
+                <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                  {selectedTrainee.registration.schedule}
+                </p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Hardware:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.communication}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Kommunikation (Discord):</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{getDiscordStatus(selectedTrainee.registration.other) || "—"}</p>
+              </div>
+
+              {selectedTrainee.registration.personal && (
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Persönliche Infos:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                    {selectedTrainee.registration.personal}
+                  </p>
+                </div>
+              )}
+
+              {selectedTrainee.registration.other && (
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Sonstiges:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                    {selectedTrainee.registration.other}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p style={{ color: "var(--text-color)" }}>Keine Anmeldungsdaten vorhanden.</p>
+          )}
+
+          <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={closeModal} className="button">
+              Schließen
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

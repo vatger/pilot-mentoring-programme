@@ -34,7 +34,6 @@ export async function GET() {
         id: true,
         cid: true,
         name: true,
-        email: true,
         role: true,
       },
     });
@@ -61,6 +60,7 @@ export async function GET() {
             schedule: true,
             communication: true,
             personal: true,
+            other: true,
           },
         }) : null;
         return {

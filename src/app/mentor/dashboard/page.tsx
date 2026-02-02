@@ -29,7 +29,6 @@ interface TraineeInfo {
   id: string;
   cid: string;
   name: string;
-  email: string | null;
   role: string;
   registration?: RegistrationData | null;
 }
@@ -228,6 +227,12 @@ export default function MentorDashboard() {
     setSelectedTrainee(null);
   };
 
+  const getDiscordStatus = (other?: string | null) => {
+    if (!other) return null;
+    const line = other.split("\n").find((entry) => entry.startsWith("VATSIM Germany Discord:"));
+    return line ? line.replace("VATSIM Germany Discord:", "").trim() : null;
+  };
+
   if (status === "loading" || loading) {
     return (
       <PageLayout>
@@ -364,16 +369,6 @@ export default function MentorDashboard() {
                             Fortschritt ansehen
                           </button>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openTraineeDetails(training.trainee);
-                            }}
-                            className="button"
-                            style={{ margin: 0 }}
-                          >
-                            Details ansehen
-                          </button>
-                          <button
                             onClick={() => setShowCancellationReasonModal(training.id)}
                             className="button button--danger"
                             style={{ margin: 0 }}
@@ -390,8 +385,17 @@ export default function MentorDashboard() {
                           {cancelDialogFor === training.id && (
                             <div className="card" style={{ margin: 0, padding: "10px 12px", background: "var(--container-bg)" }}>
                               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                                <div style={{ fontWeight: 600, color: "var(--text-color)" }}>Training verwalten</div>
+                                <div style={{ fontWeight: 600, color: "var(--text-color)" }}>Weitere Optionen</div>
                                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                                  <button
+                                    className="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openTraineeDetails(training.trainee);
+                                    }}
+                                  >
+                                    Anmeldung ansehen
+                                  </button>
                                   <button className="button" onClick={() => handleRemoveSelfAsMentor(training.id)}>
                                     Entferne mich als Mentor
                                   </button>
@@ -480,7 +484,7 @@ export default function MentorDashboard() {
       </PageLayout>
 
       {/* Registration Details Modal - Outside PageLayout */}
-      {showModal && selectedTrainee && selectedTrainee.registration && (
+      {showModal && selectedTrainee && (
         <div
           style={{
             position: "fixed",
@@ -529,103 +533,111 @@ export default function MentorDashboard() {
               Anmeldungsinformationen: {selectedTrainee.name}
             </h2>
 
-            <div style={{ display: "grid", gap: "1rem" }}>
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>CID:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.cid}</p>
-              </div>
-
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>Name:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.name}</p>
-              </div>
-
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>Rating:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.rating}</p>
-              </div>
-
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>FIR:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.fir}</p>
-              </div>
-
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>Simulator:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.simulator}</p>
-              </div>
-
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>Flugzeug:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.aircraft}</p>
-              </div>
-
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>Pilot Client:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.client}</p>
-              </div>
-
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>Flugsimulator-Erfahrung:</strong>
-                <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
-                  {selectedTrainee.registration.experience}
-                </p>
-              </div>
-
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>Charts / Navigationsmaterial:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.charts}</p>
-              </div>
-
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>AIRAC Daten:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.airac}</p>
-              </div>
-
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>Kategorie:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.category}</p>
-              </div>
-
-              {selectedTrainee.registration.topics && (
+            {selectedTrainee.registration ? (
+              <div style={{ display: "grid", gap: "1rem" }}>
                 <div>
-                  <strong style={{ color: "var(--text-color)" }}>Interessengebiete:</strong>
+                  <strong style={{ color: "var(--text-color)" }}>CID:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.cid}</p>
+                </div>
+
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Name:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.name}</p>
+                </div>
+
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Rating:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.rating}</p>
+                </div>
+
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>FIR:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.fir}</p>
+                </div>
+
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Simulator:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.simulator}</p>
+                </div>
+
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Flugzeug:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.aircraft}</p>
+                </div>
+
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Pilot Client:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.client}</p>
+                </div>
+
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Flugsimulator-Erfahrung:</strong>
                   <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
-                    {selectedTrainee.registration.topics}
+                    {selectedTrainee.registration.experience}
                   </p>
                 </div>
-              )}
 
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>Verfügbarkeit:</strong>
-                <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
-                  {selectedTrainee.registration.schedule}
-                </p>
-              </div>
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Charts / Navigationsmaterial:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.charts}</p>
+                </div>
 
-              <div>
-                <strong style={{ color: "var(--text-color)" }}>Kommunikation:</strong>
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>AIRAC Daten:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.airac}</p>
+                </div>
+
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Kategorie:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.category}</p>
+                </div>
+
+                {selectedTrainee.registration.topics && (
+                  <div>
+                    <strong style={{ color: "var(--text-color)" }}>Interessengebiete:</strong>
+                    <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                      {selectedTrainee.registration.topics}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Verfügbarkeit:</strong>
+                <strong style={{ color: "var(--text-color)" }}>Hardware:</strong>
                 <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.communication}</p>
               </div>
 
-              {selectedTrainee.registration.personal && (
-                <div>
-                  <strong style={{ color: "var(--text-color)" }}>Persönliche Infos:</strong>
-                  <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
-                    {selectedTrainee.registration.personal}
-                  </p>
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Kommunikation (Discord):</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{getDiscordStatus(selectedTrainee.registration.other) || "—"}</p>
                 </div>
-              )}
 
-              {selectedTrainee.registration.other && (
                 <div>
-                  <strong style={{ color: "var(--text-color)" }}>Sonstiges:</strong>
-                  <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
-                    {selectedTrainee.registration.other}
-                  </p>
+                  <strong style={{ color: "var(--text-color)" }}>Kommunikation:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.communication}</p>
                 </div>
-              )}
-            </div>
+
+                {selectedTrainee.registration.personal && (
+                  <div>
+                    <strong style={{ color: "var(--text-color)" }}>Persönliche Infos:</strong>
+                    <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                      {selectedTrainee.registration.personal}
+                    </p>
+                  </div>
+                )}
+
+                {selectedTrainee.registration.other && (
+                  <div>
+                    <strong style={{ color: "var(--text-color)" }}>Sonstiges:</strong>
+                    <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                      {selectedTrainee.registration.other}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p style={{ color: "var(--text-color)" }}>Keine Anmeldungsdaten vorhanden.</p>
+            )}
 
             <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
               {selectedTrainee.role === "PENDING_TRAINEE" && (

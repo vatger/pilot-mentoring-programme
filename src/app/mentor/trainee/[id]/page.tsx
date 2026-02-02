@@ -16,7 +16,6 @@ type Training = {
     id: string;
     cid: string | null;
     name: string | null;
-    email: string | null;
   };
   mentors: {
     mentor: {
@@ -207,7 +206,6 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
         <div className="card" style={{ marginBottom: "2rem" }}>
           <h2>{training.trainee.name || "Unknown Trainee"}</h2>
           <p><strong>CID:</strong> {training.trainee.cid || "N/A"}</p>
-          <p><strong>Email:</strong> {training.trainee.email || "N/A"}</p>
           <p>
             <strong>Status:</strong>{" "}
             <span

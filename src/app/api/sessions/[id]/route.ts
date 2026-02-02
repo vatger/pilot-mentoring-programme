@@ -32,7 +32,7 @@ export async function GET(
         training: {
           include: {
             trainee: {
-              select: { id: true, cid: true, name: true, email: true },
+              select: { id: true, cid: true, name: true },
             },
           },
         },

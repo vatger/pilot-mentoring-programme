@@ -33,12 +33,38 @@ interface TrainingSession {
   isDraft?: boolean;
 }
 
+interface RegistrationData {
+  cid: string;
+  name: string;
+  rating: string;
+  fir: string;
+  simulator: string;
+  aircraft: string;
+  client: string;
+  clientSetup: string;
+  experience: string;
+  charts: string;
+  airac: string;
+  category: string;
+  topics: string | null;
+  schedule: string;
+  communication: string;
+  personal: string | null;
+  other: string | null;
+}
+
 interface Training {
   id: string;
   traineeId: string;
   status: string;
   createdAt: string;
   mentors: Mentor[];
+  trainee: {
+    id: string;
+    cid: string | null;
+    name: string | null;
+    registration?: RegistrationData | null;
+  };
 }
 
 function TraineeProgressContent() {
@@ -51,6 +77,7 @@ function TraineeProgressContent() {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 
   const userRole = (session?.user as any)?.role;
   const userId = (session?.user as any)?.id;
@@ -134,6 +161,12 @@ function TraineeProgressContent() {
   const showNoSessionForumMessage =
     userRole === "TRAINEE" && !loading && training && sessions.length === 0;
 
+  const getDiscordStatus = (other?: string | null) => {
+    if (!other) return null;
+    const line = other.split("\n").find((entry) => entry.startsWith("VATSIM Germany Discord:"));
+    return line ? line.replace("VATSIM Germany Discord:", "").trim() : null;
+  };
+
   // Only trainee, their mentors, or leadership (Leitung/Admin/Examiner) can view this
   const isMentor = training ? training.mentors.some((m) => m.mentorId === userId) : false;
   const isLeadership = ["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER"].includes(userRole);
@@ -152,6 +185,7 @@ function TraineeProgressContent() {
   ) : 0;
 
   return (
+    <>
     <PageLayout>
       <div className="card" style={{ marginBottom: "1.5rem" }}>
         <h1>Trainingsfortschritt</h1>
@@ -186,7 +220,18 @@ function TraineeProgressContent() {
         <>
           {/* Training Info Card */}
           <div className="card" style={{ marginBottom: "1.5rem" }}>
-            <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Trainingsdetails</h3>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+              <h3 style={{ marginTop: 0, marginBottom: 0 }}>Trainingsdetails</h3>
+              {isLeadership && (
+                <button
+                  className="button"
+                  style={{ margin: 0 }}
+                  onClick={() => setShowRegistrationModal(true)}
+                >
+                  Anmeldung ansehen
+                </button>
+              )}
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem" }}>
               <div>
                 <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>Status</div>
@@ -468,6 +513,172 @@ function TraineeProgressContent() {
         </>
       )}
     </PageLayout>
+    
+    {showRegistrationModal && training && (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999,
+          padding: "20px",
+        }}
+        onClick={() => setShowRegistrationModal(false)}
+      >
+        <div
+          className="card"
+          style={{
+            maxWidth: "800px",
+            width: "100%",
+            maxHeight: "90vh",
+            overflowY: "auto",
+            overflowX: "hidden",
+            position: "relative",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => setShowRegistrationModal(false)}
+            style={{
+              position: "absolute",
+              top: "1rem",
+              right: "1rem",
+              background: "none",
+              border: "none",
+              fontSize: "1.5rem",
+              cursor: "pointer",
+              color: "var(--text-color)",
+            }}
+          >
+            ×
+          </button>
+
+          <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
+            Anmeldungsinformationen: {training.trainee.name || "Unbekannt"}
+          </h2>
+
+          {training.trainee.registration ? (
+            <div style={{ display: "grid", gap: "1rem" }}>
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>CID:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.cid}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Name:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.name}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Rating:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.rating}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>FIR:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.fir}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Simulator:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.simulator}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Flugzeug:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.aircraft}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Pilot Client:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.client}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Flugsimulator-Erfahrung:</strong>
+                <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                  {training.trainee.registration.experience}
+                </p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Charts / Navigationsmaterial:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.charts}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>AIRAC Daten:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.airac}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Kategorie:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.category}</p>
+              </div>
+
+              {training.trainee.registration.topics && (
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Interessengebiete:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                    {training.trainee.registration.topics}
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Verfügbarkeit:</strong>
+                <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                  {training.trainee.registration.schedule}
+                </p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Hardware:</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.communication}</p>
+              </div>
+
+              <div>
+                <strong style={{ color: "var(--text-color)" }}>Kommunikation (Discord):</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{getDiscordStatus(training.trainee.registration.other) || "—"}</p>
+              </div>
+
+              {training.trainee.registration.personal && (
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Persönliche Infos:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                    {training.trainee.registration.personal}
+                  </p>
+                </div>
+              )}
+
+              {training.trainee.registration.other && (
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Sonstiges:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                    {training.trainee.registration.other}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p style={{ color: "var(--text-color)" }}>Keine Anmeldungsdaten vorhanden.</p>
+          )}
+
+          <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={() => setShowRegistrationModal(false)} className="button">
+              Schließen
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

@@ -31,7 +31,6 @@ export async function GET(
             id: true,
             cid: true,
             name: true,
-            email: true,
             role: true,
           },
         },
@@ -73,7 +72,41 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    return NextResponse.json(training, { status: 200 });
+    const registration = training.trainee.cid
+      ? await prisma.registration.findUnique({
+          where: { cid: training.trainee.cid },
+          select: {
+            cid: true,
+            name: true,
+            rating: true,
+            fir: true,
+            simulator: true,
+            aircraft: true,
+            client: true,
+            clientSetup: true,
+            experience: true,
+            charts: true,
+            airac: true,
+            category: true,
+            topics: true,
+            schedule: true,
+            communication: true,
+            personal: true,
+            other: true,
+          },
+        })
+      : null;
+
+    return NextResponse.json(
+      {
+        ...training,
+        trainee: {
+          ...training.trainee,
+          registration,
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error fetching training:", error);
     return NextResponse.json(

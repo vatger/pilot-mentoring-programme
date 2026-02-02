@@ -44,7 +44,6 @@ export async function GET() {
             id: true,
             cid: true,
             name: true,
-            email: true,
             role: true,
           },
         },
@@ -63,7 +62,44 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(trainings, { status: 200 });
+    const trainingsWithRegistration = await Promise.all(
+      trainings.map(async (training) => {
+        const registration = training.trainee.cid
+          ? await prisma.registration.findUnique({
+              where: { cid: training.trainee.cid },
+              select: {
+                cid: true,
+                name: true,
+                rating: true,
+                fir: true,
+                simulator: true,
+                aircraft: true,
+                client: true,
+                clientSetup: true,
+                experience: true,
+                charts: true,
+                airac: true,
+                category: true,
+                topics: true,
+                schedule: true,
+                communication: true,
+                personal: true,
+                other: true,
+              },
+            })
+          : null;
+
+        return {
+          ...training,
+          trainee: {
+            ...training.trainee,
+            registration,
+          },
+        };
+      })
+    );
+
+    return NextResponse.json(trainingsWithRegistration, { status: 200 });
   } catch (error) {
     console.error("Error fetching mentor trainings:", error);
     return NextResponse.json(
