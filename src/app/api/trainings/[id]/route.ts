@@ -31,7 +31,6 @@ export async function GET(
             id: true,
             cid: true,
             name: true,
-            email: true,
           },
         },
         mentors: {

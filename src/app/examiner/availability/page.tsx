@@ -8,6 +8,7 @@ type Slot = {
   startTime: string;
   endTime: string;
   status: string;
+  examiner?: { id: string; cid: string | null; name: string | null };
 };
 
 type CheckrideEntry = {
@@ -16,7 +17,9 @@ type CheckrideEntry = {
   result: string;
   isDraft: boolean;
   trainee: { id: string; cid: string | null; name: string | null };
-  availability: Slot;
+  availability: Slot & {
+    examiner?: { id: string; cid: string | null; name: string | null };
+  };
   assessment?: any;
 };
 
@@ -27,6 +30,7 @@ export default function ExaminerAvailabilityPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [cancelling, setCancelling] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -90,6 +94,26 @@ export default function ExaminerAvailabilityPage() {
     }
   };
 
+  const cancelCheckride = async (checkrideId: string) => {
+    if (!confirm("Möchtest du diese Prüfung wirklich absagen?")) return;
+    setCancelling(checkrideId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/checkrides/${checkrideId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Fehler: ${res.status}`);
+      }
+      await load();
+    } catch (e: any) {
+      setError(e.message || "Fehler beim Absagen");
+    } finally {
+      setCancelling(null);
+    }
+  };
+
   return (
     <PageLayout>
       <div className="card" style={{ marginBottom: "1.5rem" }}>
@@ -109,7 +133,7 @@ export default function ExaminerAvailabilityPage() {
             <div>
               <h3 style={{ marginBottom: "6px", marginTop: 0 }}>Neuen Slot erstellen (2h)</h3>
               <p style={{ margin: 0, fontSize: "0.95em" }}>
-                Wähle die Startzeit in UTC; die Endzeit wird automatisch 2 Stunden später gesetzt.
+                Wähle die Startzeit in deiner lokalen Zeit; die Endzeit wird automatisch 2 Stunden später gesetzt.
               </p>
             </div>
             <label className="form-label">
@@ -133,7 +157,7 @@ export default function ExaminerAvailabilityPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "1.5rem" }}>
             <div className="card">
-              <h3 style={{ marginTop: 0 }}>Meine verfügbaren Slots</h3>
+              <h3 style={{ marginTop: 0 }}>Alle Prüfungsslots</h3>
               {slots.length === 0 ? (
                 <p style={{ color: "var(--text-color)", margin: 0 }}>Noch keine Slots</p>
               ) : (
@@ -154,10 +178,13 @@ export default function ExaminerAvailabilityPage() {
                     >
                       <div>
                         <div style={{ fontSize: "0.95em", fontWeight: 500 }}>
-                          {new Date(s.startTime).toLocaleString()}
+                          {new Date(s.startTime).toLocaleString("de-DE", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
                         </div>
                         <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginTop: "2px" }}>
-                          {s.status}
+                          {s.examiner?.name || "Unbekannt"} ({s.examiner?.cid || "N/A"})
                         </div>
                       </div>
                       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -217,7 +244,13 @@ export default function ExaminerAvailabilityPage() {
                         {c.trainee.name || "Trainee"} ({c.trainee.cid || "N/A"})
                       </div>
                       <div style={{ fontSize: "0.9em", marginBottom: "4px" }}>
-                        {new Date(c.scheduledDate).toLocaleString()}
+                        {new Date(c.scheduledDate).toLocaleString("de-DE", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </div>
+                      <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "4px" }}>
+                        Prüfer: {c.availability.examiner?.name || "Unbekannt"} ({c.availability.examiner?.cid || "N/A"})
                       </div>
                       <div
                         style={{
@@ -228,18 +261,38 @@ export default function ExaminerAvailabilityPage() {
                       >
                         {c.isDraft ? "Bewertung ausstehend" : `Ergebnis: ${c.result}`}
                       </div>
-                      <a
-                        href={`/examiner/assessment/${c.id}`}
-                        className="button"
-                        style={{
-                          padding: "6px 12px",
-                          fontSize: "0.85em",
-                          margin: 0,
-                          display: "inline-block",
-                        }}
-                      >
-                        Bewertung öffnen
-                      </a>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <a
+                          href={`/examiner/assessment/${c.id}`}
+                          className="button"
+                          style={{
+                            padding: "6px 12px",
+                            fontSize: "0.85em",
+                            margin: 0,
+                            display: "inline-block",
+                          }}
+                        >
+                          Bewertung öffnen
+                        </a>
+                        {c.result === "INCOMPLETE" && (
+                          <button
+                            onClick={() => cancelCheckride(c.id)}
+                            disabled={cancelling === c.id}
+                            className="button"
+                            style={{
+                              padding: "6px 12px",
+                              fontSize: "0.85em",
+                              margin: 0,
+                              backgroundColor: "var(--danger-color, #d32f2f)",
+                              color: "white",
+                              border: "none",
+                              cursor: cancelling === c.id ? "wait" : "pointer",
+                            }}
+                          >
+                            {cancelling === c.id ? "Absagen..." : "Absagen"}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

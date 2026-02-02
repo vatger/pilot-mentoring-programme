@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const trainings = await prisma.training.findMany({
       include: {
         trainee: {
-          select: { id: true, cid: true, name: true, email: true },
+          select: { id: true, cid: true, name: true },
         },
         mentors: {
           include: {
@@ -44,7 +44,44 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(trainings, { status: 200 });
+    const trainingsWithRegistration = await Promise.all(
+      trainings.map(async (training) => {
+        const registration = training.trainee.cid
+          ? await prisma.registration.findUnique({
+              where: { cid: training.trainee.cid },
+              select: {
+                cid: true,
+                name: true,
+                rating: true,
+                fir: true,
+                simulator: true,
+                aircraft: true,
+                client: true,
+                clientSetup: true,
+                experience: true,
+                charts: true,
+                airac: true,
+                category: true,
+                topics: true,
+                schedule: true,
+                communication: true,
+                personal: true,
+                other: true,
+              },
+            })
+          : null;
+
+        return {
+          ...training,
+          trainee: {
+            ...training.trainee,
+            registration,
+          },
+        };
+      })
+    );
+
+    return NextResponse.json(trainingsWithRegistration, { status: 200 });
   } catch (error) {
     console.error("Error fetching leitung trainings:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

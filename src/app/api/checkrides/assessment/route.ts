@@ -152,6 +152,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // If checkride failed and released, remove readyForCheckride flag
+    if (release === true && overallResult === "FAILED") {
+      await db.training.update({
+        where: { id: checkride.trainingId },
+        data: { readyForCheckride: false },
+      });
+    }
+
     return NextResponse.json({ assessment, checkride: updatedCheckride }, { status: 200 });
   } catch (error) {
     console.error("Error saving assessment:", error);

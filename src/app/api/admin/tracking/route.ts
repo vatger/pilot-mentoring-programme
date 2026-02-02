@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         trainee: {
-          select: { id: true, name: true, cid: true, email: true },
+          select: { id: true, name: true, cid: true },
         },
         mentors: {
           include: {

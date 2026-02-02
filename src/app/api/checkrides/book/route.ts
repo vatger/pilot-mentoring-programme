@@ -38,6 +38,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Training not marked ready for checkride" }, { status: 400 });
     }
 
+    // Check if trainee has already passed a checkride for this training
+    const passedCheckride = await db.checkride.findFirst({
+      where: {
+        trainingId,
+        result: "PASSED",
+      },
+    });
+    if (passedCheckride) {
+      return NextResponse.json({ error: "Cannot rebook - checkride already passed" }, { status: 400 });
+    }
+
     const availability = await db.checkrideAvailability.findUnique({
       where: { id: availabilityId },
     });

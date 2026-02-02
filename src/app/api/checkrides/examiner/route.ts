@@ -18,17 +18,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Slots owned by examiner
+    // All examiner slots (not just this examiner's)
     const slots = await prisma.checkrideAvailability.findMany({
-      where: { examinerId },
+      where: {},
       orderBy: { startTime: "asc" },
+      include: {
+        examiner: { select: { id: true, cid: true, name: true } },
+      },
     });
 
-    // Booked checkrides for this examiner
+    // All booked checkrides (not just this examiner's), exclude PASSED
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    
+    // Delete old incomplete checkrides (>2 days old with INCOMPLETE status)
+    await prisma.checkride.deleteMany({
+      where: {
+        result: "INCOMPLETE",
+        scheduledDate: { lt: twoDaysAgo },
+      },
+    });
+
     const checkrides = await prisma.checkride.findMany({
-      where: { availability: { examinerId } },
+      where: { 
+        result: { not: "PASSED" } // Hide passed exams
+      },
       include: {
-        availability: true,
+        availability: {
+          include: {
+            examiner: { select: { id: true, cid: true, name: true } },
+          },
+        },
         trainee: { select: { id: true, cid: true, name: true } },
         assessment: true,
       },
