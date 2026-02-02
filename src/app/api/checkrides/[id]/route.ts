@@ -16,7 +16,7 @@ function isExaminer(role?: string) {
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -30,7 +30,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const checkrideId = params.id;
+    const { id: checkrideId } = await params;
 
     // Get the checkride
     const checkride = await db.checkride.findUnique({
