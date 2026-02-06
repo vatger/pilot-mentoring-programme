@@ -1,13 +1,29 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { createCanvas } from "canvas";
+import { createCanvas, registerFont } from "canvas";
+import path from "path";
 import { prisma } from "@/lib/prisma";
 
 const WIDTH = 1200;
 const PADDING_X = 40;
 const PADDING_Y = 40;
 const LINE_HEIGHT = 28;
+const FONT_FAMILY = "DejaVu Sans";
+let fontRegistered = false;
+
+const ensureFont = () => {
+  if (fontRegistered) return;
+  const fontPath = path.join(
+    process.cwd(),
+    "node_modules",
+    "dejavu-fonts-ttf",
+    "ttf",
+    "DejaVuSans.ttf"
+  );
+  registerFont(fontPath, { family: FONT_FAMILY });
+  fontRegistered = true;
+};
 
 const formatDateTime = (date: Date | string | null | undefined) => {
   if (!date) return "—";
@@ -17,6 +33,7 @@ const formatDateTime = (date: Date | string | null | undefined) => {
 
 export async function GET() {
   try {
+    ensureFont();
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -66,14 +83,14 @@ export async function GET() {
     ctx.fillStyle = "#111827";
     ctx.textBaseline = "top";
 
-    ctx.font = "bold 28px sans-serif";
+    ctx.font = `bold 28px "${FONT_FAMILY}"`;
     ctx.fillText(headerLines[0], PADDING_X, PADDING_Y);
 
-    ctx.font = "16px sans-serif";
+    ctx.font = `16px "${FONT_FAMILY}"`;
     ctx.fillText(headerLines[1], PADDING_X, PADDING_Y + LINE_HEIGHT);
 
     let y = PADDING_Y + LINE_HEIGHT * 3;
-    ctx.font = "18px sans-serif";
+    ctx.font = `18px "${FONT_FAMILY}"`;
     lines.forEach((line) => {
       ctx.fillText(line, PADDING_X, y);
       y += LINE_HEIGHT;
