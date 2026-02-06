@@ -60,6 +60,7 @@ export default function MentorDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [deletingRequest, setDeletingRequest] = useState<string | null>(null);
   const [addingMentor, setAddingMentor] = useState<string | null>(null);
   const [selectedTrainee, setSelectedTrainee] = useState<TraineeInfo | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -71,6 +72,7 @@ export default function MentorDashboard() {
   const userRole = (session?.user as any)?.role;
   const isMentor =
     userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
+  const canDeleteRequests = userRole === "PMP_LEITUNG" || userRole === "ADMIN";
 
   useEffect(() => {
     if (status === "loading") return;
@@ -210,6 +212,28 @@ export default function MentorDashboard() {
       alert(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setAddingMentor(null);
+    }
+  };
+
+  const deletePendingRequest = async (traineeId: string) => {
+    if (!confirm("Möchten Sie diese Anfrage wirklich löschen?")) return;
+
+    setDeletingRequest(traineeId);
+    try {
+      const res = await fetch("/api/mentor/pending-trainees", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ traineeId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Fehler beim Löschen der Anfrage");
+      }
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setDeletingRequest(null);
     }
   };
 
@@ -462,17 +486,31 @@ export default function MentorDashboard() {
                             )}
                           </div>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            assignTrainee(trainee.id);
-                          }}
-                          disabled={assigning === trainee.id}
-                          className="button"
-                          style={{ margin: 0, minWidth: "140px" }}
-                        >
-                          {assigning === trainee.id ? "Zuweisen…" : "Mir zuweisen"}
-                        </button>
+                        <div style={{ display: "flex", gap: "8px", flexDirection: "column", alignItems: "flex-end" }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openTraineeDetails(trainee);
+                            }}
+                            className="button"
+                            style={{ margin: 0, minWidth: "140px" }}
+                          >
+                            Details
+                          </button>
+                          {canDeleteRequests && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deletePendingRequest(trainee.id);
+                              }}
+                              disabled={deletingRequest === trainee.id}
+                              className="button button--danger"
+                              style={{ margin: 0, minWidth: "140px" }}
+                            >
+                              {deletingRequest === trainee.id ? "Löscht…" : "Anfrage Löschen"}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -603,18 +641,18 @@ export default function MentorDashboard() {
 
                 <div>
                   <strong style={{ color: "var(--text-color)" }}>Verfügbarkeit:</strong>
-                <strong style={{ color: "var(--text-color)" }}>Hardware:</strong>
+                  <p style={{ margin: "0.25rem 0 0 0"}}>{selectedTrainee.registration.schedule}
+                  </p>
+                </div>
+
+                <div>
+                  <strong style={{ color: "var(--text-color)" }}>Hardware:</strong>
                 <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.communication}</p>
               </div>
 
               <div>
                 <strong style={{ color: "var(--text-color)" }}>Kommunikation (Discord):</strong>
                 <p style={{ margin: "0.25rem 0 0 0" }}>{getDiscordStatus(selectedTrainee.registration.other) || "—"}</p>
-                </div>
-
-                <div>
-                  <strong style={{ color: "var(--text-color)" }}>Kommunikation:</strong>
-                  <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.communication}</p>
                 </div>
 
                 {selectedTrainee.registration.personal && (
@@ -651,6 +689,19 @@ export default function MentorDashboard() {
                   disabled={assigning === selectedTrainee.id}
                 >
                   {assigning === selectedTrainee.id ? "Zuweisen…" : "Mir zuweisen"}
+                </button>
+              )}
+              {selectedTrainee.role === "PENDING_TRAINEE" && canDeleteRequests && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeModal();
+                    deletePendingRequest(selectedTrainee.id);
+                  }}
+                  className="button button--danger"
+                  disabled={deletingRequest === selectedTrainee.id}
+                >
+                  {deletingRequest === selectedTrainee.id ? "Löscht…" : "Anfrage Löschen"}
                 </button>
               )}
               <button onClick={closeModal} className="button">

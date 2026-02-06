@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/mentor/pending-trainees
@@ -73,6 +73,94 @@ export async function GET() {
     return NextResponse.json(traineesWithRegistration, { status: 200 });
   } catch (error) {
     console.error("Error fetching pending trainees:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/mentor/pending-trainees
+ * Remove a pending trainee request (PMP_LEITUNG, ADMIN only)
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userRole = (session.user as any).role;
+
+    if (!["PMP_LEITUNG", "ADMIN"].includes(userRole)) {
+      return NextResponse.json(
+        { error: "Only PMP_LEITUNG and ADMIN can delete requests" },
+        { status: 403 }
+      );
+    }
+
+    const { traineeId } = await request.json();
+
+    if (!traineeId) {
+      return NextResponse.json(
+        { error: "traineeId is required" },
+        { status: 400 }
+      );
+    }
+
+    const trainee = await prisma.user.findUnique({
+      where: { id: traineeId },
+      select: { id: true, cid: true, role: true },
+    });
+
+    if (!trainee) {
+      return NextResponse.json({ error: "Trainee not found" }, { status: 404 });
+    }
+
+    if (!['PENDING_TRAINEE', 'TRAINEE'].includes(trainee.role)) {
+      return NextResponse.json(
+        { error: "User is not a pending trainee" },
+        { status: 400 }
+      );
+    }
+
+    const activeTrainings = await prisma.training.count({
+      where: {
+        traineeId: trainee.id,
+        status: { in: ["ACTIVE", "COMPLETED"] },
+      },
+    });
+
+    if (activeTrainings > 0) {
+      return NextResponse.json(
+        { error: "Trainee has active or completed trainings" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (trainee.cid) {
+        await tx.registration.deleteMany({
+          where: { cid: trainee.cid },
+        });
+      }
+
+      await tx.user.update({
+        where: { id: trainee.id },
+        data: {
+          role: "VISITOR",
+          userStatus: "Cancelled Trainee",
+        },
+      });
+    });
+
+    return NextResponse.json(
+      { success: true, message: "Trainee request deleted" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error deleting pending trainee:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
