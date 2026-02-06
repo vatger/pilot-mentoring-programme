@@ -101,7 +101,8 @@ export async function GET() {
     });
 
     const buffer = canvas.toBuffer("image/png");
-    return new NextResponse(buffer, {
+    const body = new Uint8Array(buffer);
+    return new NextResponse(body, {
       status: 200,
       headers: {
         "Content-Type": "image/png",
