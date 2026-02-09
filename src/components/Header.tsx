@@ -306,7 +306,7 @@ export default function Header() {
                       <h3 style={{ margin: '0 0 6px 0' }}>Registrierung</h3>
                       <p style={{ margin: '0 0 8px 0' }}>Starte oder vervollständige deine Anmeldung.</p>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <Link className="button" href="/anmeldung">PMP Anmeldung</Link>
+                        <Link className="button" href="/anmeldung-forum">PMP Anmeldung</Link>
                       </div>
                     </div>
                   )}
