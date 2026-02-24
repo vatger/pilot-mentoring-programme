@@ -565,6 +565,29 @@ input[type="radio"]:disabled {
     cursor: not-allowed;
 }
 
+/* Topic mode checkboxes (mentor/session): explicit blue/green overrides */
+input[type="checkbox"].topic-checkbox {
+    border-radius: 50%;
+}
+
+input[type="checkbox"].topic-checkbox.topic-checkbox--theory {
+    border-color: #4d8edb;
+}
+
+input[type="checkbox"].topic-checkbox.topic-checkbox--theory:checked {
+    background: #4d8edb;
+    border-color: #4d8edb;
+}
+
+input[type="checkbox"].topic-checkbox.topic-checkbox--practice {
+    border-color: #4caf50;
+}
+
+input[type="checkbox"].topic-checkbox.topic-checkbox--practice:checked {
+    background: #4caf50;
+    border-color: #4caf50;
+}
+
 /* Date input styling */
 input[type="date"],
 input[type="time"],

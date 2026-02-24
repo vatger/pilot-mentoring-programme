@@ -14,7 +14,13 @@ interface TrainingCoverageRow {
   mentors: { id: string; name: string | null; cid: string | null }[];
   sessionsCount: number;
   topicsCoveredCount: number;
-  topicsCoverage: { topic: string; covered: boolean }[];
+  topicsCoverage: {
+    topic: string;
+    covered: boolean;
+    category?: "THEORY" | "PRACTICE";
+    theorie?: boolean;
+    praxis?: boolean;
+  }[];
   lastSessionDate: string | null;
 }
 
@@ -58,6 +64,8 @@ function PmpTrackingContent() {
   };
 
   const totalTopics = trainingTopics.length;
+  const formatPoints = (value: number) =>
+    Number.isInteger(value) ? String(value) : value.toFixed(1);
 
   if (status === "loading" || loading) {
     return (
@@ -173,7 +181,7 @@ function PmpTrackingContent() {
 
                   <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", width: "100%" }}>
                     <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                      {row.topicsCoveredCount} / {totalTopics}
+                      {formatPoints(row.topicsCoveredCount)} / {totalTopics}
                     </span>
                     <div
                       style={{
@@ -217,6 +225,9 @@ function PmpTrackingContent() {
                     fontSize: "0.95em",
                   }}
                 >
+                  <span style={{ whiteSpace: "nowrap" }}>
+                    Fortschritt: {formatPoints(row.topicsCoveredCount)} Punkte
+                  </span>
                   <span style={{ whiteSpace: "nowrap" }}>
                     Mentor: {row.mentors.length > 0 ? row.mentors.map((m) => m.name || m.cid).join(", ") : "—"}
                   </span>

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import PageLayout from "@/components/PageLayout";
 import { trainingTopics } from "@/lib/trainingTopics";
-import { Link } from "lucide-react";
 
 interface Mentor {
   mentorId: string;
@@ -19,13 +18,16 @@ interface Mentor {
 interface SessionTopic {
   topic: string;
   checked: boolean;
+  theoryCovered?: boolean;
+  practiceCovered?: boolean;
+  coverageMode?: "THEORIE" | "PRAXIS" | null;
   comment?: string | null;
   order: number;
 }
 
 interface TrainingSession {
   id: string;
-  lessonType: string;
+  lessonType?: string;
   sessionDate: string;
   comments: string | null;
   topics: SessionTopic[];
@@ -68,6 +70,9 @@ interface Training {
 }
 
 function TraineeProgressContent() {
+  const THEORY_BLUE = "#4d8edb";
+  const PRACTICE_GREEN = "#4caf50";
+
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -136,7 +141,7 @@ function TraineeProgressContent() {
       );
       if (!sessionsRes.ok) throw new Error("Failed to fetch sessions");
       const sessionsData = await sessionsRes.json();
-      setSessions(sessionsData);
+      setSessions(Array.isArray(sessionsData) ? sessionsData : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -144,18 +149,49 @@ function TraineeProgressContent() {
     }
   };
 
-  const getTopicProgress = () => {
-    const covered = new Set<string>();
-    // Only count finalized sessions (not drafts)
-    sessions.filter(s => !s.isDraft).forEach((s) => {
+  const getTopicCoverage = () => {
+    const coverageMap = new Map<string, { theorie: boolean; praxis: boolean }>();
+    sessions.filter((s) => !s.isDraft).forEach((s) => {
       s.topics.forEach((t) => {
-        if (t.checked) covered.add(t.topic);
+        if (!t.checked) return;
+        const current = coverageMap.get(t.topic) || { theorie: false, praxis: false };
+        current.theorie =
+          current.theorie ||
+          !!t.theoryCovered ||
+          (!t.theoryCovered && !t.practiceCovered && (t.coverageMode || "THEORIE") === "THEORIE");
+        current.praxis =
+          current.praxis ||
+          !!t.practiceCovered ||
+          (!t.theoryCovered && !t.practiceCovered && (t.coverageMode === "PRAXIS" || !t.coverageMode));
+        coverageMap.set(t.topic, current);
       });
     });
-    return covered;
+    return coverageMap;
   };
 
-  const coveredTopics = getTopicProgress();
+  const topicCoverage = getTopicCoverage();
+
+  const calculateProgressPoints = () => {
+    let points = 0;
+
+    trainingTopics.forEach((topicDef) => {
+      const coverage = topicCoverage.get(topicDef.key) || { theorie: false, praxis: false };
+
+      if (topicDef.category === "THEORY") {
+        if (coverage.theorie) points += 1;
+        return;
+      }
+
+      if (coverage.theorie) points += 0.5;
+      if (coverage.praxis) points += 0.5;
+    });
+
+    return points;
+  };
+
+  const progressPoints = calculateProgressPoints();
+  const formatPoints = (value: number) =>
+    Number.isInteger(value) ? String(value) : value.toFixed(1);
 
   const showPendingForumMessage = userRole === "PENDING_TRAINEE";
   const showNoSessionForumMessage =
@@ -181,7 +217,7 @@ function TraineeProgressContent() {
   }
 
   const progressPercent = training ? Math.round(
-    (coveredTopics.size / trainingTopics.length) * 100
+    (progressPoints / trainingTopics.length) * 100
   ) : 0;
 
   return (
@@ -283,7 +319,7 @@ function TraineeProgressContent() {
                   {progressPercent}%
                 </div>
                 <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
-                  {coveredTopics.size} / {trainingTopics.length} Themen
+                  {formatPoints(progressPoints)} / {trainingTopics.length} Themen
                 </div>
               </div>
               <div>
@@ -315,7 +351,11 @@ function TraineeProgressContent() {
             <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Trainingsthemen</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "8px" }}>
               {trainingTopics.map((topic) => {
-                const isCovered = coveredTopics.has(topic.key);
+                const coverage = topicCoverage.get(topic.key) || {
+                  theorie: false,
+                  praxis: false,
+                };
+                const isCovered = coverage.theorie || coverage.praxis;
                 return (
                   <div
                     key={topic.key}
@@ -358,10 +398,39 @@ function TraineeProgressContent() {
                         fontWeight: isCovered ? 600 : 500,
                         color: "var(--text-color)",
                         fontSize: "0.9em",
+                        flex: 1,
                       }}
                     >
                       {topic.label}
                     </span>
+                    {coverage.theorie && (
+                      <span
+                        style={{
+                          backgroundColor: THEORY_BLUE,
+                          color: "white",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          fontSize: "0.72em",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Theorie
+                      </span>
+                    )}
+                    {coverage.praxis && (
+                      <span
+                        style={{
+                          backgroundColor: PRACTICE_GREEN,
+                          color: "white",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          fontSize: "0.72em",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Praxis
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -374,15 +443,6 @@ function TraineeProgressContent() {
               <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>Trainingssessions</h3>
               <div style={{ display: "grid", gap: "1.5rem" }}>
                 {sessions.map((s) => {
-                  const lessonTypeLabel =
-                    s.lessonType === "THEORIE_TRAINING"
-                      ? "Theorie Training"
-                      : s.lessonType === "OFFLINE_FLUG"
-                      ? "Offline Flug"
-                      : s.lessonType === "ONLINE_FLUG"
-                      ? "Online Flug"
-                      : s.lessonType;
-
                   return (
                     <div
                       key={s.id}
@@ -407,7 +467,7 @@ function TraineeProgressContent() {
                       >
                         <div>
                           <div style={{ fontSize: "0.8em", color: "var(--text-color)", marginBottom: "0.25rem" }}>
-                            {lessonTypeLabel}
+                            Trainingssession
                           </div>
                           <div style={{ fontWeight: 600, fontSize: "1.05em" }}>
                             {new Date(s.sessionDate).toLocaleDateString()}
@@ -457,20 +517,23 @@ function TraineeProgressContent() {
                                   }}
                                 >
                                   <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
-                                    <span
-                                      style={{
-                                        backgroundColor: "var(--accent-color)",
-                                        color: "white",
-                                        padding: "2px 6px",
-                                        borderRadius: "4px",
-                                        fontSize: "0.75em",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                        marginTop: "1px",
-                                      }}
-                                    >
-                                      ✓
-                                    </span>
+                                    <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0, marginTop: "1px" }}>
+                                      <span
+                                        style={{
+                                          backgroundColor:
+                                            (topic.practiceCovered || (!topic.theoryCovered && topic.coverageMode === "PRAXIS"))
+                                              ? PRACTICE_GREEN
+                                              : THEORY_BLUE,
+                                          color: "white",
+                                          padding: "2px 6px",
+                                          borderRadius: "4px",
+                                          fontSize: "0.72em",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        {topic.practiceCovered || (!topic.theoryCovered && topic.coverageMode === "PRAXIS") ? "Praxis" : "Theorie"}
+                                      </span>
+                                    </div>
                                     <div style={{ fontSize: "0.9em" }}>
                                       <div style={{ fontWeight: 500, marginBottom: topic.comment ? "0.25rem" : "0" }}>
                                         {

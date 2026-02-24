@@ -10,7 +10,6 @@ import { trainingTopicLabelMap } from "@/lib/trainingTopics";
 type SessionDetails = {
   id: string;
   sessionDate: string;
-  lessonType: string;
   comments: string | null;
   isDraft: boolean;
   releasedAt: string | null;
@@ -19,6 +18,9 @@ type SessionDetails = {
     id: string;
     topic: string;
     checked: boolean;
+    theoryCovered?: boolean;
+    practiceCovered?: boolean;
+    coverageMode?: "THEORIE" | "PRAXIS" | null;
     comment: string | null;
   }[];
   training: {
@@ -29,12 +31,6 @@ type SessionDetails = {
       name: string | null;
     };
   };
-};
-
-const LESSON_TYPE_LABELS: Record<string, string> = {
-  THEORIE_TRAINING: "Theorie Training",
-  OFFLINE_FLUG: "Offline Flug",
-  ONLINE_FLUG: "Online Flug",
 };
 
 export default function SessionDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -139,9 +135,6 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
               <strong>Datum:</strong> {new Date(sessionDetails.sessionDate).toLocaleDateString()}
             </p>
             <p>
-              <strong>Typ:</strong> {LESSON_TYPE_LABELS[sessionDetails.lessonType] || sessionDetails.lessonType}
-            </p>
-            <p>
               <strong>Status:</strong>{" "}
               {sessionDetails.isDraft ? (
                 <span style={{ color: "var(--warning-color)" }}>🔧 Entwurf</span>
@@ -163,7 +156,15 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
             <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
               {sessionDetails.topics
                 .filter(t => t.checked)
-                .map((topic) => (
+                .map((topic) => {
+                  const hasTheory =
+                    !!topic.theoryCovered ||
+                    (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode || "THEORIE") === "THEORIE");
+                  const hasPractice =
+                    !!topic.practiceCovered ||
+                    (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode === "PRAXIS" || !topic.coverageMode));
+
+                  return (
                   <div
                     key={topic.id}
                     style={{
@@ -173,8 +174,40 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
                       background: "rgba(0, 95, 163, 0.05)",
                     }}
                   >
-                    <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
-                      {trainingTopicLabelMap[topic.topic] || topic.topic}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
+                      {hasTheory && (
+                        <span
+                          style={{
+                            fontSize: "0.75rem",
+                            fontWeight: 600,
+                            color: "white",
+                            background: "var(--accent-color)",
+                            borderRadius: "4px",
+                            padding: "2px 6px",
+                            flexShrink: 0,
+                          }}
+                        >
+                          Theorie
+                        </span>
+                      )}
+                      {hasPractice && (
+                        <span
+                          style={{
+                            fontSize: "0.75rem",
+                            fontWeight: 600,
+                            color: "white",
+                            background: "var(--success-color)",
+                            borderRadius: "4px",
+                            padding: "2px 6px",
+                            flexShrink: 0,
+                          }}
+                        >
+                          Praxis
+                        </span>
+                      )}
+                      <span style={{ fontWeight: 600 }}>
+                        {trainingTopicLabelMap[topic.topic] || topic.topic}
+                      </span>
                     </div>
                     {topic.comment && (
                       <div style={{ fontSize: "0.875rem", fontStyle: "italic", color: "var(--text-muted)" }}>
@@ -182,7 +215,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
                       </div>
                     )}
                   </div>
-                ))}
+                )})}
             </div>
           )}
         </div>

@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { trainingTopicKeys, TrainingTopicKey } from "@/lib/trainingTopics";
-import { TrainingTopic, LessonType } from "@prisma/client";
+import { TrainingTopic } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 const db = prisma as any;
@@ -31,12 +31,17 @@ export async function POST(request: NextRequest) {
     const { trainingId, sessionId, lessonType, sessionDate, comments, whiteboardSessionId, checkedTopics, isDraft } =
       await request.json();
 
-    if (!trainingId || !lessonType || !sessionDate || !Array.isArray(checkedTopics)) {
+    if (!trainingId || !sessionDate || !Array.isArray(checkedTopics)) {
       return NextResponse.json(
-        { error: "trainingId, lessonType, sessionDate, and checkedTopics array are required" },
+        { error: "trainingId, sessionDate, and checkedTopics array are required" },
         { status: 400 }
       );
     }
+
+    const normalizedLessonType =
+      lessonType && ["THEORIE_TRAINING", "OFFLINE_FLUG", "ONLINE_FLUG"].includes(lessonType)
+        ? lessonType
+        : "THEORIE_TRAINING";
 
     // Verify the training exists and requester is a mentor
     const training = await db.training.findUnique({
@@ -79,7 +84,7 @@ export async function POST(request: NextRequest) {
       trainingSession = await db.trainingSession.update({
         where: { id: sessionId },
         data: {
-          lessonType: lessonType as LessonType,
+          lessonType: normalizedLessonType,
           sessionDate: new Date(sessionDate),
           comments: comments || null,
           whiteboardSessionId: whiteboardSessionId || null,
@@ -87,12 +92,38 @@ export async function POST(request: NextRequest) {
           releasedAt: isDraft === false ? new Date() : null,
           topics: {
             create: normalizedTopics.map(
-              (topic: { topic: string; checked: boolean; comment?: string; order: number }) => ({
-                topic: topic.topic as TrainingTopic,
-                checked: topic.checked,
-                comment: topic.comment || null,
-                order: topic.order,
-              })
+              (topic: {
+                topic: string;
+                checked?: boolean;
+                theoryCovered?: boolean;
+                practiceCovered?: boolean;
+                comment?: string;
+                order: number;
+                coverageMode?: string;
+              }) => {
+                const theoryCovered =
+                  topic.theoryCovered !== undefined
+                    ? topic.theoryCovered
+                    : topic.coverageMode
+                    ? topic.coverageMode === "THEORIE"
+                    : !!topic.checked;
+                const practiceCovered =
+                  topic.practiceCovered !== undefined
+                    ? topic.practiceCovered
+                    : topic.coverageMode
+                    ? topic.coverageMode === "PRAXIS"
+                    : !!topic.checked;
+
+                return {
+                  topic: topic.topic as TrainingTopic,
+                  checked: !!(theoryCovered || practiceCovered),
+                  coverageMode: topic.coverageMode === "PRAXIS" ? "PRAXIS" : "THEORIE",
+                  theoryCovered,
+                  practiceCovered,
+                  comment: topic.comment || null,
+                  order: topic.order,
+                };
+              }
             ),
           },
         },
@@ -102,7 +133,7 @@ export async function POST(request: NextRequest) {
       trainingSession = await db.trainingSession.create({
         data: {
           trainingId,
-          lessonType: lessonType as LessonType,
+          lessonType: normalizedLessonType,
           sessionDate: new Date(sessionDate),
           comments: comments || null,
           whiteboardSessionId: whiteboardSessionId || null,
@@ -110,12 +141,38 @@ export async function POST(request: NextRequest) {
           releasedAt: isDraft === false ? new Date() : null,
           topics: {
             create: normalizedTopics.map(
-              (topic: { topic: string; checked: boolean; comment?: string; order: number }) => ({
-                topic: topic.topic as TrainingTopic,
-                checked: topic.checked,
-                comment: topic.comment || null,
-                order: topic.order,
-              })
+              (topic: {
+                topic: string;
+                checked?: boolean;
+                theoryCovered?: boolean;
+                practiceCovered?: boolean;
+                comment?: string;
+                order: number;
+                coverageMode?: string;
+              }) => {
+                const theoryCovered =
+                  topic.theoryCovered !== undefined
+                    ? topic.theoryCovered
+                    : topic.coverageMode
+                    ? topic.coverageMode === "THEORIE"
+                    : !!topic.checked;
+                const practiceCovered =
+                  topic.practiceCovered !== undefined
+                    ? topic.practiceCovered
+                    : topic.coverageMode
+                    ? topic.coverageMode === "PRAXIS"
+                    : !!topic.checked;
+
+                return {
+                  topic: topic.topic as TrainingTopic,
+                  checked: !!(theoryCovered || practiceCovered),
+                  coverageMode: topic.coverageMode === "PRAXIS" ? "PRAXIS" : "THEORIE",
+                  theoryCovered,
+                  practiceCovered,
+                  comment: topic.comment || null,
+                  order: topic.order,
+                };
+              }
             ),
           },
         },
@@ -190,16 +247,61 @@ export async function GET(request: NextRequest) {
     const canSeeDrafts = isMentor || isAdminOrLeitung || examinerHasPlannedCheckride;
 
     // Get all sessions for this training
-    const sessions = await db.trainingSession.findMany({
-      where: {
-        trainingId,
-        ...(canSeeDrafts ? {} : { isDraft: false }),
-      },
-      include: {
-        topics: { orderBy: { order: "asc" } },
-      },
-      orderBy: { sessionDate: "desc" },
-    });
+    // Fallback is needed for environments where db push has not yet applied
+    // newer topic columns (theoryCovered/practiceCovered/coverageMode).
+    let sessions;
+    try {
+      sessions = await db.trainingSession.findMany({
+        where: {
+          trainingId,
+          ...(canSeeDrafts ? {} : { isDraft: false }),
+        },
+        include: {
+          topics: { orderBy: { order: "asc" } },
+        },
+        orderBy: { sessionDate: "desc" },
+      });
+    } catch (error: any) {
+      const errorMessage = String(error?.message || "").toLowerCase();
+      const isLegacyColumnIssue =
+        errorMessage.includes("theorycovered") ||
+        errorMessage.includes("practicecovered") ||
+        errorMessage.includes("coveragemode");
+
+      if (!isLegacyColumnIssue) {
+        throw error;
+      }
+
+      const legacySessions = await db.trainingSession.findMany({
+        where: {
+          trainingId,
+          ...(canSeeDrafts ? {} : { isDraft: false }),
+        },
+        include: {
+          topics: {
+            orderBy: { order: "asc" },
+            select: {
+              id: true,
+              topic: true,
+              checked: true,
+              comment: true,
+              order: true,
+            },
+          },
+        },
+        orderBy: { sessionDate: "desc" },
+      });
+
+      sessions = legacySessions.map((session: any) => ({
+        ...session,
+        topics: (session.topics || []).map((topic: any) => ({
+          ...topic,
+          coverageMode: null,
+          theoryCovered: undefined,
+          practiceCovered: undefined,
+        })),
+      }));
+    }
 
     return NextResponse.json(sessions, { status: 200 });
   } catch (error) {
