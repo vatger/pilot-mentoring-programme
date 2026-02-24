@@ -86,7 +86,8 @@ export async function POST(request: NextRequest) {
       expiresInHours: 72,
     });
 
-    const inviteUrl = `${request.nextUrl.origin}/direkt-einladung?invite=${encodeURIComponent(token)}`;
+    const publicBaseUrl = (process.env.PMP_PUBLIC_BASE_URL || "https://pmp.vatger.de").replace(/\/$/, "");
+    const inviteUrl = `${publicBaseUrl}/direkt-einladung?invite=${encodeURIComponent(token)}`;
 
     await sendInviteNotification(traineeCid, inviteUrl);
 
