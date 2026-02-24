@@ -23,18 +23,26 @@ export async function GET() {
 
     // Get trainings where this mentor is assigned OR where they are the trainee
     // (the latter helps with single-account testing)
+    // Only show ACTIVE trainings in mentor dashboard
     const trainings = await prisma.training.findMany({
       where: {
-        OR: [
+        AND: [
           {
-            mentors: {
-              some: {
-                mentorId: userId,
-              },
-            },
+            status: "ACTIVE",
           },
           {
-            traineeId: userId,
+            OR: [
+              {
+                mentors: {
+                  some: {
+                    mentorId: userId,
+                  },
+                },
+              },
+              {
+                traineeId: userId,
+              },
+            ],
           },
         ],
       },
