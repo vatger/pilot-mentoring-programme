@@ -95,6 +95,23 @@ model Registration {
   @@index([status])
 }
 
+// Direct mentor invite for one-click trainee onboarding
+model MentorInvite {
+  id          String   @id @default(cuid())
+  mentorId    String
+  traineeCid  String
+  anmeldetext String   @db.Text
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  mentor      User     @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+
+  @@index([mentorId])
+  @@index([traineeCid])
+  @@index([expiresAt])
+}
+
 // Account model for potential future SSO session management
 model Account {
   id                 String  @id @default(cuid())
@@ -147,6 +164,7 @@ model User {
   sessions           Session[]
   trainingsAsTrainee Training[] @relation("trainee")
   trainingsAsMentor  TrainingMentor[]
+  mentorInvites      MentorInvite[]
   checkrideAvailabilities CheckrideAvailability[] @relation("examinedSessions")
   checkrides         Checkride[] @relation("checkrides")
 
