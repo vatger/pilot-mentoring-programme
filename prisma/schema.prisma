@@ -18,6 +18,11 @@ enum LessonType {
   ONLINE_FLUG
 }
 
+enum TopicCoverageMode {
+  THEORIE
+  PRAXIS
+}
+
 enum TrainingTopic {
   NMOC_BASICS
   IFR_PHASES
@@ -211,6 +216,9 @@ model TrainingSessionTopic {
   sessionId String
   topic     TrainingTopic
   checked   Boolean  @default(false)
+  coverageMode TopicCoverageMode @default(THEORIE)
+  theoryCovered Boolean @default(false)
+  practiceCovered Boolean @default(false)
   comment   String?  @db.Text // Per-topic comment from mentor
   order     Int      // Display order for topics
 

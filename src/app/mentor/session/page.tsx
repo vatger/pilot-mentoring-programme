@@ -10,6 +10,9 @@ interface SessionLog {
   id: string;
   topic: string;
   checked: boolean;
+  coverageMode?: "THEORIE" | "PRAXIS" | null;
+  theoryCovered?: boolean;
+  practiceCovered?: boolean;
   comment?: string;
   order: number;
 }
@@ -19,19 +22,21 @@ interface TopicComment {
 }
 
 function SessionLoggingContent() {
+  const THEORY_BLUE = "#4d8edb";
+  const PRACTICE_GREEN = "#4caf50";
+
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const trainingId = searchParams.get("trainingId");
   const whiteboardSessionId = searchParams.get("whiteboardSessionId");
 
-  const [lessonType, setLessonType] = useState("THEORIE_TRAINING");
   const [sessionDate, setSessionDate] = useState(
     new Date().toISOString().split("T")[0]
   );
   const [comments, setComments] = useState("");
   const [whiteboardId, setWhiteboardId] = useState(whiteboardSessionId || "");
-  const [checkedTopics, setCheckedTopics] = useState<Record<string, boolean>>({});
+  const [topicSelections, setTopicSelections] = useState<Record<string, { theory: boolean; practice: boolean }>>({});
   const [topicComments, setTopicComments] = useState<TopicComment>({});
   const [previousSessions, setPreviousSessions] = useState<SessionLog[][]>([]);
   const [traineeId, setTraineeId] = useState<string>("");
@@ -84,10 +89,23 @@ function SessionLoggingContent() {
     }
   };
 
-  const toggleTopic = (topic: string) => {
-    setCheckedTopics((prev) => ({
+  const toggleTheory = (topic: string) => {
+    setTopicSelections((prev) => ({
       ...prev,
-      [topic]: !prev[topic],
+      [topic]: {
+        theory: !(prev[topic]?.theory || false),
+        practice: prev[topic]?.practice || false,
+      },
+    }));
+  };
+
+  const togglePractice = (topic: string) => {
+    setTopicSelections((prev) => ({
+      ...prev,
+      [topic]: {
+        theory: prev[topic]?.theory || false,
+        practice: !(prev[topic]?.practice || false),
+      },
     }));
   };
 
@@ -106,8 +124,12 @@ function SessionLoggingContent() {
 
     try {
       const topicData = trainingTopics.map((t, idx) => ({
+        theoryCovered: !!topicSelections[t.key]?.theory,
+        practiceCovered: t.category === "THEORY" ? false : !!topicSelections[t.key]?.practice,
         topic: t.key,
-        checked: checkedTopics[t.key] || false,
+        checked:
+          !!topicSelections[t.key]?.theory ||
+          (t.category !== "THEORY" && !!topicSelections[t.key]?.practice),
         comment: topicComments[t.key] || null,
         order: idx,
       }));
@@ -117,7 +139,6 @@ function SessionLoggingContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           trainingId,
-          lessonType,
           sessionDate,
           comments,
           whiteboardSessionId: whiteboardId || null,
@@ -144,11 +165,24 @@ function SessionLoggingContent() {
     }
   };
 
-  // Check which topics have been covered in previous sessions
+  // Check which topics have been covered in previous sessions and in which mode
   const getCoverageStatus = (topic: string) => {
-    return previousSessions.some((session) =>
-      session.some((t: SessionLog) => t.topic === topic && t.checked)
-    );
+    const coveredEntries = previousSessions
+      .flat()
+      .filter((t: SessionLog) => t.topic === topic && t.checked);
+
+    return {
+      theorie: coveredEntries.some(
+        (t: SessionLog) =>
+          !!t.theoryCovered ||
+          (!t.theoryCovered && !t.practiceCovered && t.checked && (t.coverageMode || "THEORIE") === "THEORIE")
+      ),
+      praxis: coveredEntries.some(
+        (t: SessionLog) =>
+          !!t.practiceCovered ||
+          (!t.theoryCovered && !t.practiceCovered && t.checked && (t.coverageMode === "PRAXIS" || !t.coverageMode))
+      ),
+    };
   };
 
   if (status === "loading" || loading) {
@@ -181,24 +215,6 @@ function SessionLoggingContent() {
       {success && <div className="info-success"><p>Session erfolgreich gelogged!</p></div>}
 
       <form onSubmit={handleSubmit} className="form-card" style={{ maxWidth: "720px" }}>
-        {/* Lesson Type */}
-        <label className="form-label">
-          Art des Trainings
-          <select
-            value={lessonType}
-            onChange={(e) => setLessonType(e.target.value)}
-            className="form-input"
-            required
-          >
-            <option value="THEORIE_TRAINING">Theorie Training</option>
-            <option value="OFFLINE_FLUG">Offline Flug</option>
-            <option value="ONLINE_FLUG">Online Flug</option>
-          </select>
-          <small style={{ display: "block", marginTop: "0.5rem", color: "var(--text-muted)" }}>
-            Der Status "Bereit für Check Ride" wird separat im Training gesetzt.
-          </small>
-        </label>
-
         {/* Session Date */}
         <label className="form-label">
           Datum des Trainings
@@ -213,7 +229,7 @@ function SessionLoggingContent() {
 
         {/* Whiteboard Session (Optional) */}
         <label className="form-label">
-          Link zur Whiteboard-Session (Optional)
+          Link zur Whiteboard-Session (Zukunftsmusik, Optional)
           <input
             type="text"
             value={whiteboardId}
@@ -230,57 +246,115 @@ function SessionLoggingContent() {
         <div>
           <h2 style={{ marginBottom: "12px" }}>Abgedeckte Themen</h2>
           <p style={{ fontSize: "0.95em", marginBottom: "16px", color: "var(--text-color)" }}>
-            Markiere die Themen, die du in dieser Session besprochen hast und füge optional Kommentare hinzu.{" "}
-            <span style={{ color: "#66bb6a", fontWeight: 600 }}>
-              Grüne Themen
-            </span>{" "}
-            wurden in vorherigen Sessions behandelt.
+            Standard ist keine Auswahl. Setze die Checkboxen pro Thema: Theorie (blau) und Praxis (grün). Bei Theorie-Themen gibt es keine Praxis-Checkbox.
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {trainingTopics.map((topic) => {
-              const isPreviouslyCovered = getCoverageStatus(topic.key);
-              const isChecked = checkedTopics[topic.key] || false;
+              const previousCoverage = getCoverageStatus(topic.key);
+              const isPreviouslyCovered = previousCoverage.theorie || previousCoverage.praxis;
+              const cardColor = previousCoverage.praxis
+                ? PRACTICE_GREEN
+                : previousCoverage.theorie
+                ? THEORY_BLUE
+                : "var(--footer-border)";
+              const cardBackground = previousCoverage.praxis
+                ? "rgba(46, 125, 50, 0.08)"
+                : previousCoverage.theorie
+                ? "rgba(0, 95, 163, 0.06)"
+                : "var(--container-bg)";
+              const isTheoryChecked = !!topicSelections[topic.key]?.theory;
+              const isPracticeChecked = topic.category === "THEORY" ? false : !!topicSelections[topic.key]?.practice;
+              const isChecked = isTheoryChecked || isPracticeChecked;
               return (
                 <div
                   key={topic.key}
                   style={{
                     padding: "14px",
                     borderRadius: "8px",
-                    border: `1.5px solid ${isPreviouslyCovered ? "#66bb6a" : "var(--footer-border)"}`,
-                    background: isPreviouslyCovered ? "rgba(0, 95, 163, 0.06)" : "var(--container-bg)",
+                    border: `1.5px solid ${cardColor}`,
+                    background: cardBackground,
                     transition: "all 0.2s",
                   }}
                 >
-                  <label
+                  <div
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      cursor: "pointer",
-                      marginBottom: isChecked ? "10px" : "0",
+                      marginBottom: "10px",
+                      gap: "10px",
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleTopic(topic.key)}
-                    />
                     <span
                       style={{
-                        marginLeft: "10px",
                         fontWeight: 500,
-                        color: isPreviouslyCovered ? "var(--accent-color)" : "var(--text-color)",
+                        color: isPreviouslyCovered ? cardColor : "var(--text-color)",
                         flex: 1,
                       }}
                     >
                       {topic.label}
                     </span>
-                    {isPreviouslyCovered && (
-                      <span style={{ fontSize: "0.8em", background: "var(--accent-color)", color: "white", padding: "3px 8px", borderRadius: "4px" }}>
-                        Bereits behandelt
+                    {previousCoverage.theorie && (
+                      <span style={{ fontSize: "0.75em", background: THEORY_BLUE, color: "white", padding: "3px 8px", borderRadius: "4px" }}>
+                        Theorie vorhanden
                       </span>
                     )}
-                  </label>
+                    {previousCoverage.praxis && (
+                      <span style={{ fontSize: "0.75em", background: PRACTICE_GREEN, color: "white", padding: "3px 8px", borderRadius: "4px" }}>
+                        Praxis vorhanden
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: isChecked ? "10px" : "0" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        fontSize: "0.9em",
+                        padding: "4px 8px",
+                        borderRadius: "6px",
+                        border: `1px solid ${THEORY_BLUE}`,
+                        background: isTheoryChecked ? "rgba(0, 95, 163, 0.12)" : "transparent",
+                      }}
+                    >
+                      <input
+                        className="topic-checkbox topic-checkbox--theory"
+                        type="checkbox"
+                        checked={isTheoryChecked}
+                        onChange={() => toggleTheory(topic.key)}
+                        style={{ width: "16px", height: "16px" }}
+                      />
+                      <span style={{ color: THEORY_BLUE, fontWeight: 600 }}>Theorie</span>
+                    </label>
+                    {topic.category !== "THEORY" ? (
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          fontSize: "0.9em",
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          border: `1px solid ${PRACTICE_GREEN}`,
+                          background: isPracticeChecked ? "rgba(46, 125, 50, 0.12)" : "transparent",
+                        }}
+                      >
+                        <input
+                          className="topic-checkbox topic-checkbox--practice"
+                          type="checkbox"
+                          checked={isPracticeChecked}
+                          onChange={() => togglePractice(topic.key)}
+                          style={{ width: "16px", height: "16px" }}
+                        />
+                        <span style={{ color: PRACTICE_GREEN, fontWeight: 600 }}>Praxis</span>
+                      </label>
+                    ) : (
+                      <span style={{ fontSize: "0.8em", color: "var(--text-muted)" }}>Nur Theorie</span>
+                    )}
+                  </div>
+
                   {isChecked && (
                     <textarea
                       value={topicComments[topic.key] || ""}
