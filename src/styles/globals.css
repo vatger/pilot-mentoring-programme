@@ -26,6 +26,7 @@
     --card-shadow: 0 4px 12px var(--shadow-color);
     --overlay-bg: rgba(240, 245, 255, 0.70);
     /* semantic colors */
+    --success-color: #28a745;
     --danger-bg: #c62828;
     --danger-bg-hover: #b71c1c;
     --danger-text: #ffffff;

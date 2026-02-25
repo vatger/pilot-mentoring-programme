@@ -164,14 +164,21 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
                     !!topic.practiceCovered ||
                     (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode === "PRAXIS" || !topic.coverageMode));
 
+                  const borderColor = hasPractice && !hasTheory 
+                    ? "var(--success-color)" 
+                    : "var(--accent-color)";
+                  const bgColor = hasPractice && !hasTheory
+                    ? "rgba(40, 167, 69, 0.05)"
+                    : "rgba(0, 95, 163, 0.05)";
+
                   return (
                   <div
                     key={topic.id}
                     style={{
                       padding: "0.75rem",
                       borderRadius: "6px",
-                      border: "1px solid var(--accent-color)",
-                      background: "rgba(0, 95, 163, 0.05)",
+                      border: `1px solid ${borderColor}`,
+                      background: bgColor,
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>

@@ -56,6 +56,11 @@ type Checkride = {
   } | null;
 };
 
+type Assessment = Record<string, any> & {
+  overallResult?: string;
+  examinernotes?: string;
+};
+
 type CheckrideLog = {
   id: string;
   scheduledDate: string;
@@ -67,11 +72,7 @@ type CheckrideLog = {
       cid: string | null;
     };
   };
-  assessment?: {
-    id: string;
-    overallResult: string | null;
-    examinernotes?: string | null;
-  } | null;
+  assessment?: Assessment | null;
 };
 
 type Slot = {
@@ -83,6 +84,138 @@ type Slot = {
     cid: string | null;
   };
 };
+
+const CHECKRIDE_SECTIONS: { key: string; title: string; fields: { key: string; label: string }[] }[] = [
+  {
+    key: "flightplan",
+    title: "1 - Flugplan",
+    fields: [
+      { key: "flightplanCallsign", label: "Callsign / AC Type" },
+      { key: "flightplanAircraft", label: "Equipment" },
+      { key: "flightplanRouting", label: "Routing" },
+      { key: "flightplanTimes", label: "Zeiten" },
+      { key: "flightplanRemarks", label: "Remarks" },
+    ],
+  },
+  {
+    key: "charts",
+    title: "2 - Charts",
+    fields: [
+      { key: "chartsParkingDep", label: "Parking DEP" },
+      { key: "chartsTaxiDep", label: "Taxi DEP" },
+      { key: "chartsDeparture", label: "Departure" },
+      { key: "chartsEnroute", label: "Enroute" },
+      { key: "chartsArrivalTransition", label: "Arrival / Transition" },
+      { key: "chartsApproach", label: "Approach (alle RWYs)" },
+      { key: "chartsTaxiDest", label: "Taxi DEST" },
+      { key: "chartsParkingDest", label: "Parking DEST" },
+    ],
+  },
+  {
+    key: "briefing",
+    title: "3 - Self Briefing",
+    fields: [
+      { key: "briefingFrequencies", label: "Frequenzen" },
+      { key: "briefingPushback", label: "Pushback" },
+      { key: "briefingTaxiRunway", label: "Taxi to Runway" },
+      { key: "briefingATCTakeoff", label: "ATC after Takeoff" },
+      { key: "briefingDeparture", label: "Departure / Restrictions" },
+      { key: "briefingArrival", label: "Arrival / Transition" },
+      { key: "briefingApproach", label: "Approach" },
+      { key: "briefingRunwayExits", label: "Runway Exits" },
+      { key: "briefingTaxiParking", label: "Taxi to Parking" },
+    ],
+  },
+  {
+    key: "clearance",
+    title: "4 - Enroute Clearance",
+    fields: [
+      { key: "clearanceInitialCall", label: "Initial Call" },
+      { key: "clearanceRequest", label: "Clearance Request" },
+      { key: "clearanceClearedTo", label: "Cleared to" },
+      { key: "clearanceDeparture", label: "Departure" },
+      { key: "clearanceRoute", label: "Flight Planned Route" },
+      { key: "clearanceClimb", label: "Climb / Climb via SID" },
+      { key: "clearanceSquawk", label: "Squawk" },
+      { key: "clearanceCallsign", label: "Callsign" },
+    ],
+  },
+  {
+    key: "startup",
+    title: "5 - Startup / Pushback",
+    fields: [
+      { key: "startupStation", label: "Station / CS" },
+      { key: "startupGate", label: "Gate / Request" },
+      { key: "startupReadback", label: "Readback / CS" },
+      { key: "startupExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "taxi",
+    title: "6 - Taxi to Runway",
+    fields: [
+      { key: "taxiStation", label: "Station / CS" },
+      { key: "taxiRequest", label: "Request" },
+      { key: "taxiReadback", label: "Readback / CS" },
+      { key: "taxiExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "takeoff",
+    title: "7 - Takeoff",
+    fields: [
+      { key: "takeoffStation", label: "Station / CS" },
+      { key: "takeoffReadback", label: "Readback / CS" },
+      { key: "takeoffExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "departure",
+    title: "8 - Departure",
+    fields: [
+      { key: "departureStatement", label: "Meldung" },
+      { key: "departureStation", label: "Station / CS / Altitude" },
+      { key: "departureReadback", label: "Readback / CS" },
+      { key: "departureExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "enroute",
+    title: "9 - Enroute",
+    fields: [
+      { key: "enrouteStation", label: "Station / CS / FL" },
+      { key: "enrouteReadbacks", label: "Readbacks" },
+      { key: "enrouteExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "arrival",
+    title: "10 - Arrival / Transition",
+    fields: [
+      { key: "arrivalStation", label: "Station / CS / FL" },
+      { key: "arrivalClearances", label: "Freigaben / Anweisungen" },
+      { key: "arrivalExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "landing",
+    title: "11 - Landung",
+    fields: [
+      { key: "landingStation", label: "Station / CS / APP" },
+      { key: "landingClearance", label: "Landing Clearance" },
+      { key: "landingExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "parking",
+    title: "12 - Taxi to Parking",
+    fields: [
+      { key: "parkingStation", label: "Station / CS / TWY" },
+      { key: "parkingReadback", label: "Readback" },
+      { key: "parkingExecution", label: "Ausfuehrung" },
+    ],
+  },
+];
 
 export default function TraineeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession();
@@ -100,6 +233,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState("");
   const [updatingCheckride, setUpdatingCheckride] = useState(false);
   const [checkrideRequestText, setCheckrideRequestText] = useState("");
+  const [showCheckrideRequestInput, setShowCheckrideRequestInput] = useState(false);
   const [savingSession, setSavingSession] = useState(false);
 
   const userRole = (session?.user as any)?.role;
@@ -126,13 +260,16 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       const data = await res.json();
       setTraining(data);
       setCheckrideRequestText(data.checkrideRequestText || "");
+      setShowCheckrideRequestInput(Boolean(data.readyForCheckride));
 
       // Fetch checkride if exists
       const checkrideRes = await fetch(`/api/checkrides?trainingId=${trainingId}`);
       if (checkrideRes.ok) {
         const checkrideData = await checkrideRes.json();
-        setCheckride(checkrideData.latestCheckride || null);
-        setCheckride(checkrideData.checkrides || []);
+        const logs = checkrideData.checkrides || [];
+        const activeCheckride = logs.find((entry: CheckrideLog) => entry.result === "INCOMPLETE") || null;
+        setCheckride(activeCheckride);
+        setCheckrideLogs(logs);
       } else {
         setCheckride(null);
         setCheckrideLogs([]);
@@ -155,14 +292,15 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  const toggleReadyForCheckride = async () => {
+  const updateReadyForCheckride = async (nextReady: boolean) => {
     if (!training || updatingCheckride) return;
-    const nextReady = !training.readyForCheckride;
     const requestText = checkrideRequestText.trim();
+
     if (nextReady && requestText.length === 0) {
       setError("Bitte trage die regulären Verfügbarkeiten für den Checkride ein.");
       return;
     }
+
     setUpdatingCheckride(true);
     try {
       const res = await fetch(`/api/trainings/${training.id}/ready`, {
@@ -174,12 +312,32 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
         }),
       });
       if (!res.ok) throw new Error("Failed to update checkride status");
+      if (!nextReady) {
+        setShowCheckrideRequestInput(false);
+      }
       await fetchTrainingDetails();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setUpdatingCheckride(false);
     }
+  };
+
+  const toggleReadyForCheckride = async () => {
+    if (!training || updatingCheckride) return;
+    const nextReady = !training.readyForCheckride;
+
+    if (nextReady && checkrideRequestText.trim().length === 0) {
+      setShowCheckrideRequestInput(true);
+      setError("");
+      return;
+    }
+
+    await updateReadyForCheckride(nextReady);
+  };
+
+  const submitReadyForCheckride = async () => {
+    await updateReadyForCheckride(true);
   };
 
   const confirmCheckrideSlot = async () => {
@@ -325,7 +483,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
               <strong>Bereit für den Check Ride</strong>
             </label>
           </p>
-          {training.readyForCheckride && (
+          {(training.readyForCheckride || showCheckrideRequestInput) && (
             <div style={{ marginTop: "1rem" }}>
               <label className="form-label" style={{ marginBottom: "0.5rem", display: "block" }}>
                 Normale Verfügbarkeiten (für Checkride-Mentoren)
@@ -341,6 +499,20 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
               <p style={{ marginTop: "0.5rem", marginBottom: 0, fontSize: "0.9rem", color: "var(--text-muted)" }}>
                 Dieser Text wird den Prüfern angezeigt um passende Termine bereitstellen zu können.
               </p>
+              <div style={{ marginTop: "0.75rem" }}>
+                <button
+                  type="button"
+                  className="button"
+                  onClick={training.readyForCheckride ? () => updateReadyForCheckride(true) : submitReadyForCheckride}
+                  disabled={updatingCheckride || checkrideRequestText.trim().length === 0}
+                >
+                  {updatingCheckride
+                    ? "Speichern..."
+                    : training.readyForCheckride
+                    ? "Request-Text speichern"
+                    : "Bereit markieren"}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -409,27 +581,98 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
           <div className="card" style={{ marginBottom: "2rem" }}>
             <h3>Checkride Logs</h3>
             <div style={{ display: "grid", gap: "0.75rem" }}>
-              {checkrideLogs.map((log) => (
-                <div
-                  key={log.id}
-                  style={{
-                    border: "1px solid var(--footer-border)",
-                    borderRadius: "8px",
-                    padding: "0.75rem 1rem",
-                    backgroundColor: "var(--container-bg)",
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: "0.3rem" }}>
-                    {new Date(log.scheduledDate).toLocaleString()} – {log.result}
+              {checkrideLogs.map((log) => {
+                const assessment = log.assessment || {};
+                const showDetails = !log.isDraft && !!log.assessment;
+                return (
+                  <div
+                    key={log.id}
+                    style={{
+                      border: "1px solid var(--footer-border)",
+                      borderRadius: "8px",
+                      padding: "0.75rem 1rem",
+                      backgroundColor: "var(--container-bg)",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, marginBottom: "0.3rem" }}>
+                      {new Date(log.scheduledDate).toLocaleString()} – {log.result}
+                    </div>
+                    <div style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
+                      Prüfer: {log.availability.examiner?.name || "Unbekannt"} ({log.availability.examiner?.cid || "N/A"})
+                    </div>
+                    <div style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+                      Assessment: {log.isDraft ? "Entwurf" : (log.assessment?.overallResult || log.result)}
+                    </div>
+                    {showDetails && (
+                      <details style={{ marginTop: "0.75rem" }}>
+                        <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+                          Vollstaendiges Log anzeigen
+                        </summary>
+                        <div style={{ marginTop: "0.75rem", display: "grid", gap: "0.75rem" }}>
+                          {CHECKRIDE_SECTIONS.map((section) => (
+                            <div
+                              key={section.key}
+                              style={{
+                                border: "1px solid var(--footer-border)",
+                                borderRadius: "8px",
+                                padding: "0.75rem",
+                                backgroundColor: "var(--card-bg)",
+                              }}
+                            >
+                              <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center" }}>
+                                <strong>{section.title}</strong>
+                                <span
+                                  style={{
+                                    fontSize: "0.85em",
+                                    padding: "3px 8px",
+                                    borderRadius: "6px",
+                                    background: assessment[`${section.key}Passed`] ? "#e6f4ea" : "#fce8e6",
+                                    color: assessment[`${section.key}Passed`] ? "#1e8e3e" : "#b3261e",
+                                  }}
+                                >
+                                  {assessment[`${section.key}Passed`] ? "Bestanden" : "Nicht bestanden"}
+                                </span>
+                              </div>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginTop: "0.5rem" }}>
+                                {section.fields.map((field) => (
+                                  <div key={field.key} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                    <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>{field.label}</div>
+                                    <div
+                                      style={{
+                                        fontSize: "0.9em",
+                                        whiteSpace: "pre-wrap",
+                                        backgroundColor: "var(--container-bg)",
+                                        padding: "6px 8px",
+                                        borderRadius: "6px",
+                                        minHeight: "38px",
+                                      }}
+                                    >
+                                      {assessment?.[field.key] || "-"}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                          {assessment.examinernotes && (
+                            <div
+                              style={{
+                                border: "1px solid var(--footer-border)",
+                                borderRadius: "8px",
+                                padding: "0.75rem",
+                                backgroundColor: "var(--container-bg)",
+                              }}
+                            >
+                              <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Examiner Kommentar</div>
+                              <div style={{ whiteSpace: "pre-wrap" }}>{assessment.examinernotes}</div>
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    )}
                   </div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
-                    Prüfer: {log.availability.examiner?.name || "Unbekannt"} ({log.availability.examiner?.cid || "N/A"})
-                  </div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
-                    Assessment: {log.isDraft ? "Entwurf" : (log.assessment?.overallResult || log.result)}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
