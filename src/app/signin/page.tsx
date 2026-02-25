@@ -10,9 +10,28 @@ function SignInContent() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
+  const getSafeCallbackUrl = () => {
+    const rawCallbackUrl = searchParams.get("callbackUrl")?.trim();
+    if (!rawCallbackUrl || typeof window === "undefined") return "";
+
+    try {
+      const resolved = new URL(rawCallbackUrl, window.location.origin);
+      if (resolved.origin !== window.location.origin) return "";
+      return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+    } catch {
+      return "";
+    }
+  };
+
   useEffect(() => {
     // If user is already authenticated, redirect based on role
     if (status === "authenticated" && session?.user) {
+      const callbackUrl = getSafeCallbackUrl();
+      if (callbackUrl && callbackUrl !== "/signin") {
+        router.push(callbackUrl);
+        return;
+      }
+
       const role = (session.user as any).role;
       let redirectUrl = "/trainings"; // default
 
@@ -42,9 +61,9 @@ function SignInContent() {
 
     // If not authenticated and not loading, trigger sign in
     if (status === "unauthenticated") {
-      const callbackUrl = searchParams.get("callbackUrl") || "/api/auth/callback/vatger";
+      const callbackUrl = getSafeCallbackUrl() || "/signin?postauth=true";
       // Trigger VATGER provider login
-      signIn("vatger", { callbackUrl: `${window.location.origin}/signin?postauth=true` });
+      signIn("vatger", { callbackUrl: `${window.location.origin}${callbackUrl}` });
     }
   }, [status, session, searchParams, router]);
 
