@@ -18,6 +18,25 @@ type Training = {
     id: string;
     cid: string | null;
     name: string | null;
+    registration?: {
+      cid: string;
+      name: string;
+      rating: string;
+      fir: string;
+      simulator: string;
+      aircraft: string;
+      client: string;
+      clientSetup: string;
+      experience: string;
+      charts: string;
+      airac: string;
+      category: string;
+      topics: string | null;
+      schedule: string;
+      communication: string;
+      personal: string | null;
+      other: string | null;
+    } | null;
   };
   mentors: {
     mentor: {
@@ -235,6 +254,9 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const [checkrideRequestText, setCheckrideRequestText] = useState("");
   const [showCheckrideRequestInput, setShowCheckrideRequestInput] = useState(false);
   const [savingSession, setSavingSession] = useState(false);
+  const [editableAnmeldetext, setEditableAnmeldetext] = useState("");
+  const [savingAnmeldetext, setSavingAnmeldetext] = useState(false);
+  const [anmeldetextError, setAnmeldetextError] = useState("");
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
@@ -261,6 +283,8 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       setTraining(data);
       setCheckrideRequestText(data.checkrideRequestText || "");
       setShowCheckrideRequestInput(Boolean(data.readyForCheckride));
+      setEditableAnmeldetext(data.trainee?.registration?.experience || "");
+      setAnmeldetextError("");
 
       // Fetch checkride if exists
       const checkrideRes = await fetch(`/api/checkrides?trainingId=${trainingId}`);
@@ -399,6 +423,53 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const saveAnmeldetext = async () => {
+    if (!training || savingAnmeldetext) return;
+
+    const value = editableAnmeldetext.trim();
+    if (!value) {
+      setAnmeldetextError("Bitte einen Anmeldetext eingeben");
+      return;
+    }
+
+    setSavingAnmeldetext(true);
+    setAnmeldetextError("");
+    try {
+      const res = await fetch(`/api/training/${training.id}/anmeldetext`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anmeldetext: value }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Fehler beim Speichern des Anmeldetextes");
+      }
+
+      setTraining((prev) =>
+        prev
+          ? {
+              ...prev,
+              trainee: {
+                ...prev.trainee,
+                registration: prev.trainee.registration
+                  ? {
+                      ...prev.trainee.registration,
+                      experience: value,
+                      other: `Anmeldetext (Mentor-Link):\n${value}`,
+                    }
+                  : prev.trainee.registration,
+              },
+            }
+          : prev
+      );
+    } catch (err: any) {
+      setAnmeldetextError(err.message || "Unknown error");
+    } finally {
+      setSavingAnmeldetext(false);
+    }
+  };
+
   if (status === "loading" || loading) {
     return (
       <PageLayout>
@@ -511,6 +582,33 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                     : training.readyForCheckride
                     ? "Request-Text speichern"
                     : "Bereit markieren"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {training.trainee.registration?.category === "Direkte Mentor-Anmeldung" && (
+            <div style={{ marginTop: "1rem" }}>
+              <label className="form-label" style={{ marginBottom: "0.5rem", display: "block" }}>
+                Anmeldetext (Direkteinladung)
+              </label>
+              <textarea
+                className="form-textarea"
+                value={editableAnmeldetext}
+                onChange={(e) => setEditableAnmeldetext(e.target.value)}
+                style={{ width: "100%", minHeight: "120px", resize: "vertical" }}
+              />
+              {anmeldetextError && (
+                <p style={{ margin: "0.5rem 0 0 0", color: "var(--error-color)" }}>{anmeldetextError}</p>
+              )}
+              <div style={{ marginTop: "0.75rem" }}>
+                <button
+                  type="button"
+                  className="button"
+                  onClick={saveAnmeldetext}
+                  disabled={savingAnmeldetext}
+                >
+                  {savingAnmeldetext ? "Speichert..." : "Anmeldetext speichern"}
                 </button>
               </div>
             </div>

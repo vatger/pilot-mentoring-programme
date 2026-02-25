@@ -23,6 +23,9 @@ export async function GET(request: NextRequest) {
     // Find all trainings where this user is a mentor
     const trainings = await prisma.training.findMany({
       where: {
+        status: {
+          not: "COMPLETED",
+        },
         mentors: {
           some: {
             mentorId: userId,

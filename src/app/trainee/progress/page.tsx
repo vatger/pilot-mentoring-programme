@@ -236,6 +236,10 @@ function TraineeProgressContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [editableAnmeldetext, setEditableAnmeldetext] = useState("");
+  const [savingAnmeldetext, setSavingAnmeldetext] = useState(false);
+  const [anmeldetextError, setAnmeldetextError] = useState("");
+  const [editingAnmeldetext, setEditingAnmeldetext] = useState(false);
 
   const userRole = (session?.user as any)?.role;
   const userId = (session?.user as any)?.id;
@@ -287,6 +291,13 @@ function TraineeProgressContent() {
       if (!trainingRes.ok) throw new Error("Failed to fetch training");
       const trainingData = await trainingRes.json();
       setTraining(trainingData);
+      const marker = "Anmeldetext (Mentor-Link):";
+      const other = trainingData?.trainee?.registration?.other || "";
+      const markerIndex = other.indexOf(marker);
+      const mentorLinkText = markerIndex === -1 ? "" : other.slice(markerIndex + marker.length).trim();
+      setEditableAnmeldetext(mentorLinkText || trainingData?.trainee?.registration?.experience || "");
+      setAnmeldetextError("");
+      setEditingAnmeldetext(false);
 
       // Fetch sessions
       const sessionsRes = await fetch(
@@ -366,9 +377,68 @@ function TraineeProgressContent() {
     return line ? line.replace("VATSIM Germany Discord:", "").trim() : null;
   };
 
+  const extractMentorLinkText = (registration?: RegistrationData | null) => {
+    const marker = "Anmeldetext (Mentor-Link):";
+    const other = registration?.other || "";
+    const index = other.indexOf(marker);
+    if (index === -1) return "";
+    return other.slice(index + marker.length).trim();
+  };
+
+  const saveAnmeldetext = async () => {
+    if (!training || savingAnmeldetext) return;
+
+    const value = editableAnmeldetext.trim();
+    if (!value) {
+      setAnmeldetextError("Bitte einen Anmeldetext eingeben");
+      return;
+    }
+
+    setSavingAnmeldetext(true);
+    setAnmeldetextError("");
+    try {
+      const res = await fetch(`/api/training/${training.id}/anmeldetext`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anmeldetext: value }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Fehler beim Speichern des Anmeldetextes");
+      }
+
+      setTraining((prev) =>
+        prev
+          ? {
+              ...prev,
+              trainee: {
+                ...prev.trainee,
+                registration: prev.trainee.registration
+                  ? {
+                      ...prev.trainee.registration,
+                      experience: value,
+                      other: `Anmeldetext (Mentor-Link):\n${value}`,
+                    }
+                  : prev.trainee.registration,
+              },
+            }
+          : prev
+      );
+      setEditingAnmeldetext(false);
+    } catch (err) {
+      setAnmeldetextError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSavingAnmeldetext(false);
+    }
+  };
+
   // Only trainee, their mentors, or leadership (Leitung/Admin/Examiner) can view this
   const isMentor = training ? training.mentors.some((m) => m.mentorId === userId) : false;
   const isLeadership = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
+  const canEditAnmeldetext = isMentor || isLeadership;
+  const mentorLinkText = extractMentorLinkText(training?.trainee?.registration);
+  const hasMentorLinkText = Boolean(mentorLinkText);
   if (training && !isTrainee && !isMentor && !isLeadership) {
     return (
       <PageLayout>
@@ -421,7 +491,7 @@ function TraineeProgressContent() {
           <div className="card" style={{ marginBottom: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
               <h3 style={{ marginTop: 0, marginBottom: 0 }}>Trainingsdetails</h3>
-              {isLeadership && (
+              {(isLeadership || isMentor) && (
                 <button
                   className="button"
                   style={{ margin: 0 }}
@@ -892,6 +962,56 @@ function TraineeProgressContent() {
 
           {training.trainee.registration ? (
             <div style={{ display: "grid", gap: "1rem" }}>
+              {(canEditAnmeldetext || hasMentorLinkText) && (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "center" }}>
+                    <strong style={{ color: "var(--text-color)" }}>Anmeldetext:</strong>
+                    {canEditAnmeldetext && !editingAnmeldetext && (
+                      <button className="button" onClick={() => setEditingAnmeldetext(true)}>
+                        Anmeldetext bearbeiten
+                      </button>
+                    )}
+                  </div>
+                  {editingAnmeldetext && canEditAnmeldetext ? (
+                    <>
+                      <textarea
+                        className="form-textarea"
+                        value={editableAnmeldetext}
+                        onChange={(e) => setEditableAnmeldetext(e.target.value)}
+                        style={{ marginTop: "0.4rem", minHeight: "120px" }}
+                      />
+                      <div style={{ marginTop: "0.6rem", display: "flex", gap: "0.5rem" }}>
+                        <button className="button" onClick={saveAnmeldetext} disabled={savingAnmeldetext}>
+                          {savingAnmeldetext ? "Speichert…" : "Anmeldetext speichern"}
+                        </button>
+                        <button
+                          className="button"
+                          onClick={() => {
+                            setEditingAnmeldetext(false);
+                            setEditableAnmeldetext(mentorLinkText || training.trainee.registration?.experience || "");
+                            setAnmeldetextError("");
+                          }}
+                          disabled={savingAnmeldetext}
+                        >
+                          Abbrechen
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <p style={{ margin: "0.4rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                      {mentorLinkText || training.trainee.registration.experience || "—"}
+                    </p>
+                  )}
+                  {anmeldetextError && (
+                    <p style={{ margin: "0.5rem 0 0 0", color: "var(--error-color)" }}>
+                      {anmeldetextError}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {!hasMentorLinkText && (
+              <>
               <div>
                 <strong style={{ color: "var(--text-color)" }}>CID:</strong>
                 <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.cid}</p>
@@ -991,6 +1111,8 @@ function TraineeProgressContent() {
                     {training.trainee.registration.other}
                   </p>
                 </div>
+              )}
+              </>
               )}
             </div>
           ) : (

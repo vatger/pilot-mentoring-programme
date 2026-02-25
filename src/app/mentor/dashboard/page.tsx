@@ -63,6 +63,7 @@ export default function MentorDashboard() {
   const [deletingRequest, setDeletingRequest] = useState<string | null>(null);
   const [addingMentor, setAddingMentor] = useState<string | null>(null);
   const [selectedTrainee, setSelectedTrainee] = useState<TraineeInfo | null>(null);
+  const [selectedTrainingId, setSelectedTrainingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [cancelDialogFor, setCancelDialogFor] = useState<string | null>(null);
   const [showCancellationReasonModal, setShowCancellationReasonModal] = useState<string | null>(null);
@@ -74,6 +75,10 @@ export default function MentorDashboard() {
   const [creatingInvite, setCreatingInvite] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const [inviteError, setInviteError] = useState("");
+  const [editableAnmeldetext, setEditableAnmeldetext] = useState("");
+  const [savingAnmeldetext, setSavingAnmeldetext] = useState(false);
+  const [anmeldetextError, setAnmeldetextError] = useState("");
+  const [editingAnmeldetext, setEditingAnmeldetext] = useState(false);
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
@@ -247,14 +252,75 @@ export default function MentorDashboard() {
     router.push(`/mentor/session?trainingId=${trainingId}`);
   };
 
-  const openTraineeDetails = (trainee: TraineeInfo) => {
+  const extractMentorLinkText = (registration?: RegistrationData | null) => {
+    const marker = "Anmeldetext (Mentor-Link):";
+    const other = registration?.other || "";
+    const index = other.indexOf(marker);
+    if (index === -1) return "";
+    return other.slice(index + marker.length).trim();
+  };
+
+  const openTraineeDetails = (trainee: TraineeInfo, trainingId?: string) => {
+    const mentorLinkText = extractMentorLinkText(trainee.registration);
     setSelectedTrainee(trainee);
+    setSelectedTrainingId(trainingId || null);
+    setEditableAnmeldetext(mentorLinkText || trainee.registration?.experience || "");
+    setAnmeldetextError("");
+    setEditingAnmeldetext(false);
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedTrainee(null);
+    setSelectedTrainingId(null);
+    setEditableAnmeldetext("");
+    setAnmeldetextError("");
+    setEditingAnmeldetext(false);
+  };
+
+  const saveAnmeldetext = async () => {
+    if (!selectedTrainingId) return;
+
+    const value = editableAnmeldetext.trim();
+    if (!value) {
+      setAnmeldetextError("Bitte einen Anmeldetext eingeben");
+      return;
+    }
+
+    setSavingAnmeldetext(true);
+    setAnmeldetextError("");
+    try {
+      const res = await fetch(`/api/training/${selectedTrainingId}/anmeldetext`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anmeldetext: value }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Fehler beim Speichern des Anmeldetextes");
+      }
+
+      await fetchData();
+      setSelectedTrainee((prev) =>
+        prev?.registration
+          ? {
+              ...prev,
+              registration: {
+                ...prev.registration,
+                experience: value,
+                other: `Anmeldetext (Mentor-Link):\n${value}`,
+              },
+            }
+          : prev
+      );
+      setEditingAnmeldetext(false);
+    } catch (err) {
+      setAnmeldetextError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSavingAnmeldetext(false);
+    }
   };
 
   const createDirectInvite = async () => {
@@ -308,6 +374,17 @@ export default function MentorDashboard() {
     const line = other.split("\n").find((entry) => entry.startsWith("VATSIM Germany Discord:"));
     return line ? line.replace("VATSIM Germany Discord:", "").trim() : null;
   };
+
+  const selectedTraining = selectedTrainingId
+    ? currentTrainings.find((training) => training.id === selectedTrainingId) || null
+    : null;
+  const canEditSelectedAnmeldetext =
+    !!selectedTraining &&
+    (selectedTraining.mentors.some((entry) => entry.mentorId === (session?.user as any)?.id) ||
+      userRole === "PMP_LEITUNG" ||
+      userRole === "ADMIN");
+  const selectedMentorLinkText = extractMentorLinkText(selectedTrainee?.registration);
+  const hasSelectedMentorLinkText = Boolean(selectedMentorLinkText);
 
   if (status === "loading" || loading) {
     return (
@@ -480,7 +557,7 @@ export default function MentorDashboard() {
                                     className="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      openTraineeDetails(training.trainee);
+                                      openTraineeDetails(training.trainee, training.id);
                                     }}
                                   >
                                     Anmeldung ansehen
@@ -735,6 +812,56 @@ export default function MentorDashboard() {
 
             {selectedTrainee.registration ? (
               <div style={{ display: "grid", gap: "1rem" }}>
+                {canEditSelectedAnmeldetext && (
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "center" }}>
+                      <strong style={{ color: "var(--text-color)" }}>Anmeldetext:</strong>
+                      {canEditSelectedAnmeldetext && !editingAnmeldetext && (
+                        <button className="button" onClick={() => setEditingAnmeldetext(true)}>
+                          Anmeldetext bearbeiten
+                        </button>
+                      )}
+                    </div>
+                    {editingAnmeldetext ? (
+                      <>
+                        <textarea
+                          className="form-textarea"
+                          value={editableAnmeldetext}
+                          onChange={(e) => setEditableAnmeldetext(e.target.value)}
+                          style={{ marginTop: "0.4rem", minHeight: "120px" }}
+                        />
+                        <div style={{ marginTop: "0.6rem", display: "flex", gap: "0.5rem" }}>
+                          <button className="button" onClick={saveAnmeldetext} disabled={savingAnmeldetext}>
+                            {savingAnmeldetext ? "Speichert…" : "Anmeldetext speichern"}
+                          </button>
+                          <button
+                            className="button"
+                            onClick={() => {
+                              setEditingAnmeldetext(false);
+                              setEditableAnmeldetext(selectedMentorLinkText || selectedTrainee.registration?.experience || "");
+                              setAnmeldetextError("");
+                            }}
+                            disabled={savingAnmeldetext}
+                          >
+                            Abbrechen
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <p style={{ margin: "0.4rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                        {selectedMentorLinkText || selectedTrainee.registration.experience || "—"}
+                      </p>
+                    )}
+                    {anmeldetextError && (
+                      <p style={{ margin: "0.5rem 0 0 0", color: "var(--error-color)" }}>
+                        {anmeldetextError}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {!hasSelectedMentorLinkText && (
+                <>
                 <div>
                   <strong style={{ color: "var(--text-color)" }}>CID:</strong>
                   <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.cid}</p>
@@ -833,6 +960,8 @@ export default function MentorDashboard() {
                       {selectedTrainee.registration.other}
                     </p>
                   </div>
+                )}
+                </>
                 )}
               </div>
             ) : (
