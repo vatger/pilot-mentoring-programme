@@ -226,7 +226,7 @@ function PmpTrackingContent() {
                   }}
                 >
                   <span style={{ whiteSpace: "nowrap" }}>
-                    Fortschritt: {formatPoints(row.topicsCoveredCount)} Punkte
+                    Fortschritt: {formatPoints(row.topicsCoveredCount)} Themen
                   </span>
                   <span style={{ whiteSpace: "nowrap" }}>
                     Mentor: {row.mentors.length > 0 ? row.mentors.map((m) => m.name || m.cid).join(", ") : "—"}

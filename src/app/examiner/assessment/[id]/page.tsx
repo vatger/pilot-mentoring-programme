@@ -263,7 +263,18 @@ export default function AssessmentPage() {
 
       {!loading && (
         <div className="card" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", padding: "10px", background: "#f6f6f6", borderRadius: "8px" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              alignItems: "center",
+              padding: "10px",
+              background: "var(--container-bg)",
+              color: "var(--text-color)",
+              borderRadius: "8px",
+              border: "1px solid var(--footer-border)",
+            }}
+          >
             <strong>Status:</strong>
             <span>{isDraft ? "Entwurf (nicht freigegeben)" : "Freigegeben für Trainee"}</span>
           </div>

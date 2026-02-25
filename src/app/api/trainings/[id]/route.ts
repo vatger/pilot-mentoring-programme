@@ -74,7 +74,38 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(training);
+    const registration = training.trainee.cid
+      ? await prisma.registration.findUnique({
+          where: { cid: training.trainee.cid },
+          select: {
+            cid: true,
+            name: true,
+            rating: true,
+            fir: true,
+            simulator: true,
+            aircraft: true,
+            client: true,
+            clientSetup: true,
+            experience: true,
+            charts: true,
+            airac: true,
+            category: true,
+            topics: true,
+            schedule: true,
+            communication: true,
+            personal: true,
+            other: true,
+          },
+        })
+      : null;
+
+    return NextResponse.json({
+      ...training,
+      trainee: {
+        ...training.trainee,
+        registration,
+      },
+    });
   } catch (error: any) {
     console.error("Error fetching training:", error);
     return NextResponse.json(

@@ -16,7 +16,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { readyForCheckride } = body;
+    const { readyForCheckride, checkrideRequestText } = body;
 
     const userRole = (session.user as any).role;
     const userId = (session.user as any).id;
@@ -52,10 +52,23 @@ export async function PATCH(
       );
     }
 
-    // Update the readyForCheckride status
+    const requestText = typeof checkrideRequestText === "string" ? checkrideRequestText.trim() : "";
+
+    if (readyForCheckride === true && requestText.length === 0) {
+      return NextResponse.json(
+        { error: "checkrideRequestText is required when marking ready" },
+        { status: 400 }
+      );
+    }
+
+    // Update the readyForCheckride status and mentor request info
     const updated = await prisma.training.update({
       where: { id },
-      data: { readyForCheckride },
+      data: {
+        readyForCheckride,
+        checkrideRequestText: readyForCheckride ? requestText : null,
+        checkrideRequestedAt: readyForCheckride ? new Date() : null,
+      } as any,
     });
 
     return NextResponse.json(updated);

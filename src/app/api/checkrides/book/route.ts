@@ -8,7 +8,7 @@ const db = prisma as any;
 /**
  * POST /api/checkrides/book
  * Body: { trainingId, availabilityId }
- * Trainee books an available slot after mentor marks readyForCheckride.
+ * Mentor (or admin/leitung/pruefer) books an available slot for the trainee after mentor marks readyForCheckride.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -26,12 +26,18 @@ export async function POST(request: NextRequest) {
 
     const training = await db.training.findUnique({
       where: { id: trainingId },
-      select: { id: true, traineeId: true, readyForCheckride: true },
+      include: {
+        mentors: {
+          select: { mentorId: true },
+        },
+      },
     });
     if (!training) {
       return NextResponse.json({ error: "Training not found" }, { status: 404 });
     }
-    if (training.traineeId !== userId && !["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER"].includes(userRole)) {
+    const isMentorForTraining = training.mentors.some((m: any) => m.mentorId === userId);
+    const isPrivileged = ["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER"].includes(userRole);
+    if (!isMentorForTraining && !isPrivileged) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     if (!training.readyForCheckride) {
@@ -56,8 +62,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Slot not available" }, { status: 400 });
     }
 
-    // Ensure no existing booking for this training
-    const existing = await db.checkride.findFirst({ where: { trainingId } });
+    // Ensure no active booking for this training
+    const existing = await db.checkride.findFirst({
+      where: {
+        trainingId,
+        result: "INCOMPLETE",
+      },
+    });
     if (existing) {
       return NextResponse.json({ error: "Checkride already scheduled" }, { status: 400 });
     }

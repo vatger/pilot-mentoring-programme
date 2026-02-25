@@ -40,6 +40,14 @@ type Training = {
   readyForCheckride: boolean;
   createdAt: string;
   trainee: Trainee;
+  mentors?: {
+    mentorId?: string;
+    mentor?: {
+      id: string;
+      name: string | null;
+      cid: string | null;
+    };
+  }[];
   sessions: { id: string; topics: { topic: string; checked: boolean }[] }[];
 };
 
@@ -50,12 +58,17 @@ export default function MentorTraineePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedTrainee, setSelectedTrainee] = useState<Trainee | null>(null);
+  const [selectedTrainingId, setSelectedTrainingId] = useState<string | null>(null);
+  const [editableAnmeldetext, setEditableAnmeldetext] = useState("");
+  const [savingAnmeldetext, setSavingAnmeldetext] = useState(false);
+  const [anmeldetextError, setAnmeldetextError] = useState("");
+  const [editingAnmeldetext, setEditingAnmeldetext] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
-    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
-  const isLeitung = userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
+    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
+  const isLeitung = userRole === "PMP_LEITUNG" || userRole === "ADMIN";
 
   useEffect(() => {
     if (status === "loading") return;
@@ -81,14 +94,74 @@ export default function MentorTraineePage() {
     }
   };
 
-  const openRegistrationDetails = (trainee: Trainee) => {
+  const extractMentorLinkText = (registration?: RegistrationData | null) => {
+    const marker = "Anmeldetext (Mentor-Link):";
+    const other = registration?.other || "";
+    const index = other.indexOf(marker);
+    if (index === -1) return "";
+    return other.slice(index + marker.length).trim();
+  };
+
+  const openRegistrationDetails = (trainee: Trainee, trainingId: string) => {
+    const mentorLinkText = extractMentorLinkText(trainee.registration);
     setSelectedTrainee(trainee);
+    setSelectedTrainingId(trainingId);
+    setEditableAnmeldetext(mentorLinkText || trainee.registration?.experience || "");
+    setAnmeldetextError("");
+    setEditingAnmeldetext(false);
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedTrainee(null);
+    setSelectedTrainingId(null);
+    setEditableAnmeldetext("");
+    setAnmeldetextError("");
+    setEditingAnmeldetext(false);
+  };
+
+  const saveAnmeldetext = async () => {
+    if (!selectedTrainingId) return;
+
+    const value = editableAnmeldetext.trim();
+    if (!value) {
+      setAnmeldetextError("Bitte einen Anmeldetext eingeben");
+      return;
+    }
+
+    setSavingAnmeldetext(true);
+    setAnmeldetextError("");
+
+    try {
+      const res = await fetch(`/api/training/${selectedTrainingId}/anmeldetext`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anmeldetext: value }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Fehler beim Speichern des Anmeldetextes");
+      }
+
+      await fetchTrainings();
+      if (selectedTrainee?.registration) {
+        setSelectedTrainee({
+          ...selectedTrainee,
+          registration: {
+            ...selectedTrainee.registration,
+            experience: value,
+            other: `Anmeldetext (Mentor-Link):\n${value}`,
+          },
+        });
+      }
+      setEditingAnmeldetext(false);
+    } catch (err) {
+      setAnmeldetextError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSavingAnmeldetext(false);
+    }
   };
 
   const getDiscordStatus = (other?: string | null) => {
@@ -308,7 +381,7 @@ export default function MentorTraineePage() {
                       Fortschritt ansehen
                     </Link>
                     <button
-                      onClick={() => openRegistrationDetails(training.trainee)}
+                      onClick={() => openRegistrationDetails(training.trainee, training.id)}
                       className="button"
                       style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
                     >
@@ -374,6 +447,60 @@ export default function MentorTraineePage() {
 
           {selectedTrainee.registration ? (
             <div style={{ display: "grid", gap: "1rem" }}>
+              {selectedTrainingId && (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "center" }}>
+                    <strong style={{ color: "var(--text-color)" }}>Anmeldetext:</strong>
+                    {!editingAnmeldetext && (
+                      <button className="button" onClick={() => setEditingAnmeldetext(true)}>
+                        Anmeldetext bearbeiten
+                      </button>
+                    )}
+                  </div>
+                  {editingAnmeldetext ? (
+                    <>
+                      <textarea
+                        className="form-textarea"
+                        value={editableAnmeldetext}
+                        onChange={(e) => setEditableAnmeldetext(e.target.value)}
+                        style={{ marginTop: "0.4rem", minHeight: "120px" }}
+                      />
+                      <div style={{ marginTop: "0.6rem", display: "flex", gap: "0.5rem" }}>
+                        <button className="button" onClick={saveAnmeldetext} disabled={savingAnmeldetext}>
+                          {savingAnmeldetext ? "Speichert…" : "Anmeldetext speichern"}
+                        </button>
+                        <button
+                          className="button"
+                          onClick={() => {
+                            setEditingAnmeldetext(false);
+                            setEditableAnmeldetext(
+                              extractMentorLinkText(selectedTrainee.registration) ||
+                                selectedTrainee.registration?.experience ||
+                                ""
+                            );
+                            setAnmeldetextError("");
+                          }}
+                          disabled={savingAnmeldetext}
+                        >
+                          Abbrechen
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <p style={{ margin: "0.4rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                      {extractMentorLinkText(selectedTrainee.registration) || selectedTrainee.registration.experience || "—"}
+                    </p>
+                  )}
+                  {anmeldetextError && (
+                    <p style={{ margin: "0.5rem 0 0 0", color: "var(--error-color)" }}>
+                      {anmeldetextError}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {!extractMentorLinkText(selectedTrainee.registration) && (
+              <>
               <div>
                 <strong style={{ color: "var(--text-color)" }}>CID:</strong>
                 <p style={{ margin: "0.25rem 0 0 0" }}>{selectedTrainee.registration.cid}</p>
@@ -473,6 +600,8 @@ export default function MentorTraineePage() {
                     {selectedTrainee.registration.other}
                   </p>
                 </div>
+              )}
+              </>
               )}
             </div>
           ) : (

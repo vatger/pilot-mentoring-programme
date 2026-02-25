@@ -19,6 +19,11 @@ export async function GET(request: NextRequest) {
     }
 
     const trainings = await prisma.training.findMany({
+      where: {
+        status: {
+          not: "COMPLETED",
+        },
+      },
       include: {
         trainee: {
           select: { id: true, cid: true, name: true },

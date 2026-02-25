@@ -69,6 +69,158 @@ interface Training {
   };
 }
 
+type Assessment = Record<string, any> & {
+  overallResult?: string;
+  examinernotes?: string;
+};
+
+interface CheckrideLog {
+  id: string;
+  scheduledDate: string;
+  result: string;
+  isDraft: boolean;
+  availability: {
+    examiner?: {
+      id: string;
+      name: string | null;
+      cid: string | null;
+    };
+  };
+  assessment?: Assessment | null;
+}
+
+const CHECKRIDE_SECTIONS: { key: string; title: string; fields: { key: string; label: string }[] }[] = [
+  {
+    key: "flightplan",
+    title: "1 - Flugplan",
+    fields: [
+      { key: "flightplanCallsign", label: "Callsign / AC Type" },
+      { key: "flightplanAircraft", label: "Equipment" },
+      { key: "flightplanRouting", label: "Routing" },
+      { key: "flightplanTimes", label: "Zeiten" },
+      { key: "flightplanRemarks", label: "Remarks" },
+    ],
+  },
+  {
+    key: "charts",
+    title: "2 - Charts",
+    fields: [
+      { key: "chartsParkingDep", label: "Parking DEP" },
+      { key: "chartsTaxiDep", label: "Taxi DEP" },
+      { key: "chartsDeparture", label: "Departure" },
+      { key: "chartsEnroute", label: "Enroute" },
+      { key: "chartsArrivalTransition", label: "Arrival / Transition" },
+      { key: "chartsApproach", label: "Approach (alle RWYs)" },
+      { key: "chartsTaxiDest", label: "Taxi DEST" },
+      { key: "chartsParkingDest", label: "Parking DEST" },
+    ],
+  },
+  {
+    key: "briefing",
+    title: "3 - Self Briefing",
+    fields: [
+      { key: "briefingFrequencies", label: "Frequenzen" },
+      { key: "briefingPushback", label: "Pushback" },
+      { key: "briefingTaxiRunway", label: "Taxi to Runway" },
+      { key: "briefingATCTakeoff", label: "ATC after Takeoff" },
+      { key: "briefingDeparture", label: "Departure / Restrictions" },
+      { key: "briefingArrival", label: "Arrival / Transition" },
+      { key: "briefingApproach", label: "Approach" },
+      { key: "briefingRunwayExits", label: "Runway Exits" },
+      { key: "briefingTaxiParking", label: "Taxi to Parking" },
+    ],
+  },
+  {
+    key: "clearance",
+    title: "4 - Enroute Clearance",
+    fields: [
+      { key: "clearanceInitialCall", label: "Initial Call" },
+      { key: "clearanceRequest", label: "Clearance Request" },
+      { key: "clearanceClearedTo", label: "Cleared to" },
+      { key: "clearanceDeparture", label: "Departure" },
+      { key: "clearanceRoute", label: "Flight Planned Route" },
+      { key: "clearanceClimb", label: "Climb / Climb via SID" },
+      { key: "clearanceSquawk", label: "Squawk" },
+      { key: "clearanceCallsign", label: "Callsign" },
+    ],
+  },
+  {
+    key: "startup",
+    title: "5 - Startup / Pushback",
+    fields: [
+      { key: "startupStation", label: "Station / CS" },
+      { key: "startupGate", label: "Gate / Request" },
+      { key: "startupReadback", label: "Readback / CS" },
+      { key: "startupExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "taxi",
+    title: "6 - Taxi to Runway",
+    fields: [
+      { key: "taxiStation", label: "Station / CS" },
+      { key: "taxiRequest", label: "Request" },
+      { key: "taxiReadback", label: "Readback / CS" },
+      { key: "taxiExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "takeoff",
+    title: "7 - Takeoff",
+    fields: [
+      { key: "takeoffStation", label: "Station / CS" },
+      { key: "takeoffReadback", label: "Readback / CS" },
+      { key: "takeoffExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "departure",
+    title: "8 - Departure",
+    fields: [
+      { key: "departureStatement", label: "Meldung" },
+      { key: "departureStation", label: "Station / CS / Altitude" },
+      { key: "departureReadback", label: "Readback / CS" },
+      { key: "departureExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "enroute",
+    title: "9 - Enroute",
+    fields: [
+      { key: "enrouteStation", label: "Station / CS / FL" },
+      { key: "enrouteReadbacks", label: "Readbacks" },
+      { key: "enrouteExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "arrival",
+    title: "10 - Arrival / Transition",
+    fields: [
+      { key: "arrivalStation", label: "Station / CS / FL" },
+      { key: "arrivalClearances", label: "Freigaben / Anweisungen" },
+      { key: "arrivalExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "landing",
+    title: "11 - Landung",
+    fields: [
+      { key: "landingStation", label: "Station / CS / APP" },
+      { key: "landingClearance", label: "Landing Clearance" },
+      { key: "landingExecution", label: "Ausfuehrung" },
+    ],
+  },
+  {
+    key: "parking",
+    title: "12 - Taxi to Parking",
+    fields: [
+      { key: "parkingStation", label: "Station / CS / TWY" },
+      { key: "parkingReadback", label: "Readback" },
+      { key: "parkingExecution", label: "Ausfuehrung" },
+    ],
+  },
+];
+
 function TraineeProgressContent() {
   const THEORY_BLUE = "#4d8edb";
   const PRACTICE_GREEN = "#4caf50";
@@ -80,9 +232,14 @@ function TraineeProgressContent() {
 
   const [training, setTraining] = useState<Training | null>(null);
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
+  const [checkrideLogs, setCheckrideLogs] = useState<CheckrideLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [editableAnmeldetext, setEditableAnmeldetext] = useState("");
+  const [savingAnmeldetext, setSavingAnmeldetext] = useState(false);
+  const [anmeldetextError, setAnmeldetextError] = useState("");
+  const [editingAnmeldetext, setEditingAnmeldetext] = useState(false);
 
   const userRole = (session?.user as any)?.role;
   const userId = (session?.user as any)?.id;
@@ -134,6 +291,13 @@ function TraineeProgressContent() {
       if (!trainingRes.ok) throw new Error("Failed to fetch training");
       const trainingData = await trainingRes.json();
       setTraining(trainingData);
+      const marker = "Anmeldetext (Mentor-Link):";
+      const other = trainingData?.trainee?.registration?.other || "";
+      const markerIndex = other.indexOf(marker);
+      const mentorLinkText = markerIndex === -1 ? "" : other.slice(markerIndex + marker.length).trim();
+      setEditableAnmeldetext(mentorLinkText || trainingData?.trainee?.registration?.experience || "");
+      setAnmeldetextError("");
+      setEditingAnmeldetext(false);
 
       // Fetch sessions
       const sessionsRes = await fetch(
@@ -142,6 +306,16 @@ function TraineeProgressContent() {
       if (!sessionsRes.ok) throw new Error("Failed to fetch sessions");
       const sessionsData = await sessionsRes.json();
       setSessions(Array.isArray(sessionsData) ? sessionsData : []);
+
+      const checkridesRes = await fetch(`/api/checkrides?trainingId=${id}`, { cache: "no-store" });
+      if (checkridesRes.ok) {
+        const checkridesData = await checkridesRes.json();
+        setCheckrideLogs(checkridesData.checkrides || []);
+      } else if (checkridesRes.status === 404) {
+        setCheckrideLogs([]);
+      } else {
+        throw new Error("Failed to fetch checkride logs");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -203,14 +377,73 @@ function TraineeProgressContent() {
     return line ? line.replace("VATSIM Germany Discord:", "").trim() : null;
   };
 
+  const extractMentorLinkText = (registration?: RegistrationData | null) => {
+    const marker = "Anmeldetext (Mentor-Link):";
+    const other = registration?.other || "";
+    const index = other.indexOf(marker);
+    if (index === -1) return "";
+    return other.slice(index + marker.length).trim();
+  };
+
+  const saveAnmeldetext = async () => {
+    if (!training || savingAnmeldetext) return;
+
+    const value = editableAnmeldetext.trim();
+    if (!value) {
+      setAnmeldetextError("Bitte einen Anmeldetext eingeben");
+      return;
+    }
+
+    setSavingAnmeldetext(true);
+    setAnmeldetextError("");
+    try {
+      const res = await fetch(`/api/training/${training.id}/anmeldetext`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anmeldetext: value }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Fehler beim Speichern des Anmeldetextes");
+      }
+
+      setTraining((prev) =>
+        prev
+          ? {
+              ...prev,
+              trainee: {
+                ...prev.trainee,
+                registration: prev.trainee.registration
+                  ? {
+                      ...prev.trainee.registration,
+                      experience: value,
+                      other: `Anmeldetext (Mentor-Link):\n${value}`,
+                    }
+                  : prev.trainee.registration,
+              },
+            }
+          : prev
+      );
+      setEditingAnmeldetext(false);
+    } catch (err) {
+      setAnmeldetextError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSavingAnmeldetext(false);
+    }
+  };
+
   // Only trainee, their mentors, or leadership (Leitung/Admin/Examiner) can view this
   const isMentor = training ? training.mentors.some((m) => m.mentorId === userId) : false;
-  const isLeadership = ["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER"].includes(userRole);
+  const isLeadership = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
+  const canEditAnmeldetext = isMentor || isLeadership;
+  const mentorLinkText = extractMentorLinkText(training?.trainee?.registration);
+  const hasMentorLinkText = Boolean(mentorLinkText);
   if (training && !isTrainee && !isMentor && !isLeadership) {
     return (
       <PageLayout>
         <div className="info-danger">
-          <p>Zugriff verweigert. Nur der Trainees, Mentoren und PMP-Leitung können diese Seite anzeigen.</p>
+          <p>Zugriff verweigert. Nur der Trainee, Mentoren und PMP-Leitung können diese Seite anzeigen.</p>
         </div>
       </PageLayout>
     );
@@ -258,7 +491,7 @@ function TraineeProgressContent() {
           <div className="card" style={{ marginBottom: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
               <h3 style={{ marginTop: 0, marginBottom: 0 }}>Trainingsdetails</h3>
-              {isLeadership && (
+              {(isLeadership || isMentor) && (
                 <button
                   className="button"
                   style={{ margin: 0 }}
@@ -438,6 +671,107 @@ function TraineeProgressContent() {
           </div>
 
           {/* Session History */}
+          {checkrideLogs.length > 0 && (
+            <div className="card" style={{ marginBottom: "1.5rem" }}>
+              <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Checkride Logs</h3>
+              <div style={{ display: "grid", gap: "0.75rem" }}>
+                {checkrideLogs.map((log) => {
+                  const assessment = log.assessment || {};
+                  const showDetails = !log.isDraft && !!log.assessment;
+                  return (
+                    <div
+                      key={log.id}
+                      style={{
+                        padding: "0.9rem 1rem",
+                        backgroundColor: "var(--container-bg)",
+                        borderRadius: "8px",
+                        border: "1px solid var(--footer-border)",
+                        borderLeft: "4px solid var(--accent-color)",
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, marginBottom: "0.35rem" }}>
+                        {new Date(log.scheduledDate).toLocaleString()} – {log.result}
+                      </div>
+                      <div style={{ fontSize: "0.9em", color: "var(--text-color)", marginBottom: "0.25rem" }}>
+                        Prüfer: {log.availability.examiner?.name || "Unbekannt"} ({log.availability.examiner?.cid || "N/A"})
+                      </div>
+                      <div style={{ fontSize: "0.88em", color: "var(--text-color)" }}>
+                        Bewertungsstatus: {log.isDraft ? "Entwurf" : (log.assessment?.overallResult || log.result)}
+                      </div>
+                      {showDetails && (
+                        <details style={{ marginTop: "0.75rem" }}>
+                          <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+                            Vollstaendiges Log anzeigen
+                          </summary>
+                          <div style={{ marginTop: "0.75rem", display: "grid", gap: "0.75rem" }}>
+                            {CHECKRIDE_SECTIONS.map((section) => (
+                              <div
+                                key={section.key}
+                                style={{
+                                  border: "1px solid var(--footer-border)",
+                                  borderRadius: "8px",
+                                  padding: "0.75rem",
+                                  backgroundColor: "var(--card-bg)",
+                                }}
+                              >
+                                <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center" }}>
+                                  <strong>{section.title}</strong>
+                                  <span
+                                    style={{
+                                      fontSize: "0.85em",
+                                      padding: "3px 8px",
+                                      borderRadius: "6px",
+                                      background: assessment[`${section.key}Passed`] ? "#e6f4ea" : "#fce8e6",
+                                      color: assessment[`${section.key}Passed`] ? "#1e8e3e" : "#b3261e",
+                                    }}
+                                  >
+                                    {assessment[`${section.key}Passed`] ? "Bestanden" : "Nicht bestanden"}
+                                  </span>
+                                </div>
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginTop: "0.5rem" }}>
+                                  {section.fields.map((field) => (
+                                    <div key={field.key} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                      <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>{field.label}</div>
+                                      <div
+                                        style={{
+                                          fontSize: "0.9em",
+                                          whiteSpace: "pre-wrap",
+                                          backgroundColor: "var(--container-bg)",
+                                          padding: "6px 8px",
+                                          borderRadius: "6px",
+                                          minHeight: "38px",
+                                        }}
+                                      >
+                                        {assessment?.[field.key] || "-"}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                            {assessment.examinernotes && (
+                              <div
+                                style={{
+                                  border: "1px solid var(--footer-border)",
+                                  borderRadius: "8px",
+                                  padding: "0.75rem",
+                                  backgroundColor: "var(--container-bg)",
+                                }}
+                              >
+                                <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Examiner Kommentar</div>
+                                <div style={{ whiteSpace: "pre-wrap" }}>{assessment.examinernotes}</div>
+                              </div>
+                            )}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {sessions.length > 0 && (
             <div className="card">
               <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>Trainingssessions</h3>
@@ -628,6 +962,56 @@ function TraineeProgressContent() {
 
           {training.trainee.registration ? (
             <div style={{ display: "grid", gap: "1rem" }}>
+              {(canEditAnmeldetext || hasMentorLinkText) && (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "center" }}>
+                    <strong style={{ color: "var(--text-color)" }}>Anmeldetext:</strong>
+                    {canEditAnmeldetext && !editingAnmeldetext && (
+                      <button className="button" onClick={() => setEditingAnmeldetext(true)}>
+                        Anmeldetext bearbeiten
+                      </button>
+                    )}
+                  </div>
+                  {editingAnmeldetext && canEditAnmeldetext ? (
+                    <>
+                      <textarea
+                        className="form-textarea"
+                        value={editableAnmeldetext}
+                        onChange={(e) => setEditableAnmeldetext(e.target.value)}
+                        style={{ marginTop: "0.4rem", minHeight: "120px" }}
+                      />
+                      <div style={{ marginTop: "0.6rem", display: "flex", gap: "0.5rem" }}>
+                        <button className="button" onClick={saveAnmeldetext} disabled={savingAnmeldetext}>
+                          {savingAnmeldetext ? "Speichert…" : "Anmeldetext speichern"}
+                        </button>
+                        <button
+                          className="button"
+                          onClick={() => {
+                            setEditingAnmeldetext(false);
+                            setEditableAnmeldetext(mentorLinkText || training.trainee.registration?.experience || "");
+                            setAnmeldetextError("");
+                          }}
+                          disabled={savingAnmeldetext}
+                        >
+                          Abbrechen
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <p style={{ margin: "0.4rem 0 0 0", whiteSpace: "pre-wrap" }}>
+                      {mentorLinkText || training.trainee.registration.experience || "—"}
+                    </p>
+                  )}
+                  {anmeldetextError && (
+                    <p style={{ margin: "0.5rem 0 0 0", color: "var(--error-color)" }}>
+                      {anmeldetextError}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {!hasMentorLinkText && (
+              <>
               <div>
                 <strong style={{ color: "var(--text-color)" }}>CID:</strong>
                 <p style={{ margin: "0.25rem 0 0 0" }}>{training.trainee.registration.cid}</p>
@@ -727,6 +1111,8 @@ function TraineeProgressContent() {
                     {training.trainee.registration.other}
                   </p>
                 </div>
+              )}
+              </>
               )}
             </div>
           ) : (

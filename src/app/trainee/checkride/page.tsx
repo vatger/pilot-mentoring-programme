@@ -37,9 +37,6 @@ export default function TraineeCheckridePage() {
   const [training, setTraining] = useState<TrainingSummary | null>(null);
   const [booking, setBooking] = useState<CheckrideBooking | null>(null);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
-  const [slots, setSlots] = useState<AvailableSlot[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState<string>("");
-  const [submitting, setSubmitting] = useState(false);
 
   const hasReady = training?.readyForCheckride;
 
@@ -68,7 +65,6 @@ export default function TraineeCheckridePage() {
       setTraining(data.training);
       setBooking(data.booking);
       setAssessment(data.assessment);
-      setSlots(data.availableSlots || []);
     } catch (e: any) {
       setError(e.message || "Fehler beim Laden");
     } finally {
@@ -80,35 +76,12 @@ export default function TraineeCheckridePage() {
     load();
   }, []);
 
-  const book = async () => {
-    if (!selectedSlot || !training) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/checkrides/book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trainingId: training.id, availabilityId: selectedSlot }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Fehler: ${res.status}`);
-      }
-      await load();
-      setSelectedSlot("");
-    } catch (e: any) {
-      setError(e.message || "Fehler bei Buchung");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const statusText = assessment
     ? "Bewertung freigegeben"
     : booking
     ? "Checkride gebucht (Warten auf Bewertung)"
     : hasReady
-    ? "Bereit für Checkride"
+    ? "Checkride angefragt (Termin folgt über Mentor)"
     : "Noch nicht bereit für Checkride";
 
   const SECTIONS: { key: string; title: string; fields: { key: string; label: string }[] }[] = [
@@ -248,7 +221,7 @@ export default function TraineeCheckridePage() {
       <div className="card" style={{ marginBottom: "1.5rem" }}>
         <h1>Checkride Center</h1>
         <p style={{ color: "var(--text-color)", margin: "0.5rem 0 0 0" }}>
-          Buche den Termin für deinen Checkride und schaue dir das Ergebnis an
+          Sieh deinen bestätigten Termin und später dein Ergebnis ein
         </p>
       </div>
 
@@ -269,7 +242,7 @@ export default function TraineeCheckridePage() {
             </div>
             <p style={{ margin: 0, fontSize: "0.95em" }}>
               {hasReady
-                ? "Du kannst jetzt einen Slot buchen, sobald ein Prüfer seine Verfügbarkeit veröffentlicht hat."
+                ? "Dein Mentor koordiniert den Termin mit dir und bestätigt anschließend einen Prüfer-Slot."
                 : "Dein Mentor muss dich als bereit für deine Prüfung markieren."}
             </p>
           </div>
@@ -353,53 +326,6 @@ export default function TraineeCheckridePage() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {!booking && hasReady && (
-            <div className="form-card" style={{ maxWidth: "720px" }}>
-              <div>
-                <h3 style={{ marginTop: 0, marginBottom: "6px" }}>Buche einen Checkride-Slot</h3>
-                <p style={{ margin: 0, fontSize: "0.95em" }}>
-                  Verfügbare Slots werden von Prüfern bereitgestellt. Wähle die Zeit, die am besten für dich passt.
-                </p>
-              </div>
-              {slots.length === 0 ? (
-                <p style={{ margin: 0, color: "var(--text-color)" }}>
-                  Zurzeit sind keine Slots verfügbar. Schau später noch einmal vorbei.
-                </p>
-              ) : (
-                <>
-                  <label className="form-label">
-                    Slot auswählen
-                    <select
-                      value={selectedSlot}
-                      onChange={(e) => setSelectedSlot(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="">-- Slot auswählen --</option>
-                      {slots.map((s) => {
-                        const examinerLabel = s.examiner?.name
-                          ? `${s.examiner.name} (${s.examiner.cid || s.examinerId})`
-                          : s.examinerId;
-                        return (
-                          <option key={s.id} value={s.id}>
-                            {new Date(s.startTime).toLocaleString()} (Prüfer: {examinerLabel})
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </label>
-                  <button
-                    onClick={book}
-                    disabled={!selectedSlot || submitting}
-                    className="button form-submit"
-                    style={{ alignSelf: "flex-start" }}
-                  >
-                    {submitting ? "Buchen…" : "Slot buchen"}
-                  </button>
-                </>
-              )}
             </div>
           )}
         </>
