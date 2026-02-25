@@ -10,6 +10,8 @@ type Training = {
   id: string;
   status: string;
   readyForCheckride: boolean;
+  checkrideRequestText?: string | null;
+  checkrideRequestedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   trainee: {
@@ -39,16 +41,47 @@ type Training = {
 
 type Checkride = {
   id: string;
-  status: string;
-  scheduledAt: string;
-  examiner: {
-    name: string | null;
-    cid: string | null;
+  scheduledDate: string;
+  result: string;
+  isDraft: boolean;
+  availability: {
+    examiner?: {
+      name: string | null;
+      cid: string | null;
+    };
   };
-  assessment: {
+  assessment?: {
     id: string;
     overallResult: string | null;
   } | null;
+};
+
+type CheckrideLog = {
+  id: string;
+  scheduledDate: string;
+  result: string;
+  isDraft: boolean;
+  availability: {
+    examiner?: {
+      name: string | null;
+      cid: string | null;
+    };
+  };
+  assessment?: {
+    id: string;
+    overallResult: string | null;
+    examinernotes?: string | null;
+  } | null;
+};
+
+type Slot = {
+  id: string;
+  startTime: string;
+  status: string;
+  examiner?: {
+    name: string | null;
+    cid: string | null;
+  };
 };
 
 export default function TraineeDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -59,14 +92,19 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
 
   const [training, setTraining] = useState<Training | null>(null);
   const [checkride, setCheckride] = useState<Checkride | null>(null);
+  const [checkrideLogs, setCheckrideLogs] = useState<CheckrideLog[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<string>("");
+  const [bookingSlot, setBookingSlot] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingCheckride, setUpdatingCheckride] = useState(false);
+  const [checkrideRequestText, setCheckrideRequestText] = useState("");
   const [savingSession, setSavingSession] = useState(false);
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
-    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
+    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
 
   useEffect(() => {
     if (status === "loading") return;
@@ -87,12 +125,26 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       if (!res.ok) throw new Error("Failed to fetch training details");
       const data = await res.json();
       setTraining(data);
+      setCheckrideRequestText(data.checkrideRequestText || "");
 
       // Fetch checkride if exists
       const checkrideRes = await fetch(`/api/checkrides?trainingId=${trainingId}`);
       if (checkrideRes.ok) {
         const checkrideData = await checkrideRes.json();
-        setCheckride(checkrideData);
+        setCheckride(checkrideData.latestCheckride || null);
+        setCheckride(checkrideData.checkrides || []);
+      } else {
+        setCheckride(null);
+        setCheckrideLogs([]);
+      }
+
+      const examinerRes = await fetch("/api/checkrides/examiner", { cache: "no-store" });
+      if (examinerRes.ok) {
+        const examinerData = await examinerRes.json();
+        const freeSlots = (examinerData.slots || []).filter((slot: Slot) => slot.status === "AVAILABLE");
+        setAvailableSlots(freeSlots);
+      } else {
+        setAvailableSlots([]);
       }
 
       setError("");
@@ -105,19 +157,54 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
 
   const toggleReadyForCheckride = async () => {
     if (!training || updatingCheckride) return;
+    const nextReady = !training.readyForCheckride;
+    const requestText = checkrideRequestText.trim();
+    if (nextReady && requestText.length === 0) {
+      setError("Bitte trage die regulären Verfügbarkeiten für den Checkride ein.");
+      return;
+    }
     setUpdatingCheckride(true);
     try {
       const res = await fetch(`/api/trainings/${training.id}/ready`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ readyForCheckride: !training.readyForCheckride }),
+        body: JSON.stringify({
+          readyForCheckride: nextReady,
+          checkrideRequestText: requestText,
+        }),
       });
       if (!res.ok) throw new Error("Failed to update checkride status");
-      setTraining({ ...training, readyForCheckride: !training.readyForCheckride });
+      await fetchTrainingDetails();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setUpdatingCheckride(false);
+    }
+  };
+
+  const confirmCheckrideSlot = async () => {
+    if (!training || !selectedSlot || bookingSlot) return;
+    setBookingSlot(true);
+    setError("");
+    try {
+      const res = await fetch("/api/checkrides/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trainingId: training.id,
+          availabilityId: selectedSlot,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to book slot");
+      }
+      setSelectedSlot("");
+      await fetchTrainingDetails();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBookingSlot(false);
     }
   };
 
@@ -238,6 +325,24 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
               <strong>Bereit für den Check Ride</strong>
             </label>
           </p>
+          {training.readyForCheckride && (
+            <div style={{ marginTop: "1rem" }}>
+              <label className="form-label" style={{ marginBottom: "0.5rem", display: "block" }}>
+                Normale Verfügbarkeiten (für Checkride-Mentoren)
+              </label>
+              <textarea
+                value={checkrideRequestText}
+                onChange={(e) => setCheckrideRequestText(e.target.value)}
+                rows={4}
+                className="form-input"
+                placeholder="z.B. meistens Mo/Mi/Fr ab 19:30z, Wochenende nach Absprache"
+                style={{ width: "100%", resize: "vertical" }}
+              />
+              <p style={{ marginTop: "0.5rem", marginBottom: 0, fontSize: "0.9rem", color: "var(--text-muted)" }}>
+                Dieser Text wird den Prüfern angezeigt um passende Termine bereitstellen zu können.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Mentors */}
@@ -266,9 +371,9 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                 className="status-pill"
                 style={{
                   backgroundColor:
-                    checkride.status === "PASSED"
+                    checkride.result === "PASSED"
                       ? "var(--success-color)"
-                      : checkride.status === "FAILED"
+                      : checkride.result === "FAILED"
                       ? "var(--error-color)"
                       : "var(--warning-color)",
                   color: "white",
@@ -277,16 +382,16 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                   fontSize: "0.875rem",
                 }}
               >
-                {checkride.status}
+                {checkride.result}
               </span>
             </p>
             <p>
               <strong>Geplant:</strong>{" "}
-              {new Date(checkride.scheduledAt).toLocaleString()}
+              {new Date(checkride.scheduledDate).toLocaleString()}
             </p>
             <p>
-              <strong>Prüfer:</strong> {checkride.examiner.name || "Unbekannt"} (CID:{" "}
-              {checkride.examiner.cid || "N/A"})
+              <strong>Prüfer:</strong> {checkride.availability.examiner?.name || "Unbekannt"} (CID:{" "}
+              {checkride.availability.examiner?.cid || "N/A"})
             </p>
             {checkride.assessment && (
               <div style={{ marginTop: "1rem" }}>
@@ -295,6 +400,72 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                     <strong>Ergebnis:</strong> {checkride.assessment.overallResult}
                   </p>
                 )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {checkrideLogs.length > 0 && (
+          <div className="card" style={{ marginBottom: "2rem" }}>
+            <h3>Checkride Logs</h3>
+            <div style={{ display: "grid", gap: "0.75rem" }}>
+              {checkrideLogs.map((log) => (
+                <div
+                  key={log.id}
+                  style={{
+                    border: "1px solid var(--footer-border)",
+                    borderRadius: "8px",
+                    padding: "0.75rem 1rem",
+                    backgroundColor: "var(--container-bg)",
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: "0.3rem" }}>
+                    {new Date(log.scheduledDate).toLocaleString()} – {log.result}
+                  </div>
+                  <div style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
+                    Prüfer: {log.availability.examiner?.name || "Unbekannt"} ({log.availability.examiner?.cid || "N/A"})
+                  </div>
+                  <div style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+                    Assessment: {log.isDraft ? "Entwurf" : (log.assessment?.overallResult || log.result)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {training.readyForCheckride && !checkride && (
+          <div className="card" style={{ marginBottom: "2rem" }}>
+            <h3>Checkride-Termin bestätigen</h3>
+            <p style={{ marginTop: 0 }}>
+              Der Mentor stimmt den Termin mit dem Trainee ab und bestätigt anschließend den passenden Prüfer-Slot.
+            </p>
+            {availableSlots.length === 0 ? (
+              <p style={{ color: "var(--text-muted)", marginBottom: 0 }}>
+                Aktuell sind keine verfügbaren Prüfer-Slots vorhanden.
+              </p>
+            ) : (
+              <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+                <select
+                  value={selectedSlot}
+                  onChange={(e) => setSelectedSlot(e.target.value)}
+                  className="form-select"
+                  style={{ minWidth: "360px" }}
+                >
+                  <option value="">-- Slot auswählen --</option>
+                  {availableSlots.map((slot) => (
+                    <option key={slot.id} value={slot.id}>
+                      {new Date(slot.startTime).toLocaleString()} – {slot.examiner?.name || "Unbekannt"} ({slot.examiner?.cid || "N/A"})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={confirmCheckrideSlot}
+                  disabled={!selectedSlot || bookingSlot}
+                  className="button"
+                >
+                  {bookingSlot ? "Bestätigt..." : "Termin bestätigen"}
+                </button>
               </div>
             )}
           </div>

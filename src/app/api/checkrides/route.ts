@@ -20,11 +20,40 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const checkride = await prisma.checkride.findFirst({
+    const userId = (session.user as any).id;
+    const userRole = (session.user as any).role;
+
+    const training = await prisma.training.findUnique({
+      where: { id: trainingId },
+      include: {
+        mentors: {
+          select: { mentorId: true },
+        },
+      },
+    });
+
+    if (!training) {
+      return NextResponse.json({ error: "Training not found" }, { status: 404 });
+    }
+
+    const isTrainee = training.traineeId === userId;
+    const isAssignedMentor = training.mentors.some((m) => m.mentorId === userId);
+    const isLeadership = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
+
+    if (!isTrainee && !isAssignedMentor && !isLeadership) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const checkrides = await prisma.checkride.findMany({
       where: { trainingId },
+      orderBy: { scheduledDate: "desc" },
       include: {
         availability: {
           select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            status: true,
             examiner: {
               select: {
                 id: true,
@@ -34,20 +63,25 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-        assessment: {
-          select: {
-            id: true,
-            overallResult: true,
-          },
-        },
+        assessment: true,
       },
     });
 
-    if (!checkride) {
+    if (checkrides.length === 0) {
       return NextResponse.json({ error: "Checkride not found" }, { status: 404 });
     }
 
-    return NextResponse.json(checkride);
+    const sanitized = checkrides.map((checkride) => {
+      if (isTrainee && checkride.isDraft) {
+        return { ...checkride, assessment: null };
+      }
+      return checkride;
+    });
+
+    return NextResponse.json({
+      latestCheckride: sanitized[0],
+      checkrides: sanitized,
+    });
   } catch (error: any) {
     console.error("Error fetching checkride:", error);
     return NextResponse.json(

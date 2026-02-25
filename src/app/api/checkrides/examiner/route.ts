@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 const EXAMINER_ROLES = ["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER", "MENTOR"];
 
 // GET /api/checkrides/examiner
-// Returns examiner's slots and any booked checkrides with trainee info
+// Returns slots, booked checkrides and all ready-for-checkride mentor requests
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,12 +19,33 @@ export async function GET(request: NextRequest) {
     }
 
     // All examiner slots (not just this examiner's)
-    const slots = await prisma.checkrideAvailability.findMany({
+    const rawSlots = await prisma.checkrideAvailability.findMany({
       where: {},
       orderBy: { startTime: "asc" },
       include: {
         examiner: { select: { id: true, cid: true, name: true } },
+        checkride: {
+          select: {
+            id: true,
+            result: true,
+            isDraft: true,
+          },
+        },
       },
+    });
+
+    const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000);
+    const slots = rawSlots.filter((slot) => {
+      const isOlderThan8Hours = slot.startTime < eightHoursAgo;
+      if (!isOlderThan8Hours) return true;
+
+      const isUnassigned = slot.status === "AVAILABLE" && !slot.checkride;
+      const isPendingAssignment =
+        slot.status === "BOOKED" &&
+        !!slot.checkride &&
+        slot.checkride.result === "INCOMPLETE";
+
+      return isUnassigned || isPendingAssignment;
     });
 
     // All booked checkrides (not just this examiner's), exclude PASSED
@@ -54,7 +75,44 @@ export async function GET(request: NextRequest) {
       orderBy: { scheduledDate: "asc" },
     });
 
-    return NextResponse.json({ slots, checkrides }, { status: 200 });
+    const readyRequests = await prisma.training.findMany({
+      where: {
+        readyForCheckride: true,
+        status: { not: "ABGEBROCHEN" },
+        checkrides: {
+          none: {
+            OR: [{ result: "INCOMPLETE" }, { result: "PASSED" }],
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        trainee: {
+          select: { id: true, cid: true, name: true },
+        },
+        mentors: {
+          include: {
+            mentor: {
+              select: { id: true, cid: true, name: true },
+            },
+          },
+        },
+        checkrides: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: {
+            id: true,
+            scheduledDate: true,
+            result: true,
+            isDraft: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ slots, checkrides, readyRequests }, { status: 200 });
   } catch (error) {
     console.error("Error fetching examiner data:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

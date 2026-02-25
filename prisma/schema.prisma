@@ -179,6 +179,8 @@ model Training {
   traineeId           String
   status              TrainingStatus @default(ACTIVE) // ACTIVE, COMPLETED, ABGEBROCHEN
   readyForCheckride   Boolean @default(false)
+  checkrideRequestText String?  @db.Text
+  checkrideRequestedAt DateTime?
   cancellationReason  String?  @db.Text // Reason for cancellation (filled by mentor)
   cancellationAt      DateTime? // When the cancellation was initiated
   createdAt           DateTime @default(now())

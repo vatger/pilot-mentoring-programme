@@ -54,8 +54,8 @@ export default function MentorTraineePage() {
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
-    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
-  const isLeitung = userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
+    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
+  const isLeitung = userRole === "PMP_LEITUNG" || userRole === "ADMIN";
 
   useEffect(() => {
     if (status === "loading") return;

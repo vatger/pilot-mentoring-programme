@@ -23,9 +23,20 @@ type CheckrideEntry = {
   assessment?: any;
 };
 
+type ReadyRequest = {
+  id: string;
+  readyForCheckride: boolean;
+  checkrideRequestText?: string | null;
+  checkrideRequestedAt?: string | null;
+  trainee: { id: string; cid: string | null; name: string | null };
+  mentors: { mentor: { id: string; cid: string | null; name: string | null } }[];
+  checkrides: { id: string; scheduledDate: string; result: string; isDraft: boolean }[];
+};
+
 export default function ExaminerAvailabilityPage() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [checkrides, setCheckrides] = useState<CheckrideEntry[]>([]);
+  const [readyRequests, setReadyRequests] = useState<ReadyRequest[]>([]);
   const [startTime, setStartTime] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +52,7 @@ export default function ExaminerAvailabilityPage() {
       const data = await res.json();
       setSlots(data.slots || []);
       setCheckrides(data.checkrides || []);
+      setReadyRequests(data.readyRequests || []);
     } catch (e: any) {
       setError(e.message || "Fehler beim Laden");
     } finally {
@@ -156,6 +168,65 @@ export default function ExaminerAvailabilityPage() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "1.5rem" }}>
+            <div className="card" style={{ gridColumn: "1 / -1" }}>
+              <h3 style={{ marginTop: 0 }}>Checkride Anfragen</h3>
+              {readyRequests.length === 0 ? (
+                <p style={{ color: "var(--text-color)", margin: 0 }}>Keine offenen Anfragen</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {readyRequests.map((req) => {
+                    const mentorNames = req.mentors
+                      .map((m) => `${m.mentor.name || "Unbekannt"} (${m.mentor.cid || "N/A"})`)
+                      .join(", ");
+                    const latestCheckride = req.checkrides?.[0];
+                    const activeCheckride =
+                      latestCheckride && latestCheckride.result === "INCOMPLETE"
+                        ? latestCheckride
+                        : null;
+                    return (
+                      <div
+                        key={req.id}
+                        className="card"
+                        style={{
+                          marginBottom: 0,
+                          padding: "12px 14px",
+                          background: "var(--container-bg)",
+                          borderLeft: "3px solid var(--accent-color)",
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: "4px" }}>
+                          {req.trainee.name || "Trainee"} ({req.trainee.cid || "N/A"})
+                        </div>
+                        <div style={{ fontSize: "0.9em", color: "var(--text-color)", marginBottom: "4px" }}>
+                          Mentor: {mentorNames || "N/A"}
+                        </div>
+                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "6px" }}>
+                          Anfrage erstellt: {req.checkrideRequestedAt ? new Date(req.checkrideRequestedAt).toLocaleString("de-DE") : "unbekannt"}
+                        </div>
+                        <div
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            fontSize: "0.9em",
+                            background: "var(--background-color)",
+                            padding: "8px 10px",
+                            borderRadius: "6px",
+                            marginBottom: activeCheckride ? "8px" : 0,
+                          }}
+                        >
+                          {req.checkrideRequestText || "Kein Availability-Text hinterlegt"}
+                        </div>
+                        {activeCheckride && (
+                          <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
+                            Bereits geplant: {new Date(activeCheckride.scheduledDate).toLocaleString("de-DE")} ({activeCheckride.result})
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <div className="card">
               <h3 style={{ marginTop: 0 }}>Alle Prüfungsslots</h3>
               {slots.length === 0 ? (
