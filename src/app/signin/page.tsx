@@ -27,33 +27,16 @@ function SignInContent() {
     // If user is already authenticated, redirect based on role
     if (status === "authenticated" && session?.user) {
       const callbackUrl = getSafeCallbackUrl();
-      if (callbackUrl && callbackUrl !== "/signin") {
+      const isDirectInviteCallback = callbackUrl.startsWith("/direkt-einladung");
+
+      if (isDirectInviteCallback) {
         router.push(callbackUrl);
         return;
       }
 
       const role = (session.user as any).role;
-      let redirectUrl = "/trainings"; // default
-
-      // Determine redirect based on role
-      switch (role) {
-        case "VISITOR":
-          redirectUrl = "/anmeldung";
-          break;
-        case "TRAINEE":
-        case "PENDING_TRAINEE":
-        case "COMPLETED_TRAINEE":
-          redirectUrl = "/trainee/progress";
-          break;
-        case "MENTOR":
-        case "PMP_PRÜFER":
-        case "PMP_LEITUNG":
-        case "ADMIN":
-          redirectUrl = "/mentor/dashboard";
-          break;
-        default:
-          redirectUrl = "/trainings";
-      }
+      const mentorOrHigherRoles = ["MENTOR", "PMP_PRÜFER", "PMP_LEITUNG", "ADMIN"];
+      const redirectUrl = mentorOrHigherRoles.includes(role) ? "/mentor/dashboard" : "/";
 
       router.push(redirectUrl);
       return;
@@ -61,9 +44,12 @@ function SignInContent() {
 
     // If not authenticated and not loading, trigger sign in
     if (status === "unauthenticated") {
-      const callbackUrl = getSafeCallbackUrl() || "/signin?postauth=true";
+      const callbackUrl = getSafeCallbackUrl();
+      const finalCallbackUrl = callbackUrl.startsWith("/direkt-einladung")
+        ? callbackUrl
+        : "/signin?postauth=true";
       // Trigger VATGER provider login
-      signIn("vatger", { callbackUrl: `${window.location.origin}${callbackUrl}` });
+      signIn("vatger", { callbackUrl: `${window.location.origin}${finalCallbackUrl}` });
     }
   }, [status, session, searchParams, router]);
 
