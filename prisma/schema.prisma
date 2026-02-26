@@ -74,7 +74,7 @@ model Registration {
   aircraft  String   // Known aircraft
   client    String   // Pilot client (vPilot, xPilot, swift)
   clientSetup String // Yes/No if client is set up
-  experience String  // Flight sim experience
+  experience String  @db.Text // Flight sim experience
   charts    String   // Chart materials used
   airac     String   // AIRAC data availability
   category  String   // Flight category (IFR Airliner, IFR GA, VFR)
@@ -82,7 +82,7 @@ model Registration {
   schedule  String   // Preferred times/days
   communication String // Communication setup (TS, Discord, etc.)
   personal  String?  // Personal info (age, profession, location)
-  other     String?  // Other notes
+  other     String?  @db.Text // Other notes
   
   // Metadata
   createdAt DateTime @default(now())

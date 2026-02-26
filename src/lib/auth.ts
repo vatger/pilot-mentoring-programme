@@ -174,12 +174,24 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // After OAuth callback, redirect to signin page for role-based routing
-      if (url.startsWith(baseUrl)) return url;
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      
-      // Default redirect to signin page which will handle role-based redirects
-      return `${baseUrl}/signin?postauth=true`;
+      try {
+        const resolvedUrl = new URL(url, baseUrl);
+        const baseOrigin = new URL(baseUrl).origin;
+
+        if (resolvedUrl.origin !== baseOrigin) {
+          return `${baseUrl}/signin?postauth=true`;
+        }
+
+        // Preserve direct invite callbacks so the token can be executed after login
+        if (resolvedUrl.pathname === "/direkt-einladung") {
+          return resolvedUrl.toString();
+        }
+
+        // Route all other callbacks through signin for role-based redirect handling
+        return `${baseUrl}/signin?postauth=true`;
+      } catch {
+        return `${baseUrl}/signin?postauth=true`;
+      }
     },
   },
   // Default pages can be used; customize if you want a bespoke /signin route
