@@ -12,20 +12,30 @@ export async function GET(
   { params }: { params: Promise<{ cid: string }> }
 ) {
   try {
-    // Authenticate via Authorization header
-    const authHeader = request.headers.get("Authorization");
+    const authHeader = request.headers.get("authorization") ?? request.headers.get("Authorization");
+    const customTokenHeader = request.headers.get("x-gdpr-token")?.trim();
     const gdprToken = process.env.GDPR_TOKEN;
 
-    if (!authHeader || !gdprToken) {
+    if (!gdprToken) {
       return NextResponse.json(
-        { error: "Missing or invalid authorization" },
+        { error: "GDPR token not configured" },
+        { status: 500 }
+      );
+    }
+
+    if (!authHeader && !customTokenHeader) {
+      return NextResponse.json(
+        { error: "Missing authorization" },
         { status: 401 }
       );
     }
 
-    // Expect: "Token XXXXX"
-    const token = authHeader.replace(/^Token\s+/, "");
-    if (token !== gdprToken) {
+    const expectedToken = gdprToken.trim().replace(/^['\"]|['\"]$/g, "");
+    const normalizedHeader = authHeader?.trim() ?? "";
+    const headerMatch = normalizedHeader.match(/^(token|bearer)\s+(.+)$/i);
+    const providedToken = (customTokenHeader ?? headerMatch?.[2] ?? normalizedHeader).trim();
+
+    if (providedToken !== expectedToken) {
       return NextResponse.json(
         { error: "Invalid token" },
         { status: 401 }
@@ -34,13 +44,11 @@ export async function GET(
 
     const { cid } = await params;
 
-    // Fetch user by CID
     const user = await prisma.user.findUnique({
       where: { cid },
     });
 
     if (!user) {
-      // Also check if there's a registration record (in case user never logged in)
       const registration = await prisma.registration.findUnique({
         where: { cid },
       });

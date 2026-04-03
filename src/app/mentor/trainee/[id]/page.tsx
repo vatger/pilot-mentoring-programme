@@ -5,6 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 import Link from "next/link";
+import {
+  CHECKRIDE_RUBRIC,
+  formatRubricRating,
+  parseRubricNotes,
+  RUBRIC_CODE_COLORS,
+  RUBRIC_ROW_TINTS,
+} from "@/lib/checkrideRubric";
 
 type Training = {
   id: string;
@@ -92,16 +99,6 @@ type CheckrideLog = {
     };
   };
   assessment?: Assessment | null;
-};
-
-type Slot = {
-  id: string;
-  startTime: string;
-  status: string;
-  examiner?: {
-    name: string | null;
-    cid: string | null;
-  };
 };
 
 const CHECKRIDE_SECTIONS: { key: string; title: string; fields: { key: string; label: string }[] }[] = [
@@ -245,22 +242,22 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const [training, setTraining] = useState<Training | null>(null);
   const [checkride, setCheckride] = useState<Checkride | null>(null);
   const [checkrideLogs, setCheckrideLogs] = useState<CheckrideLog[]>([]);
-  const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState<string>("");
-  const [bookingSlot, setBookingSlot] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingCheckride, setUpdatingCheckride] = useState(false);
+  const [finishingWithoutCheckride, setFinishingWithoutCheckride] = useState(false);
   const [checkrideRequestText, setCheckrideRequestText] = useState("");
   const [showCheckrideRequestInput, setShowCheckrideRequestInput] = useState(false);
   const [savingSession, setSavingSession] = useState(false);
   const [editableAnmeldetext, setEditableAnmeldetext] = useState("");
   const [savingAnmeldetext, setSavingAnmeldetext] = useState(false);
   const [anmeldetextError, setAnmeldetextError] = useState("");
+  const [expandedCheckrideIds, setExpandedCheckrideIds] = useState<Record<string, boolean>>({});
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
     userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
+  const isLeadership = userRole === "PMP_LEITUNG" || userRole === "ADMIN";
 
   useEffect(() => {
     if (status === "loading") return;
@@ -297,15 +294,6 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       } else {
         setCheckride(null);
         setCheckrideLogs([]);
-      }
-
-      const examinerRes = await fetch("/api/checkrides/examiner", { cache: "no-store" });
-      if (examinerRes.ok) {
-        const examinerData = await examinerRes.json();
-        const freeSlots = (examinerData.slots || []).filter((slot: Slot) => slot.status === "AVAILABLE");
-        setAvailableSlots(freeSlots);
-      } else {
-        setAvailableSlots([]);
       }
 
       setError("");
@@ -364,29 +352,27 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
     await updateReadyForCheckride(true);
   };
 
-  const confirmCheckrideSlot = async () => {
-    if (!training || !selectedSlot || bookingSlot) return;
-    setBookingSlot(true);
+  const finishWithoutCheckride = async () => {
+    if (!training || finishingWithoutCheckride) return;
+    if (!confirm("Training ohne Checkride abschliessen? Diese Aktion ist fuer den regulären Flow nicht rueckgaengig.")) {
+      return;
+    }
+
+    setFinishingWithoutCheckride(true);
     setError("");
     try {
-      const res = await fetch("/api/checkrides/book", {
+      const res = await fetch(`/api/trainings/${training.id}/finish-without-checkride`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          trainingId: training.id,
-          availabilityId: selectedSlot,
-        }),
       });
+      const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Failed to book slot");
+        throw new Error(payload.error || "Training konnte nicht abgeschlossen werden");
       }
-      setSelectedSlot("");
       await fetchTrainingDetails();
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Unknown error");
     } finally {
-      setBookingSlot(false);
+      setFinishingWithoutCheckride(false);
     }
   };
 
@@ -508,6 +494,28 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
 
   const completedSessions = training.sessions.filter(s => !s.isDraft).length;
   const totalSessions = training.sessions.length;
+  const timelineEntries = [
+    ...training.sessions.map((sess) => ({
+      type: "session" as const,
+      key: `session-${sess.id}`,
+      date: sess.sessionDate,
+      session: sess,
+    })),
+    ...checkrideLogs.map((log) => ({
+      type: "checkride" as const,
+      key: `checkride-${log.id}`,
+      date: log.scheduledDate,
+      log,
+      released: !log.isDraft && !!log.assessment,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const toggleCheckrideDetails = (id: string) => {
+    setExpandedCheckrideIds((current) => ({
+      ...current,
+      [id]: !current[id],
+    }));
+  };
 
   return (
     <PageLayout>
@@ -631,85 +639,153 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
           )}
         </div>
 
-        {/* Checkride Info */}
-        {checkride && (
+        {isLeadership && training.status !== "COMPLETED" && checkrideLogs.length === 0 && (
           <div className="card" style={{ marginBottom: "2rem" }}>
-            <h3>Check Ride</h3>
-            <p>
-              <strong>Status:</strong>{" "}
-              <span
-                className="status-pill"
-                style={{
-                  backgroundColor:
-                    checkride.result === "PASSED"
-                      ? "var(--success-color)"
-                      : checkride.result === "FAILED"
-                      ? "var(--error-color)"
-                      : "var(--warning-color)",
-                  color: "white",
-                  padding: "0.25rem 0.75rem",
-                  borderRadius: "1rem",
-                  fontSize: "0.875rem",
-                }}
-              >
-                {checkride.result}
-              </span>
+            <h3>Leitung/Admin Aktion</h3>
+            <p style={{ marginTop: 0 }}>
+              Falls ein Trainee ausserhalb des regulären Checkride-Prozesses abgeschlossen werden muss, kann hier manuell beendet werden.
             </p>
-            <p>
-              <strong>Geplant:</strong>{" "}
-              {new Date(checkride.scheduledDate).toLocaleString()}
-            </p>
-            <p>
-              <strong>Prüfer:</strong> {checkride.availability.examiner?.name || "Unbekannt"} (CID:{" "}
-              {checkride.availability.examiner?.cid || "N/A"})
-            </p>
-            {checkride.assessment && (
-              <div style={{ marginTop: "1rem" }}>
-                {checkride.assessment.overallResult && (
-                  <p>
-                    <strong>Ergebnis:</strong> {checkride.assessment.overallResult}
-                  </p>
-                )}
-              </div>
-            )}
+            <button
+              type="button"
+              className="button"
+              onClick={finishWithoutCheckride}
+              disabled={finishingWithoutCheckride}
+              style={{
+                backgroundColor: "#f59e0b",
+                color: "#1a1200",
+                border: "1px solid #7c4a03",
+                fontWeight: 700,
+              }}
+            >
+              {finishingWithoutCheckride ? "Schliesst ab..." : "Finish without checkride"}
+            </button>
           </div>
         )}
 
-        {checkrideLogs.length > 0 && (
-          <div className="card" style={{ marginBottom: "2rem" }}>
-            <h3>Checkride Logs</h3>
-            <div style={{ display: "grid", gap: "0.75rem" }}>
-              {checkrideLogs.map((log) => {
+        {/* Training Sessions */}
+        <div className="card">
+          <h3>Trainingssessions ({completedSessions} / {totalSessions} abgeschlossen)</h3>
+          {timelineEntries.length === 0 ? (
+            <p style={{ color: "var(--text-muted)" }}>Keine Sitzungen erfasst</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {timelineEntries.map((entry) => {
+                if (entry.type === "session") {
+                  const sess = entry.session;
+                  return (
+                    <div
+                      key={entry.key}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "0.75rem",
+                        borderRadius: "6px",
+                        border: "1px solid var(--footer-border)",
+                        borderLeft: `4px solid ${sess.isDraft ? "var(--warning-color)" : "var(--success-color)"}`,
+                        opacity: sess.isDraft ? 0.7 : 1,
+                        gap: "1rem",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1 }}>
+                        <span style={{ fontWeight: 600, minWidth: "100px" }}>
+                          {new Date(sess.sessionDate).toLocaleDateString()}
+                        </span>
+                        <span style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                          {sess.topics.filter((t) => t.checked).length} Themen
+                        </span>
+                        {sess.isDraft ? (
+                          <span style={{ color: "var(--warning-color)", fontSize: "0.875rem" }}>
+                            🔧 Entwurf
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--success-color)", fontSize: "0.875rem" }}>
+                            ✓ Freigegeben
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+                        {sess.isDraft && (
+                          <>
+                            <button
+                              onClick={() => releaseSession(sess.id)}
+                              disabled={savingSession}
+                              className="button"
+                              style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                            >
+                              {savingSession ? "..." : "Freigeben"}
+                            </button>
+                            <button
+                              onClick={() => deleteSession(sess.id)}
+                              disabled={savingSession}
+                              className="button"
+                              style={{ fontSize: "0.75rem", padding: "4px 10px", backgroundColor: "var(--danger-bg)", color: "white" }}
+                            >
+                              {savingSession ? "..." : "Löschen"}
+                            </button>
+                          </>
+                        )}
+                        <Link
+                          href={`/mentor/session-details/${sess.id}?trainingId=${training.id}`}
+                          className="button"
+                          style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                        >
+                          Details
+                        </Link>
+                        {sess.isDraft && (
+                          <Link
+                            href={`/trainings/session/${sess.id}?trainingId=${training.id}`}
+                            className="button"
+                            style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                          >
+                            Whiteboard
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                const log = entry.log;
                 const assessment = log.assessment || {};
-                const showDetails = !log.isDraft && !!log.assessment;
+                const parsedNotes = parseRubricNotes(assessment.examinernotes);
+                const isExpanded = Boolean(expandedCheckrideIds[log.id]);
                 return (
                   <div
-                    key={log.id}
+                    key={entry.key}
                     style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.5rem",
+                      padding: "0.85rem 1rem",
+                      borderRadius: "6px",
                       border: "1px solid var(--footer-border)",
-                      borderRadius: "8px",
-                      padding: "0.75rem 1rem",
+                      borderLeft: `4px solid ${entry.released ? "var(--success-color)" : "var(--warning-color)"}`,
                       backgroundColor: "var(--container-bg)",
                     }}
                   >
-                    <div style={{ fontWeight: 600, marginBottom: "0.3rem" }}>
-                      {new Date(log.scheduledDate).toLocaleString()} – {log.result}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+                      <span style={{ fontWeight: 600, minWidth: "100px" }}>
+                        {new Date(log.scheduledDate).toLocaleDateString()}
+                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          className="button"
+                          onClick={() => toggleCheckrideDetails(log.id)}
+                          style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                        >
+                          {isExpanded ? "Einklappen" : "Expand"}
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
-                      Prüfer: {log.availability.examiner?.name || "Unbekannt"} ({log.availability.examiner?.cid || "N/A"})
-                    </div>
-                    <div style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
-                      Assessment: {log.isDraft ? "Entwurf" : (log.assessment?.overallResult || log.result)}
-                    </div>
-                    {showDetails && (
-                      <details style={{ marginTop: "0.75rem" }}>
-                        <summary style={{ cursor: "pointer", fontWeight: 600 }}>
-                          Vollstaendiges Log anzeigen
-                        </summary>
+                    {isExpanded && (
+                      <details open style={{ marginTop: "0.25rem" }}>
+                        <summary style={{ cursor: "pointer", fontWeight: 600 }}>Vollständiges Checkride-Log</summary>
                         <div style={{ marginTop: "0.75rem", display: "grid", gap: "0.75rem" }}>
-                          {CHECKRIDE_SECTIONS.map((section) => (
+                          {CHECKRIDE_RUBRIC.map((procedure) => (
                             <div
-                              key={section.key}
+                              key={procedure.id}
                               style={{
                                 border: "1px solid var(--footer-border)",
                                 borderRadius: "8px",
@@ -718,41 +794,75 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                               }}
                             >
                               <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center" }}>
-                                <strong>{section.title}</strong>
-                                <span
-                                  style={{
-                                    fontSize: "0.85em",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    background: assessment[`${section.key}Passed`] ? "#e6f4ea" : "#fce8e6",
-                                    color: assessment[`${section.key}Passed`] ? "#1e8e3e" : "#b3261e",
-                                  }}
-                                >
-                                  {assessment[`${section.key}Passed`] ? "Bestanden" : "Nicht bestanden"}
-                                </span>
+                                <strong>{procedure.title}</strong>
                               </div>
-                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginTop: "0.5rem" }}>
-                                {section.fields.map((field) => (
-                                  <div key={field.key} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                                    <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>{field.label}</div>
-                                    <div
-                                      style={{
-                                        fontSize: "0.9em",
-                                        whiteSpace: "pre-wrap",
-                                        backgroundColor: "var(--container-bg)",
-                                        padding: "6px 8px",
-                                        borderRadius: "6px",
-                                        minHeight: "38px",
-                                      }}
-                                    >
-                                      {assessment?.[field.key] || "-"}
+                              <div style={{ marginTop: "0.5rem", display: "grid", gap: "8px" }}>
+                                {procedure.rows.map((row) => (
+                                  <div key={row.fieldKey} style={{ display: "grid", gap: "4px" }}>
+                                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                      <span
+                                        style={{
+                                          display: "inline-flex",
+                                          minWidth: "28px",
+                                          justifyContent: "center",
+                                          padding: "2px 8px",
+                                          borderRadius: "999px",
+                                          backgroundColor: RUBRIC_CODE_COLORS[row.code].bg,
+                                          color: RUBRIC_CODE_COLORS[row.code].fg,
+                                          fontWeight: 700,
+                                          fontSize: "0.8em",
+                                        }}
+                                      >
+                                        {row.code}
+                                      </span>
+                                      <span style={{ fontSize: "0.9em", fontWeight: 600 }}>{row.criterion}</span>
+                                    </div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px", alignItems: "start" }}>
+                                      <div
+                                        style={{
+                                          fontSize: "0.9em",
+                                          whiteSpace: "pre-wrap",
+                                          backgroundColor: "var(--container-bg)",
+                                          padding: "6px 8px",
+                                          borderRadius: "6px",
+                                          minHeight: "38px",
+                                          border: "1px solid var(--footer-border)",
+                                        }}
+                                      >
+                                        {formatRubricRating(assessment?.[row.fieldKey])}
+                                      </div>
+                                      {row.hint && (
+                                        <div style={{ fontSize: "0.82em", color: "var(--text-muted)", maxWidth: "220px" }}>
+                                          {row.hint}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 ))}
                               </div>
+
+                              {(parsedNotes.blockNotes[procedure.id] || "").trim().length > 0 && (
+                                <div
+                                  style={{
+                                    marginTop: "10px",
+                                    padding: "10px 12px",
+                                    border: "1px solid var(--footer-border)",
+                                    borderRadius: "6px",
+                                    backgroundColor: "var(--container-bg)",
+                                  }}
+                                >
+                                  <div style={{ fontSize: "0.85em", fontWeight: 600, marginBottom: "4px" }}>
+                                    Notiz zu {procedure.id}
+                                  </div>
+                                  <div style={{ whiteSpace: "pre-wrap", fontSize: "0.92em" }}>
+                                    {parsedNotes.blockNotes[procedure.id]}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ))}
-                          {assessment.examinernotes && (
+
+                          {parsedNotes.generalNote.trim().length > 0 && (
                             <div
                               style={{
                                 border: "1px solid var(--footer-border)",
@@ -761,8 +871,8 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                                 backgroundColor: "var(--container-bg)",
                               }}
                             >
-                              <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Examiner Kommentar</div>
-                              <div style={{ whiteSpace: "pre-wrap" }}>{assessment.examinernotes}</div>
+                              <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Allgemeine Notiz</div>
+                              <div style={{ whiteSpace: "pre-wrap" }}>{parsedNotes.generalNote}</div>
                             </div>
                           )}
                         </div>
@@ -771,128 +881,6 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 );
               })}
-            </div>
-          </div>
-        )}
-
-        {training.readyForCheckride && !checkride && (
-          <div className="card" style={{ marginBottom: "2rem" }}>
-            <h3>Checkride-Termin bestätigen</h3>
-            <p style={{ marginTop: 0 }}>
-              Der Mentor stimmt den Termin mit dem Trainee ab und bestätigt anschließend den passenden Prüfer-Slot.
-            </p>
-            {availableSlots.length === 0 ? (
-              <p style={{ color: "var(--text-muted)", marginBottom: 0 }}>
-                Aktuell sind keine verfügbaren Prüfer-Slots vorhanden.
-              </p>
-            ) : (
-              <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
-                <select
-                  value={selectedSlot}
-                  onChange={(e) => setSelectedSlot(e.target.value)}
-                  className="form-select"
-                  style={{ minWidth: "360px" }}
-                >
-                  <option value="">-- Slot auswählen --</option>
-                  {availableSlots.map((slot) => (
-                    <option key={slot.id} value={slot.id}>
-                      {new Date(slot.startTime).toLocaleString()} – {slot.examiner?.name || "Unbekannt"} ({slot.examiner?.cid || "N/A"})
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={confirmCheckrideSlot}
-                  disabled={!selectedSlot || bookingSlot}
-                  className="button"
-                >
-                  {bookingSlot ? "Bestätigt..." : "Termin bestätigen"}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Training Sessions */}
-        <div className="card">
-          <h3>Trainingssessions ({completedSessions} / {totalSessions} abgeschlossen)</h3>
-          {training.sessions.length === 0 ? (
-            <p style={{ color: "var(--text-muted)" }}>Keine Sitzungen erfasst</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {training.sessions
-                .sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime())
-                .map((sess) => (
-                  <div
-                    key={sess.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "0.75rem",
-                      borderRadius: "6px",
-                      border: "1px solid var(--footer-border)",
-                      borderLeft: `4px solid ${sess.isDraft ? "var(--warning-color)" : "var(--success-color)"}`,
-                      opacity: sess.isDraft ? 0.7 : 1,
-                      gap: "1rem",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1 }}>
-                      <span style={{ fontWeight: 600, minWidth: "100px" }}>
-                        {new Date(sess.sessionDate).toLocaleDateString()}
-                      </span>
-                      <span style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
-                        {sess.topics.filter(t => t.checked).length} Themen
-                      </span>
-                      {sess.isDraft ? (
-                        <span style={{ color: "var(--warning-color)", fontSize: "0.875rem" }}>
-                          🔧 Entwurf
-                        </span>
-                      ) : (
-                        <span style={{ color: "var(--success-color)", fontSize: "0.875rem" }}>
-                          ✓ Freigegeben
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
-                      {sess.isDraft && (
-                        <>
-                          <button
-                            onClick={() => releaseSession(sess.id)}
-                            disabled={savingSession}
-                            className="button"
-                            style={{ fontSize: "0.75rem", padding: "4px 10px" }}
-                          >
-                            {savingSession ? "..." : "Freigeben"}
-                          </button>
-                          <button
-                            onClick={() => deleteSession(sess.id)}
-                            disabled={savingSession}
-                            className="button"
-                            style={{ fontSize: "0.75rem", padding: "4px 10px", backgroundColor: "var(--danger-bg)", color: "white" }}
-                          >
-                            {savingSession ? "..." : "Löschen"}
-                          </button>
-                        </>
-                      )}
-                      <Link
-                        href={`/mentor/session-details/${sess.id}?trainingId=${training.id}`}
-                        className="button"
-                        style={{ fontSize: "0.75rem", padding: "4px 10px" }}
-                      >
-                        Details
-                      </Link>
-                      {sess.isDraft && (
-                        <Link
-                          href={`/trainings/session/${sess.id}?trainingId=${training.id}`}
-                          className="button"
-                          style={{ fontSize: "0.75rem", padding: "4px 10px" }}
-                        >
-                          Whiteboard
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                ))}
             </div>
           )}
 

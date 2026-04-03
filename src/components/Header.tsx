@@ -266,9 +266,9 @@ export default function Header() {
                   {isExaminer && (
                     <div className="card" style={{ marginBottom: 0, padding: '12px 14px' }}>
                       <h3 style={{ margin: '0 0 6px 0' }}>Checkride Prüfer</h3>
-                      <p style={{ margin: '0 0 8px 0' }}>Slots anlegen und Assessments öffnen.</p>
+                      <p style={{ margin: '0 0 8px 0' }}>Ready-Queue prüfen und Assessments öffnen.</p>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <Link className="button" href="/examiner/availability">Checkride Slots</Link>
+                        <Link className="button" href="/examiner/availability">Checkride Queue</Link>
                       </div>
                     </div>
                   )}
@@ -295,7 +295,7 @@ export default function Header() {
                           <div className="stepper-progress" style={{ margin: 0 }}>Anmeldung eingegangen – wartet auf Zuweisung</div>
                         )}
                         {isCheckrideReady && hasCheckrideInfo && (
-                          <Link className="button" href="/trainee/checkride">Checkride buchen / Ergebnis</Link>
+                          <Link className="button" href="/trainee/checkride">Checkride Status / Ergebnis</Link>
                         )}
                       </div>
                     </div>

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import PageLayout from "@/components/PageLayout";
 import { trainingTopics } from "@/lib/trainingTopics";
+import { CHECKRIDE_RUBRIC, parseRubricNotes, RUBRIC_CODE_COLORS, RUBRIC_ROW_TINTS } from "@/lib/checkrideRubric";
 
 interface Mentor {
   mentorId: string;
@@ -366,6 +367,21 @@ function TraineeProgressContent() {
   const progressPoints = calculateProgressPoints();
   const formatPoints = (value: number) =>
     Number.isInteger(value) ? String(value) : value.toFixed(1);
+  const timelineEntries = [
+    ...sessions.map((session) => ({
+      type: "session" as const,
+      key: `session-${session.id}`,
+      date: session.sessionDate,
+      session,
+    })),
+    ...checkrideLogs.map((log) => ({
+      type: "checkride" as const,
+      key: `checkride-${log.id}`,
+      date: log.scheduledDate,
+      log,
+      released: !log.isDraft && !!log.assessment,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const showPendingForumMessage = userRole === "PENDING_TRAINEE";
   const showNoSessionForumMessage =
@@ -671,7 +687,7 @@ function TraineeProgressContent() {
           </div>
 
           {/* Session History */}
-          {checkrideLogs.length > 0 && (
+          {false && checkrideLogs.length > 0 && (
             <div className="card" style={{ marginBottom: "1.5rem" }}>
               <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Checkride Logs</h3>
               <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -772,14 +788,16 @@ function TraineeProgressContent() {
             </div>
           )}
 
-          {sessions.length > 0 && (
+          {timelineEntries.length > 0 && (
             <div className="card">
               <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>Trainingssessions</h3>
               <div style={{ display: "grid", gap: "1.5rem" }}>
-                {sessions.map((s) => {
-                  return (
+                {timelineEntries.map((entry) => {
+                  if (entry.type === "session") {
+                    const s = entry.session;
+                    return (
                     <div
-                      key={s.id}
+                      key={entry.key}
                       style={{
                         padding: "1rem 1.25rem",
                         backgroundColor: "var(--container-bg)",
@@ -891,12 +909,165 @@ function TraineeProgressContent() {
                       )}
                     </div>
                   );
+                  }
+
+                  const log = entry.log;
+                  if (!entry.released) {
+                    return (
+                      <div
+                        key={entry.key}
+                        style={{
+                          padding: "1rem 1.25rem",
+                          backgroundColor: "var(--container-bg)",
+                          borderRadius: "8px",
+                          border: "1px solid var(--footer-border)",
+                          borderLeft: "4px solid var(--warning-color)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr auto",
+                            gap: "1rem",
+                            alignItems: "start",
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: "0.8em", color: "var(--text-color)", marginBottom: "0.25rem" }}>
+                              Checkride-Session
+                            </div>
+                            <div style={{ fontWeight: 600, fontSize: "1.05em" }}>
+                              {new Date(log.scheduledDate).toLocaleDateString()}
+                            </div>
+                            <div style={{ marginTop: "0.4rem", fontSize: "0.9em", color: "var(--text-color)" }}>
+                              Pruefer: {log.availability.examiner?.name || "Unbekannt"} ({log.availability.examiner?.cid || "N/A"})
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              textAlign: "right",
+                              fontSize: "0.88em",
+                              fontWeight: 700,
+                              color: "var(--warning-color)",
+                            }}
+                          >
+                            Entwurf / noch nicht freigegeben
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const assessment = log.assessment || {};
+                  const parsedNotes = parseRubricNotes(assessment?.examinernotes);
+                  return (
+                    <div
+                      key={entry.key}
+                      style={{
+                        padding: "1rem 1.25rem",
+                        backgroundColor: "var(--container-bg)",
+                        borderRadius: "8px",
+                        border: "1px solid var(--footer-border)",
+                        borderLeft: "4px solid var(--accent-color)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr auto",
+                          gap: "1rem",
+                          alignItems: "start",
+                          marginBottom: "1rem",
+                          paddingBottom: "1rem",
+                          borderBottom: "1px solid var(--footer-border)",
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: "0.8em", color: "var(--text-color)", marginBottom: "0.25rem" }}>
+                            Checkride-Session
+                          </div>
+                          <div style={{ fontWeight: 600, fontSize: "1.05em" }}>
+                            {new Date(log.scheduledDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right", fontSize: "0.9em", fontWeight: 600 }}>
+                          Ergebnis: {assessment?.overallResult || log.result}
+                        </div>
+                      </div>
+
+                      <details>
+                        <summary style={{ cursor: "pointer", fontWeight: 600 }}>Bewertungstabelle anzeigen</summary>
+                        <div style={{ marginTop: "0.75rem", display: "grid", gap: "10px" }}>
+                          {CHECKRIDE_RUBRIC.map((procedure) => {
+                            return (
+                            <div key={procedure.id} className="card" style={{ marginBottom: 0 }}>
+                              <h4 style={{ marginTop: 0 }}>{procedure.title}</h4>
+                              <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+                                <thead>
+                                  <tr>
+                                    <th style={{ textAlign: "left", padding: "6px", borderBottom: "1px solid var(--footer-border)", width: "70px" }}>Typ</th>
+                                    <th style={{ textAlign: "left", padding: "6px", borderBottom: "1px solid var(--footer-border)", width: "250px" }}>Kriterium</th>
+                                    <th style={{ textAlign: "left", padding: "6px", borderBottom: "1px solid var(--footer-border)" }}>Hinweis</th>
+                                    <th style={{ textAlign: "left", padding: "6px", borderBottom: "1px solid var(--footer-border)", width: "120px" }}>Wertung</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {procedure.rows.map((row) => (
+                                    <tr key={row.fieldKey} style={{ backgroundColor: RUBRIC_ROW_TINTS[row.code] }}>
+                                      <td style={{ padding: "6px", borderBottom: "1px solid var(--footer-border)", verticalAlign: "top" }}>
+                                        <span
+                                          style={{
+                                            display: "inline-flex",
+                                            minWidth: "24px",
+                                            justifyContent: "center",
+                                            padding: "1px 7px",
+                                            borderRadius: "999px",
+                                            backgroundColor: RUBRIC_CODE_COLORS[row.code].bg,
+                                            color: RUBRIC_CODE_COLORS[row.code].fg,
+                                            fontWeight: 700,
+                                          }}
+                                        >
+                                          {row.code}
+                                        </span>
+                                      </td>
+                                      <td style={{ padding: "6px", borderBottom: "1px solid var(--footer-border)", overflowWrap: "anywhere", verticalAlign: "top" }}>{row.criterion}</td>
+                                      <td style={{ padding: "6px", borderBottom: "1px solid var(--footer-border)", color: "var(--text-color)", overflowWrap: "anywhere", verticalAlign: "top" }}>{row.hint || "-"}</td>
+                                      <td style={{ padding: "6px", borderBottom: "1px solid var(--footer-border)", fontWeight: 600 }}>{assessment?.[row.fieldKey] || "-"}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                              {(parsedNotes.blockNotes[procedure.id] || "").trim().length > 0 && (
+                                <div
+                                  style={{
+                                    marginTop: "8px",
+                                    padding: "8px 10px",
+                                    border: "1px solid var(--footer-border)",
+                                    borderRadius: "6px",
+                                    backgroundColor: "var(--container-bg)",
+                                  }}
+                                >
+                                  <div style={{ fontSize: "0.82em", fontWeight: 600, marginBottom: "4px" }}>
+                                    Notiz zu {procedure.id}
+                                  </div>
+                                  <div style={{ fontSize: "0.88em", whiteSpace: "pre-wrap" }}>
+                                    {parsedNotes.blockNotes[procedure.id]}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            );
+                          })}
+                        </div>
+                      </details>
+                    </div>
+                  );
                 })}
               </div>
             </div>
           )}
 
-          {sessions.length === 0 && (
+          {timelineEntries.length === 0 && (
             <div className="card" style={{ textAlign: "center", padding: "2rem 1.5rem" }}>
               <div style={{ fontSize: "2.5em", marginBottom: "0.5rem" }}>📋</div>
               <p style={{ fontSize: "1em", color: "var(--text-color)", marginBottom: "0.25rem" }}>

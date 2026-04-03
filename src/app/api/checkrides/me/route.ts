@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/checkrides/me
-// Returns trainee's active training, ready flag, booking (if any), released assessment, and available slots
-export async function GET(request: NextRequest) {
+// Returns trainee's active training, active checkride (if any) and released assessment.
+export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,25 +33,11 @@ export async function GET(request: NextRequest) {
     const booking = training?.checkrides?.[0] ?? null;
     const releasedAssessment = booking && !booking.isDraft ? booking.assessment : null;
 
-    // Available future slots (any examiner) if ready for checkride
-    let slots = [] as any[];
-    if (training?.readyForCheckride) {
-      slots = await prisma.checkrideAvailability.findMany({
-        where: { status: "AVAILABLE", startTime: { gte: new Date() } },
-        orderBy: { startTime: "asc" },
-        take: 20,
-        include: {
-          examiner: { select: { id: true, name: true, cid: true } },
-        },
-      });
-    }
-
     return NextResponse.json(
       {
         training,
         booking,
         assessment: releasedAssessment,
-        availableSlots: slots,
       },
       { status: 200 }
     );
