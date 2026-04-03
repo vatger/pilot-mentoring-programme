@@ -12,20 +12,32 @@ export async function DELETE(
   { params }: { params: Promise<{ cid: string }> }
 ) {
   try {
-    // Authenticate via Authorization header
-    const authHeader = request.headers.get("Authorization");
+   
+    const authHeader = request.headers.get("authorization") ?? request.headers.get("Authorization");
+    const customTokenHeader = request.headers.get("x-gdpr-token")?.trim();
     const gdprToken = process.env.GDPR_TOKEN;
 
-    if (!authHeader || !gdprToken) {
+    if (!gdprToken) {
       return NextResponse.json(
-        { error: "Missing or invalid authorization" },
+        { error: "GDPR token not configured" },
+        { status: 500 }
+      );
+    }
+
+    if (!authHeader && !customTokenHeader) {
+      return NextResponse.json(
+        { error: "Missing authorization" },
         { status: 401 }
       );
     }
 
-    // Expect: "Token XXXXX"
-    const token = authHeader.replace(/^Token\s+/, "");
-    if (token !== gdprToken) {
+
+    const expectedToken = gdprToken.trim().replace(/^['\"]|['\"]$/g, "");
+    const normalizedHeader = authHeader?.trim() ?? "";
+    const headerMatch = normalizedHeader.match(/^(token|bearer)\s+(.+)$/i);
+    const providedToken = (customTokenHeader ?? headerMatch?.[2] ?? normalizedHeader).trim();
+
+    if (providedToken !== expectedToken) {
       return NextResponse.json(
         { error: "Invalid token" },
         { status: 401 }
@@ -40,15 +52,13 @@ export async function DELETE(
       select: { id: true },
     });
 
-    // Delete all related data for this CID
-    // Cascade deletes will handle sessions, accounts, trainings, etc.
+ 
     if (user) {
       await prisma.user.delete({
         where: { cid },
       });
     }
 
-    // Also delete registration record if it exists (separate model)
     await prisma.registration.deleteMany({
       where: { cid },
     });
