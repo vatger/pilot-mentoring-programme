@@ -3,24 +3,15 @@
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 
-type Slot = {
-  id: string;
-  startTime: string;
-  endTime: string;
-  status: string;
-  examiner?: { id: string; cid: string | null; name: string | null };
-};
-
 type CheckrideEntry = {
   id: string;
   scheduledDate: string;
   result: string;
   isDraft: boolean;
   trainee: { id: string; cid: string | null; name: string | null };
-  availability: Slot & {
+  availability: {
     examiner?: { id: string; cid: string | null; name: string | null };
   };
-  assessment?: any;
 };
 
 type ReadyRequest = {
@@ -30,17 +21,14 @@ type ReadyRequest = {
   checkrideRequestedAt?: string | null;
   trainee: { id: string; cid: string | null; name: string | null };
   mentors: { mentor: { id: string; cid: string | null; name: string | null } }[];
-  checkrides: { id: string; scheduledDate: string; result: string; isDraft: boolean }[];
 };
 
 export default function ExaminerAvailabilityPage() {
-  const [slots, setSlots] = useState<Slot[]>([]);
   const [checkrides, setCheckrides] = useState<CheckrideEntry[]>([]);
   const [readyRequests, setReadyRequests] = useState<ReadyRequest[]>([]);
-  const [startTime, setStartTime] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [starting, setStarting] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<string | null>(null);
 
   const load = async () => {
@@ -50,7 +38,6 @@ export default function ExaminerAvailabilityPage() {
       const res = await fetch("/api/checkrides/examiner", { cache: "no-store" });
       if (!res.ok) throw new Error(`Load failed: ${res.status}`);
       const data = await res.json();
-      setSlots(data.slots || []);
       setCheckrides(data.checkrides || []);
       setReadyRequests(data.readyRequests || []);
     } catch (e: any) {
@@ -64,45 +51,28 @@ export default function ExaminerAvailabilityPage() {
     load();
   }, []);
 
-  const createSlot = async () => {
-    if (!startTime) return;
-    setSubmitting(true);
+  const startCheckride = async (trainingId: string) => {
+    setStarting(trainingId);
     setError(null);
     try {
-      const res = await fetch("/api/checkrides/availability", {
+      const res = await fetch("/api/checkrides/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ startTime }),
+        body: JSON.stringify({ trainingId }),
       });
+      const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Fehler: ${res.status}`);
+        throw new Error(payload.error || `Fehler: ${res.status}`);
       }
-      setStartTime("");
-      await load();
+      const checkrideId = payload.checkrideId;
+      if (!checkrideId) {
+        throw new Error("Kein Checkride konnte erstellt werden");
+      }
+      window.location.href = `/examiner/assessment/${checkrideId}`;
     } catch (e: any) {
-      setError(e.message || "Fehler beim Anlegen");
+      setError(e.message || "Fehler beim Starten des Checkrides");
     } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const deleteSlot = async (slotId: string) => {
-    if (!confirm("Möchtest du diesen Slot wirklich löschen?")) return;
-    setError(null);
-    try {
-      const res = await fetch("/api/checkrides/availability", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ availabilityId: slotId }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Fehler: ${res.status}`);
-      }
-      await load();
-    } catch (e: any) {
-      setError(e.message || "Fehler beim Löschen");
+      setStarting(null);
     }
   };
 
@@ -129,9 +99,9 @@ export default function ExaminerAvailabilityPage() {
   return (
     <PageLayout>
       <div className="card" style={{ marginBottom: "1.5rem" }}>
-        <h1>Prüfungsslots</h1>
+        <h1>Checkride Queue</h1>
         <p style={{ color: "var(--text-color)", margin: "0.5rem 0 0 0" }}>
-          Verwalte deine Verfügbarkeiten für Prüfungsflüge
+          Bereite Assessments direkt aus den offenen Checkride-Anfragen vor.
         </p>
       </div>
 
@@ -141,168 +111,20 @@ export default function ExaminerAvailabilityPage() {
         <div className="card"><p style={{ margin: 0 }}>lädt…</p></div>
       ) : (
         <>
-          <div className="form-card" style={{ maxWidth: "720px", marginBottom: "1.5rem" }}>
-            <div>
-              <h3 style={{ marginBottom: "6px", marginTop: 0 }}>Neuen Slot erstellen (2h)</h3>
-              <p style={{ margin: 0, fontSize: "0.95em" }}>
-                Wähle die Startzeit in deiner lokalen Zeit; die Endzeit wird automatisch 2 Stunden später gesetzt.
-              </p>
-            </div>
-            <label className="form-label">
-              Startzeit
-              <input
-                type="datetime-local"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="form-input"
-              />
-            </label>
-            <button
-              onClick={createSlot}
-              disabled={!startTime || submitting}
-              className="button form-submit"
-              style={{ alignSelf: "flex-start" }}
-            >
-              {submitting ? "Speichert…" : "Slot speichern"}
-            </button>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "1.5rem" }}>
-            <div className="card" style={{ gridColumn: "1 / -1" }}>
-              <h3 style={{ marginTop: 0 }}>Checkride Anfragen</h3>
-              {readyRequests.length === 0 ? (
-                <p style={{ color: "var(--text-color)", margin: 0 }}>Keine offenen Anfragen</p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {readyRequests.map((req) => {
-                    const mentorNames = req.mentors
-                      .map((m) => `${m.mentor.name || "Unbekannt"} (${m.mentor.cid || "N/A"})`)
-                      .join(", ");
-                    const latestCheckride = req.checkrides?.[0];
-                    const activeCheckride =
-                      latestCheckride && latestCheckride.result === "INCOMPLETE"
-                        ? latestCheckride
-                        : null;
-                    return (
-                      <div
-                        key={req.id}
-                        className="card"
-                        style={{
-                          marginBottom: 0,
-                          padding: "12px 14px",
-                          background: "var(--container-bg)",
-                          borderLeft: "3px solid var(--accent-color)",
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, marginBottom: "4px" }}>
-                          {req.trainee.name || "Trainee"} ({req.trainee.cid || "N/A"})
-                        </div>
-                        <div style={{ fontSize: "0.9em", color: "var(--text-color)", marginBottom: "4px" }}>
-                          Mentor: {mentorNames || "N/A"}
-                        </div>
-                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "6px" }}>
-                          Anfrage erstellt: {req.checkrideRequestedAt ? new Date(req.checkrideRequestedAt).toLocaleString("de-DE") : "unbekannt"}
-                        </div>
-                        <div
-                          style={{
-                            whiteSpace: "pre-wrap",
-                            fontSize: "0.9em",
-                            background: "var(--background-color)",
-                            padding: "8px 10px",
-                            borderRadius: "6px",
-                            marginBottom: activeCheckride ? "8px" : 0,
-                          }}
-                        >
-                          {req.checkrideRequestText || "Kein Availability-Text hinterlegt"}
-                        </div>
-                        {activeCheckride && (
-                          <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
-                            Bereits geplant: {new Date(activeCheckride.scheduledDate).toLocaleString("de-DE")} ({activeCheckride.result})
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="card">
-              <h3 style={{ marginTop: 0 }}>Alle Prüfungsslots</h3>
-              {slots.length === 0 ? (
-                <p style={{ color: "var(--text-color)", margin: 0 }}>Noch keine Slots</p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {slots.map((s) => (
+          <div className="card" style={{ marginBottom: "1.5rem" }}>
+            <h3 style={{ marginTop: 0 }}>Trainees bereit für Checkride</h3>
+            {readyRequests.length === 0 ? (
+              <p style={{ color: "var(--text-color)", margin: 0 }}>Keine offenen Anfragen</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {readyRequests.map((req) => {
+                  const mentorNames = req.mentors
+                    .map((m) => `${m.mentor.name || "Unbekannt"} (${m.mentor.cid || "N/A"})`)
+                    .join(", ");
+                  const isStarting = starting === req.id;
+                  return (
                     <div
-                      key={s.id}
-                      className="card"
-                      style={{
-                        marginBottom: 0,
-                        padding: "12px 14px",
-                        background: "var(--container-bg)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: "0.95em", fontWeight: 500 }}>
-                          {new Date(s.startTime).toLocaleString("de-DE", {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })}
-                        </div>
-                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginTop: "2px" }}>
-                          {s.examiner?.name || "Unbekannt"} ({s.examiner?.cid || "N/A"})
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                        <div
-                          className="stepper-progress"
-                          style={{
-                            margin: 0,
-                            padding: "4px 10px",
-                            fontSize: "0.8em",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {s.status}
-                        </div>
-                        {s.status === "AVAILABLE" && (
-                          <button
-                            onClick={() => deleteSlot(s.id)}
-                            className="button"
-                            style={{
-                              padding: "4px 10px",
-                              fontSize: "0.8em",
-                              margin: 0,
-                              backgroundColor: "var(--danger-color, #d32f2f)",
-                              color: "white",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Löschen
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="card">
-              <h3 style={{ marginTop: 0 }}>Geplante Prüfungen</h3>
-              {checkrides.length === 0 ? (
-                <p style={{ color: "var(--text-color)", margin: 0 }}>Noch keine Buchungen</p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {checkrides.map((c) => (
-                    <div
-                      key={c.id}
+                      key={req.id}
                       className="card"
                       style={{
                         marginBottom: 0,
@@ -312,63 +134,115 @@ export default function ExaminerAvailabilityPage() {
                       }}
                     >
                       <div style={{ fontWeight: 600, marginBottom: "4px" }}>
-                        {c.trainee.name || "Trainee"} ({c.trainee.cid || "N/A"})
+                        {req.trainee.name || "Trainee"} ({req.trainee.cid || "N/A"})
                       </div>
-                      <div style={{ fontSize: "0.9em", marginBottom: "4px" }}>
-                        {new Date(c.scheduledDate).toLocaleString("de-DE", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })}
+                      <div style={{ fontSize: "0.9em", color: "var(--text-color)", marginBottom: "4px" }}>
+                        Mentor: {mentorNames || "N/A"}
                       </div>
-                      <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "4px" }}>
-                        Prüfer: {c.availability.examiner?.name || "Unbekannt"} ({c.availability.examiner?.cid || "N/A"})
+                      <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "6px" }}>
+                        Anfrage erstellt: {req.checkrideRequestedAt ? new Date(req.checkrideRequestedAt).toLocaleString("de-DE") : "unbekannt"}
                       </div>
                       <div
                         style={{
-                          fontSize: "0.85em",
-                          color: c.isDraft ? "var(--accent-color)" : "var(--text-color)",
-                          marginBottom: "8px",
+                          whiteSpace: "pre-wrap",
+                          fontSize: "0.9em",
+                          background: "var(--background-color)",
+                          padding: "8px 10px",
+                          borderRadius: "6px",
+                          marginBottom: "10px",
                         }}
                       >
-                        {c.isDraft ? "Bewertung ausstehend" : `Ergebnis: ${c.result}`}
+                        {req.checkrideRequestText || "Kein Availability-Text hinterlegt"}
                       </div>
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <a
-                          href={`/examiner/assessment/${c.id}`}
+                      <button
+                        type="button"
+                        className="button"
+                        onClick={() => startCheckride(req.id)}
+                        disabled={isStarting}
+                      >
+                        {isStarting ? "Startet..." : "Assessment starten"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <h3 style={{ marginTop: 0 }}>Aktive und offene Checkrides</h3>
+            {checkrides.length === 0 ? (
+              <p style={{ color: "var(--text-color)", margin: 0 }}>Noch keine Checkrides vorhanden</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {checkrides.map((c) => (
+                  <div
+                    key={c.id}
+                    className="card"
+                    style={{
+                      marginBottom: 0,
+                      padding: "12px 14px",
+                      background: "var(--container-bg)",
+                      borderLeft: "3px solid var(--accent-color)",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, marginBottom: "4px" }}>
+                      {c.trainee.name || "Trainee"} ({c.trainee.cid || "N/A"})
+                    </div>
+                    <div style={{ fontSize: "0.9em", marginBottom: "4px" }}>
+                      {new Date(c.scheduledDate).toLocaleString("de-DE", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </div>
+                    <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "4px" }}>
+                      Prüfer: {c.availability.examiner?.name || "Unbekannt"} ({c.availability.examiner?.cid || "N/A"})
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.85em",
+                        color: c.isDraft ? "var(--accent-color)" : "var(--text-color)",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      {c.isDraft ? "Bewertung ausstehend" : `Ergebnis: ${c.result}`}
+                    </div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <a
+                        href={`/examiner/assessment/${c.id}`}
+                        className="button"
+                        style={{
+                          padding: "6px 12px",
+                          fontSize: "0.85em",
+                          margin: 0,
+                          display: "inline-block",
+                        }}
+                      >
+                        Bewertung öffnen
+                      </a>
+                      {c.result === "INCOMPLETE" && (
+                        <button
+                          onClick={() => cancelCheckride(c.id)}
+                          disabled={cancelling === c.id}
                           className="button"
                           style={{
                             padding: "6px 12px",
                             fontSize: "0.85em",
                             margin: 0,
-                            display: "inline-block",
+                            backgroundColor: "var(--danger-color, #d32f2f)",
+                            color: "white",
+                            border: "none",
+                            cursor: cancelling === c.id ? "wait" : "pointer",
                           }}
                         >
-                          Bewertung öffnen
-                        </a>
-                        {c.result === "INCOMPLETE" && (
-                          <button
-                            onClick={() => cancelCheckride(c.id)}
-                            disabled={cancelling === c.id}
-                            className="button"
-                            style={{
-                              padding: "6px 12px",
-                              fontSize: "0.85em",
-                              margin: 0,
-                              backgroundColor: "var(--danger-color, #d32f2f)",
-                              color: "white",
-                              border: "none",
-                              cursor: cancelling === c.id ? "wait" : "pointer",
-                            }}
-                          >
-                            {cancelling === c.id ? "Absagen..." : "Absagen"}
-                          </button>
-                        )}
-                      </div>
+                          {cancelling === c.id ? "Absagen..." : "Absagen"}
+                        </button>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

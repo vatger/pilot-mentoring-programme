@@ -3,6 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
+import {
+  CHECKRIDE_RUBRIC,
+  CHECKRIDE_RUBRIC_INTRO,
+  createInitialBlockNotes,
+  createInitialRubricAssessment,
+  parseRubricNotes,
+  RUBRIC_CODE_COLORS,
+  RUBRIC_ROW_TINTS,
+  RUBRIC_RATING_OPTIONS,
+  normalizeRubricRating,
+  RubricRating,
+  serializeRubricNotes,
+} from "@/lib/checkrideRubric";
 
 type Assessment = Record<string, any> & {
   overallResult?: string;
@@ -12,153 +25,7 @@ type Assessment = Record<string, any> & {
 type Checkride = {
   id: string;
   isDraft: boolean;
-  result: string;
-  assessment?: Assessment;
 };
-
-const SECTIONS: { key: string; title: string; fields: { key: string; label: string }[] }[] = [
-  {
-    key: "flightplan",
-    title: "1 - Flugplan",
-    fields: [
-      { key: "flightplanCallsign", label: "Callsign / AC Type" },
-      { key: "flightplanAircraft", label: "Equipment" },
-      { key: "flightplanRouting", label: "Routing" },
-      { key: "flightplanTimes", label: "Zeiten" },
-      { key: "flightplanRemarks", label: "Remarks" },
-    ],
-  },
-  {
-    key: "charts",
-    title: "2 - Charts",
-    fields: [
-      { key: "chartsParkingDep", label: "Parking DEP" },
-      { key: "chartsTaxiDep", label: "Taxi DEP" },
-      { key: "chartsDeparture", label: "Departure" },
-      { key: "chartsEnroute", label: "Enroute" },
-      { key: "chartsArrivalTransition", label: "Arrival / Transition" },
-      { key: "chartsApproach", label: "Approach (alle RWYs)" },
-      { key: "chartsTaxiDest", label: "Taxi DEST" },
-      { key: "chartsParkingDest", label: "Parking DEST" },
-    ],
-  },
-  {
-    key: "briefing",
-    title: "3 - Self Briefing",
-    fields: [
-      { key: "briefingFrequencies", label: "Frequenzen" },
-      { key: "briefingPushback", label: "Pushback" },
-      { key: "briefingTaxiRunway", label: "Taxi to Runway" },
-      { key: "briefingATCTakeoff", label: "ATC after Takeoff" },
-      { key: "briefingDeparture", label: "Departure / Restrictions" },
-      { key: "briefingArrival", label: "Arrival / Transition" },
-      { key: "briefingApproach", label: "Approach" },
-      { key: "briefingRunwayExits", label: "Runway Exits" },
-      { key: "briefingTaxiParking", label: "Taxi to Parking" },
-    ],
-  },
-  {
-    key: "clearance",
-    title: "4 - Enroute Clearance",
-    fields: [
-      { key: "clearanceInitialCall", label: "Initial Call" },
-      { key: "clearanceRequest", label: "Clearance Request" },
-      { key: "clearanceClearedTo", label: "Cleared to" },
-      { key: "clearanceDeparture", label: "Departure" },
-      { key: "clearanceRoute", label: "Flight Planned Route" },
-      { key: "clearanceClimb", label: "Climb / Climb via SID" },
-      { key: "clearanceSquawk", label: "Squawk" },
-      { key: "clearanceCallsign", label: "Callsign" },
-    ],
-  },
-  {
-    key: "startup",
-    title: "5 - Startup / Pushback",
-    fields: [
-      { key: "startupStation", label: "Station / CS" },
-      { key: "startupGate", label: "Gate / Request" },
-      { key: "startupReadback", label: "Readback / CS" },
-      { key: "startupExecution", label: "Ausführung" },
-    ],
-  },
-  {
-    key: "taxi",
-    title: "6 - Taxi to Runway",
-    fields: [
-      { key: "taxiStation", label: "Station / CS" },
-      { key: "taxiRequest", label: "Request" },
-      { key: "taxiReadback", label: "Readback / CS" },
-      { key: "taxiExecution", label: "Ausführung" },
-    ],
-  },
-  {
-    key: "takeoff",
-    title: "7 - Takeoff",
-    fields: [
-      { key: "takeoffStation", label: "Station / CS" },
-      { key: "takeoffReadback", label: "Readback / CS" },
-      { key: "takeoffExecution", label: "Ausführung" },
-    ],
-  },
-  {
-    key: "departure",
-    title: "8 - Departure",
-    fields: [
-      { key: "departureStatement", label: "Meldung" },
-      { key: "departureStation", label: "Station / CS / Altitude" },
-      { key: "departureReadback", label: "Readback / CS" },
-      { key: "departureExecution", label: "Ausführung" },
-    ],
-  },
-  {
-    key: "enroute",
-    title: "9 - Enroute",
-    fields: [
-      { key: "enrouteStation", label: "Station / CS / FL" },
-      { key: "enrouteReadbacks", label: "Readbacks" },
-      { key: "enrouteExecution", label: "Ausführung" },
-    ],
-  },
-  {
-    key: "arrival",
-    title: "10 - Arrival / Transition",
-    fields: [
-      { key: "arrivalStation", label: "Station / CS / FL" },
-      { key: "arrivalClearances", label: "Freigaben / Anweisungen" },
-      { key: "arrivalExecution", label: "Ausführung" },
-    ],
-  },
-  {
-    key: "landing",
-    title: "11 - Landung",
-    fields: [
-      { key: "landingStation", label: "Station / CS / APP" },
-      { key: "landingClearance", label: "Landing Clearance" },
-      { key: "landingExecution", label: "Ausführung" },
-    ],
-  },
-  {
-    key: "parking",
-    title: "12 - Taxi to Parking",
-    fields: [
-      { key: "parkingStation", label: "Station / CS / TWY" },
-      { key: "parkingReadback", label: "Readback" },
-      { key: "parkingExecution", label: "Ausführung" },
-    ],
-  },
-];
-
-function buildInitial(): Assessment {
-  const base: Assessment = {};
-  SECTIONS.forEach((section) => {
-    section.fields.forEach((f) => {
-      base[f.key] = "";
-    });
-    base[`${section.key}Passed`] = false;
-  });
-  base.examinernotes = "";
-  return base;
-}
 
 export default function AssessmentPage() {
   const params = useParams<{ id: string }>();
@@ -168,7 +35,12 @@ export default function AssessmentPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [assessment, setAssessment] = useState<Assessment>(buildInitial());
+  const [assessment, setAssessment] = useState<Assessment>({
+    ...createInitialRubricAssessment(),
+    examinernotes: "",
+  });
+  const [generalNote, setGeneralNote] = useState<string>("");
+  const [blockNotes, setBlockNotes] = useState<Record<string, string>>(createInitialBlockNotes());
   const [overallResult, setOverallResult] = useState<string>("INCOMPLETE");
   const [isDraft, setIsDraft] = useState<boolean>(true);
 
@@ -182,9 +54,17 @@ export default function AssessmentPage() {
       const res = await fetch(`/api/checkrides/assessment?checkrideId=${checkrideId}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`Load failed: ${res.status}`);
       const data = await res.json();
-      const existing = data?.assessment || buildInitial();
-      const { overallResult: existingResult, ...rest } = existing;
-      setAssessment(rest as Assessment);
+      const existing = data?.assessment || {};
+      const { overallResult: existingResult, examinernotes: existingNotes, ...rest } = existing;
+      const parsedNotes = parseRubricNotes(existingNotes);
+      setAssessment({
+        ...createInitialRubricAssessment(),
+        ...Object.fromEntries(
+          Object.entries(rest).map(([key, value]) => [key, normalizeRubricRating(String(value))])
+        ),
+      } as Assessment);
+      setGeneralNote(parsedNotes.generalNote);
+      setBlockNotes(parsedNotes.blockNotes);
       setOverallResult(existingResult || "INCOMPLETE");
       setIsDraft(Boolean(data?.isDraft ?? true));
     } catch (e: any) {
@@ -209,7 +89,13 @@ export default function AssessmentPage() {
       const res = await fetch(`/api/checkrides/assessment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkrideId, release: opts?.release, ...assessment, overallResult }),
+        body: JSON.stringify({
+          checkrideId,
+          release: opts?.release,
+          ...assessment,
+          overallResult,
+          examinernotes: serializeRubricNotes(generalNote, blockNotes),
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -219,14 +105,26 @@ export default function AssessmentPage() {
       const savedAssessment = payload?.assessment;
       const savedCheckride = payload?.checkride as Checkride | undefined;
       if (savedAssessment) {
-        const { overallResult: savedResult, ...rest } = savedAssessment;
-        setAssessment(rest as Assessment);
+        const {
+          overallResult: savedResult,
+          examinernotes: savedNotes,
+          ...rest
+        } = savedAssessment;
+        const parsedNotes = parseRubricNotes(savedNotes);
+        setAssessment({
+          ...createInitialRubricAssessment(),
+          ...Object.fromEntries(
+            Object.entries(rest).map(([key, value]) => [key, normalizeRubricRating(String(value))])
+          ),
+        } as Assessment);
+        setGeneralNote(parsedNotes.generalNote);
+        setBlockNotes(parsedNotes.blockNotes);
         setOverallResult(savedResult || overallResult);
       }
       if (savedCheckride && typeof savedCheckride.isDraft === "boolean") {
         setIsDraft(savedCheckride.isDraft);
       }
-      if (!opts?.silent) setSuccess(opts?.release ? "Assessment veröffentlicht" : "Gespeichert");
+      if (!opts?.silent) setSuccess(opts?.release ? "Assessment veroeffentlicht" : "Gespeichert");
     } catch (e: any) {
       if (!opts?.silent) setError(e.message || "Fehler beim Speichern");
     } finally {
@@ -234,7 +132,6 @@ export default function AssessmentPage() {
     }
   };
 
-  // Autosave every 20s
   useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
@@ -243,26 +140,45 @@ export default function AssessmentPage() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [assessment, overallResult]);
+  }, [assessment, overallResult, generalNote, blockNotes]);
 
-  const updateField = (key: string, value: string | boolean) => {
+  const updateField = (key: string, value: string) => {
     setAssessment((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const updateBlockNote = (procedureId: string, value: string) => {
+    setBlockNotes((prev) => ({ ...prev, [procedureId]: value }));
   };
 
   return (
     <PageLayout>
       <div className="header-container">
         <div className="header">
-          <h1>Checkride Assessment</h1>
+          <h1>{CHECKRIDE_RUBRIC_INTRO.title} Assessment</h1>
         </div>
       </div>
 
-      {loading && <div className="card"><p>lädt…</p></div>}
+      {loading && <div className="card"><p>laedt...</p></div>}
       {error && <div className="info-danger"><p>{error}</p></div>}
       {success && <div className="info-success"><p>{success}</p></div>}
 
       {!loading && (
         <div className="card" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div style={{ background: "var(--container-bg)", border: "1px solid var(--footer-border)", borderRadius: "8px", padding: "12px" }}>
+            <h3 style={{ marginTop: 0 }}>{CHECKRIDE_RUBRIC_INTRO.title}</h3>
+            <p style={{ marginTop: 0, marginBottom: "10px" }}>{CHECKRIDE_RUBRIC_INTRO.objective}</p>
+            <div style={{ display: "grid", gap: "4px", marginBottom: "10px" }}>
+              {CHECKRIDE_RUBRIC_INTRO.legend.map((item) => (
+                <div key={item} style={{ fontSize: "0.9em" }}>{item}</div>
+              ))}
+            </div>
+            <div style={{ display: "grid", gap: "4px" }}>
+              {CHECKRIDE_RUBRIC_INTRO.pillars.map((item) => (
+                <div key={item} style={{ fontSize: "0.9em" }}>{item}</div>
+              ))}
+            </div>
+          </div>
+
           <div
             style={{
               display: "flex",
@@ -276,8 +192,9 @@ export default function AssessmentPage() {
             }}
           >
             <strong>Status:</strong>
-            <span>{isDraft ? "Entwurf (nicht freigegeben)" : "Freigegeben für Trainee"}</span>
+            <span>{isDraft ? "Entwurf (nicht freigegeben)" : "Freigegeben fuer Trainee"}</span>
           </div>
+
           <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
             <label className="form-label" style={{ marginBottom: 0, minWidth: "220px" }}>
               Gesamtergebnis
@@ -292,62 +209,89 @@ export default function AssessmentPage() {
               </select>
             </label>
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              <button
-                onClick={() => save()}
-                disabled={saving}
-                className="button"
-              >
-                {saving ? "Speichere…" : "Zwischenspeichern"}
+              <button onClick={() => save()} disabled={saving} className="button">
+                {saving ? "Speichere..." : "Zwischenspeichern"}
               </button>
               {isDraft && (
-                <button
-                  onClick={() => save({ release: true })}
-                  disabled={saving}
-                  className="button"
-                >
-                  {saving ? "Veröffentliche…" : "Veröffentlichen"}
+                <button onClick={() => save({ release: true })} disabled={saving} className="button">
+                  {saving ? "Veroeffentliche..." : "Veroeffentlichen"}
                 </button>
               )}
             </div>
           </div>
 
-          <div className="grid">
-            {SECTIONS.map((section) => (
-              <div key={section.key} className="card" style={{ marginBottom: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center" }}>
-                  <h3 style={{ margin: 0 }}>{section.title}</h3>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.95em" }}>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(assessment[`${section.key}Passed`])}
-                      onChange={(e) => updateField(`${section.key}Passed`, e.target.checked)}
-                    />
-                    Bestanden
-                  </label>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "12px" }}>
-                  {section.fields.map((f) => (
-                    <label key={f.key} className="form-label" style={{ marginBottom: 0 }}>
-                      {f.label}
-                      <textarea
-                        className="form-textarea"
-                        value={assessment[f.key] ?? ""}
-                        onChange={(e) => updateField(f.key, e.target.value)}
-                      />
-                    </label>
+          {CHECKRIDE_RUBRIC.map((procedure) => {
+            return (
+            <div key={procedure.id} className="card" style={{ marginBottom: 0 }}>
+              <h3 style={{ marginTop: 0 }}>{procedure.title}</h3>
+              <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: "left", padding: "8px", borderBottom: "1px solid var(--footer-border)", width: "70px" }}>Typ</th>
+                    <th style={{ textAlign: "left", padding: "8px", borderBottom: "1px solid var(--footer-border)", width: "280px" }}>Kriterium</th>
+                    <th style={{ textAlign: "left", padding: "8px", borderBottom: "1px solid var(--footer-border)" }}>Hinweis</th>
+                    <th style={{ textAlign: "left", padding: "8px", borderBottom: "1px solid var(--footer-border)", width: "180px" }}>Bewertung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {procedure.rows.map((row) => (
+                    <tr key={row.fieldKey} style={{ backgroundColor: RUBRIC_ROW_TINTS[row.code] }}>
+                      <td style={{ padding: "8px", borderBottom: "1px solid var(--footer-border)", verticalAlign: "top" }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            minWidth: "28px",
+                            justifyContent: "center",
+                            padding: "2px 8px",
+                            borderRadius: "999px",
+                            backgroundColor: RUBRIC_CODE_COLORS[row.code].bg,
+                            color: RUBRIC_CODE_COLORS[row.code].fg,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {row.code}
+                        </span>
+                      </td>
+                      <td style={{ padding: "8px", borderBottom: "1px solid var(--footer-border)", overflowWrap: "anywhere", verticalAlign: "top" }}>{row.criterion}</td>
+                      <td style={{ padding: "8px", borderBottom: "1px solid var(--footer-border)", color: "var(--text-color)", overflowWrap: "anywhere", verticalAlign: "top" }}>{row.hint || "-"}</td>
+                      <td style={{ padding: "8px", borderBottom: "1px solid var(--footer-border)" }}>
+                        <select
+                          className="form-select"
+                          value={(assessment[row.fieldKey] as RubricRating) || ""}
+                          onChange={(e) => updateField(row.fieldKey, e.target.value)}
+                        >
+                          <option value="">-</option>
+                          {RUBRIC_RATING_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
                   ))}
-                </div>
-              </div>
-            ))}
-          </div>
+                </tbody>
+              </table>
+
+              <label className="form-label" style={{ marginTop: "10px", marginBottom: 0 }}>
+                Notiz zu {procedure.id}
+                <textarea
+                  className="form-textarea"
+                  value={blockNotes[procedure.id] || ""}
+                  onChange={(e) => updateBlockNote(procedure.id, e.target.value)}
+                />
+              </label>
+            </div>
+            );
+          })}
 
           <div className="form-card" style={{ maxWidth: "100%", margin: 0 }}>
             <label className="form-label">
               Examiner Notizen
               <textarea
                 className="form-textarea"
-                value={assessment.examinernotes ?? ""}
-                onChange={(e) => updateField("examinernotes", e.target.value)}
+                value={generalNote}
+                onChange={(e) => setGeneralNote(e.target.value)}
               />
             </label>
           </div>
