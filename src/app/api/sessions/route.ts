@@ -71,11 +71,33 @@ export async function POST(request: NextRequest) {
     if (sessionId) {
       const existing = await db.trainingSession.findUnique({
         where: { id: sessionId },
-        include: { training: true },
+        include: {
+          training: {
+            include: { mentors: true },
+          },
+        },
       });
 
       if (!existing || existing.trainingId !== trainingId) {
         return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      }
+
+      if (!existing.isDraft) {
+        return NextResponse.json(
+          { error: "Released sessions cannot be edited" },
+          { status: 403 }
+        );
+      }
+
+      const isLeadership = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
+      const isAssignedMentor = existing.training.mentors.some((m: any) => m.mentorId === userId);
+      const isSessionAuthor = existing.createdByMentorId === userId;
+
+      if (!isLeadership && (!isAssignedMentor || !isSessionAuthor)) {
+        return NextResponse.json(
+          { error: "Only the session author or leadership can edit this draft" },
+          { status: 403 }
+        );
       }
 
       // Replace topics for simplicity
@@ -88,6 +110,7 @@ export async function POST(request: NextRequest) {
           sessionDate: new Date(sessionDate),
           comments: comments || null,
           whiteboardSessionId: whiteboardSessionId || null,
+          createdByMentorId: existing.createdByMentorId || userId,
           isDraft: isDraft !== false, // default true if undefined
           releasedAt: isDraft === false ? new Date() : null,
           topics: {
@@ -137,6 +160,7 @@ export async function POST(request: NextRequest) {
           sessionDate: new Date(sessionDate),
           comments: comments || null,
           whiteboardSessionId: whiteboardSessionId || null,
+          createdByMentorId: userId,
           isDraft: isDraft !== false, // default true if undefined
           releasedAt: isDraft === false ? new Date() : null,
           topics: {
@@ -213,7 +237,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify training exists and user is involved
-    const training = await prisma.training.findUnique({
+    const training = await db.training.findUnique({
       where: { id: trainingId },
       include: { mentors: true },
     });
@@ -224,7 +248,7 @@ export async function GET(request: NextRequest) {
 
     const userId = (session.user as any).id;
     const userRole = (session.user as any).role;
-    const isMentor = training.mentors.some((m) => m.mentorId === userId);
+    const isMentor = training.mentors.some((m: any) => m.mentorId === userId);
     const isTrainee = training.traineeId === userId;
     const isAdminOrLeitung = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
     const isExaminer = userRole === "PMP_PRÜFER";
@@ -257,6 +281,9 @@ export async function GET(request: NextRequest) {
           ...(canSeeDrafts ? {} : { isDraft: false }),
         },
         include: {
+          createdByMentor: {
+            select: { id: true, name: true, cid: true },
+          },
           topics: { orderBy: { order: "asc" } },
         },
         orderBy: { sessionDate: "desc" },
@@ -278,6 +305,9 @@ export async function GET(request: NextRequest) {
           ...(canSeeDrafts ? {} : { isDraft: false }),
         },
         include: {
+          createdByMentor: {
+            select: { id: true, name: true, cid: true },
+          },
           topics: {
             orderBy: { order: "asc" },
             select: {

@@ -12,6 +12,7 @@ import {
   RUBRIC_CODE_COLORS,
   RUBRIC_ROW_TINTS,
 } from "@/lib/checkrideRubric";
+import { trainingTopics } from "@/lib/trainingTopics";
 
 type Training = {
   id: string;
@@ -58,9 +59,18 @@ type Training = {
     comments: string | null;
     isDraft: boolean;
     releasedAt: string | null;
+    createdByMentorId?: string | null;
+    createdByMentor?: {
+      id: string;
+      name: string | null;
+      cid: string | null;
+    } | null;
     topics: {
       topic: string;
       checked: boolean;
+      theoryCovered?: boolean;
+      practiceCovered?: boolean;
+      coverageMode?: string | null;
     }[];
   }[];
 };
@@ -254,7 +264,34 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const [anmeldetextError, setAnmeldetextError] = useState("");
   const [expandedCheckrideIds, setExpandedCheckrideIds] = useState<Record<string, boolean>>({});
 
+  const getTopicCoverage = () => {
+    const coverageMap = new Map<string, { theorie: boolean; praxis: boolean }>();
+    const sessions = training?.sessions ?? [];
+
+    sessions
+      .filter((session) => !session.isDraft)
+      .forEach((session) => {
+        session.topics.forEach((topic) => {
+          if (!topic.checked) return;
+
+          const current = coverageMap.get(topic.topic) || { theorie: false, praxis: false };
+          current.theorie =
+            current.theorie ||
+            !!topic.theoryCovered ||
+            (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode || "THEORIE") === "THEORIE");
+          current.praxis =
+            current.praxis ||
+            !!topic.practiceCovered ||
+            (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode === "PRAXIS" || !topic.coverageMode));
+          coverageMap.set(topic.topic, current);
+        });
+      });
+
+    return coverageMap;
+  };
+
   const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
   const isMentor =
     userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
   const isLeadership = userRole === "PMP_LEITUNG" || userRole === "ADMIN";
@@ -494,6 +531,20 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
 
   const completedSessions = training.sessions.filter(s => !s.isDraft).length;
   const totalSessions = training.sessions.length;
+  const topicCoverage = getTopicCoverage();
+  const progressPoints = trainingTopics.reduce((points, topicDef) => {
+    const coverage = topicCoverage.get(topicDef.key) || { theorie: false, praxis: false };
+
+    if (topicDef.category === "THEORY") {
+      return points + (coverage.theorie ? 1 : 0);
+    }
+
+    if (coverage.theorie) points += 0.5;
+    if (coverage.praxis) points += 0.5;
+    return points;
+  }, 0);
+  const formatPoints = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
+  const progressPercent = Math.round((progressPoints / trainingTopics.length) * 100);
   const timelineEntries = [
     ...training.sessions.map((sess) => ({
       type: "session" as const,
@@ -639,6 +690,126 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
           )}
         </div>
 
+        <div className="card" style={{ marginBottom: "2rem" }}>
+          <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Gesamtfortschritt</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "1.5rem", alignItems: "center" }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: "2.2em", fontWeight: 700, color: "var(--accent-color)" }}>
+                {progressPercent}%
+              </div>
+              <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
+                {formatPoints(progressPoints)} / {trainingTopics.length} Themen
+              </div>
+            </div>
+            <div>
+              <div
+                style={{
+                  width: "100%",
+                  height: "16px",
+                  backgroundColor: "var(--footer-border)",
+                  borderRadius: "999px",
+                  overflow: "hidden",
+                  border: "1px solid var(--footer-border)",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${progressPercent}%`,
+                    backgroundColor: "var(--accent-color)",
+                    transition: "width 0.5s ease-in-out",
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="card" style={{ marginBottom: "2rem" }}>
+          <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Trainingsthemen</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "8px" }}>
+            {trainingTopics.map((topic) => {
+              const coverage = topicCoverage.get(topic.key) || {
+                theorie: false,
+                praxis: false,
+              };
+              const isCovered = coverage.theorie || coverage.praxis;
+
+              return (
+                <div
+                  key={topic.key}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: "6px",
+                    border: `1.5px solid ${isCovered ? "var(--accent-color)" : "var(--footer-border)"}`,
+                    backgroundColor: isCovered ? "rgba(0, 95, 163, 0.06)" : "transparent",
+                    transition: "all 0.3s ease",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "18px",
+                      height: "18px",
+                      borderRadius: "50%",
+                      backgroundColor: isCovered ? "var(--accent-color)" : "var(--footer-border)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontWeight: "bold",
+                      fontSize: "0.9em",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {isCovered ? "✓" : ""}
+                  </div>
+                  <span
+                    style={{
+                      fontWeight: isCovered ? 600 : 500,
+                      color: "var(--text-color)",
+                      fontSize: "0.9em",
+                      flex: 1,
+                    }}
+                  >
+                    {topic.label}
+                  </span>
+                  {coverage.theorie && (
+                    <span
+                      style={{
+                        backgroundColor: "#005fa3",
+                        color: "white",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        fontSize: "0.72em",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Theorie
+                    </span>
+                  )}
+                  {coverage.praxis && (
+                    <span
+                      style={{
+                        backgroundColor: "#2e7d32",
+                        color: "white",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        fontSize: "0.72em",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Praxis
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {isLeadership && training.status !== "COMPLETED" && checkrideLogs.length === 0 && (
           <div className="card" style={{ marginBottom: "2rem" }}>
             <h3>Leitung/Admin Aktion</h3>
@@ -672,6 +843,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
               {timelineEntries.map((entry) => {
                 if (entry.type === "session") {
                   const sess = entry.session;
+                  const isOtherMentorSession = Boolean(sess.createdByMentorId && sess.createdByMentorId !== userId);
                   return (
                     <div
                       key={entry.key}
@@ -682,7 +854,14 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                         padding: "0.75rem",
                         borderRadius: "6px",
                         border: "1px solid var(--footer-border)",
-                        borderLeft: `4px solid ${sess.isDraft ? "var(--warning-color)" : "var(--success-color)"}`,
+                        borderLeft: `4px solid ${
+                          sess.isDraft
+                            ? "var(--warning-color)"
+                            : isOtherMentorSession
+                            ? "#8b5cf6"
+                            : "var(--success-color)"
+                        }`,
+                        backgroundColor: isOtherMentorSession ? "rgba(139, 92, 246, 0.05)" : "transparent",
                         opacity: sess.isDraft ? 0.7 : 1,
                         gap: "1rem",
                       }}
@@ -699,9 +878,25 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                             🔧 Entwurf
                           </span>
                         ) : (
-                          <span style={{ color: "var(--success-color)", fontSize: "0.875rem" }}>
-                            ✓ Freigegeben
-                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                            <span style={{ color: isOtherMentorSession ? "#8b5cf6" : "var(--success-color)", fontSize: "0.875rem" }}>
+                              ✓ Freigegeben
+                            </span>
+                            {isOtherMentorSession && (
+                              <span
+                                style={{
+                                  fontSize: "0.72rem",
+                                  fontWeight: 700,
+                                  color: "#5b21b6",
+                                  backgroundColor: "rgba(139, 92, 246, 0.14)",
+                                  borderRadius: "999px",
+                                  padding: "2px 8px",
+                                }}
+                              >
+                                anderer Mentor
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                       <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
@@ -732,6 +927,15 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                         >
                           Details
                         </Link>
+                        {sess.isDraft && (
+                          <Link
+                            href={`/mentor/session?trainingId=${training.id}&sessionId=${sess.id}`}
+                            className="button"
+                            style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                          >
+                            Bearbeiten
+                          </Link>
+                        )}
                         {sess.isDraft && (
                           <Link
                             href={`/trainings/session/${sess.id}?trainingId=${training.id}`}
