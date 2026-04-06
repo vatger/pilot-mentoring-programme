@@ -164,6 +164,7 @@ model User {
   sessions           Session[]
   trainingsAsTrainee Training[] @relation("trainee")
   trainingsAsMentor  TrainingMentor[]
+  authoredSessions   TrainingSession[] @relation("sessionAuthor")
   mentorInvites      MentorInvite[]
   checkrideAvailabilities CheckrideAvailability[] @relation("examinedSessions")
   checkrides         Checkride[] @relation("checkrides")
@@ -214,6 +215,7 @@ model TrainingMentor {
 model TrainingSession {
   id                  String      @id @default(cuid())
   trainingId          String
+  createdByMentorId   String?
   lessonType          LessonType  // THEORIE_TRAINING, OFFLINE_FLUG, ONLINE_FLUG
   sessionDate         DateTime
   comments            String?     @db.Text // General session comments
@@ -223,10 +225,12 @@ model TrainingSession {
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
-  training   Training                @relation(fields: [trainingId], references: [id], onDelete: Cascade)
-  topics     TrainingSessionTopic[]
+  training          Training                @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  createdByMentor   User?                   @relation("sessionAuthor", fields: [createdByMentorId], references: [id], onDelete: SetNull)
+  topics            TrainingSessionTopic[]
 
   @@index([trainingId])
+  @@index([createdByMentorId])
   @@index([sessionDate])
 }
 

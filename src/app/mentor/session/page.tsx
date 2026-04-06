@@ -29,6 +29,7 @@ function SessionLoggingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const trainingId = searchParams.get("trainingId");
+  const sessionId = searchParams.get("sessionId");
   const whiteboardSessionId = searchParams.get("whiteboardSessionId");
 
   const [sessionDate, setSessionDate] = useState(
@@ -44,6 +45,8 @@ function SessionLoggingContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isLockedReleased, setIsLockedReleased] = useState(false);
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
@@ -63,7 +66,65 @@ function SessionLoggingContent() {
 
     fetchTrainingDetails();
     fetchPreviousSessions();
-  }, [status, isMentor, trainingId, router]);
+    if (sessionId) {
+      fetchSessionForEditing(sessionId);
+    }
+  }, [status, isMentor, trainingId, sessionId, router]);
+
+  const fetchSessionForEditing = async (id: string) => {
+    try {
+      const res = await fetch(`/api/sessions/${id}`);
+      if (!res.ok) throw new Error("Failed to fetch session for editing");
+      const data = await res.json();
+
+      if (data.training?.id !== trainingId) {
+        throw new Error("Session does not belong to this training");
+      }
+
+      setIsEditMode(true);
+      setIsLockedReleased(!data.isDraft);
+      setSessionDate(new Date(data.sessionDate).toISOString().split("T")[0]);
+      setComments(data.comments || "");
+      setWhiteboardId(data.whiteboardSessionId || "");
+
+      const selections: Record<string, { theory: boolean; practice: boolean }> = {};
+      const commentsByTopic: TopicComment = {};
+
+      (data.topics || []).forEach((topic: any) => {
+        const isChecked = !!topic.checked;
+        const hasTheory =
+          isChecked &&
+          (
+            !!topic.theoryCovered ||
+            (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode || "THEORIE") === "THEORIE")
+          );
+        const hasPractice =
+          isChecked &&
+          (
+            !!topic.practiceCovered ||
+            (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode === "PRAXIS" || !topic.coverageMode))
+          );
+
+        selections[topic.topic] = {
+          theory: hasTheory,
+          practice: hasPractice,
+        };
+
+        if (topic.comment) {
+          commentsByTopic[topic.topic] = topic.comment;
+        }
+      });
+
+      setTopicSelections(selections);
+      setTopicComments(commentsByTopic);
+
+      if (!data.isDraft) {
+        setError("Diese Session ist bereits freigegeben und kann nicht mehr bearbeitet werden.");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    }
+  };
 
   const fetchTrainingDetails = async () => {
     try {
@@ -139,17 +200,19 @@ function SessionLoggingContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           trainingId,
+          sessionId,
           sessionDate,
           comments,
           whiteboardSessionId: whiteboardId || null,
+          isDraft: true,
           checkedTopics: topicData,
         }),
       });
 
       if (!res.ok) throw new Error("Failed to log session");
       
-      // Redirect to trainee page to activate the session
-      if (traineeId) {
+      // Keep flow simple: back to trainee page after saving (create or edit)
+      if (traineeId && trainingId) {
         router.push(`/mentor/trainee/${traineeId}?trainingId=${trainingId}`);
       } else {
         setSuccess(true);
@@ -193,6 +256,8 @@ function SessionLoggingContent() {
     );
   }
 
+  const formLocked = submitting || isLockedReleased;
+
   if (!isMentor) {
     return (
       <PageLayout>
@@ -207,9 +272,19 @@ function SessionLoggingContent() {
     <PageLayout>
       <div className="header-container">
         <div className="header">
-          <h1>Trainingssession loggen</h1>
+          <h1>{isEditMode ? "Trainingssession bearbeiten" : "Trainingssession loggen"}</h1>
         </div>
       </div>
+
+      {isEditMode && (
+        <div className={isLockedReleased ? "info-danger" : "info-success"}>
+          <p>
+            {isLockedReleased
+              ? "Diese Session ist bereits freigegeben und kann nicht mehr geändert werden."
+              : "Entwurf geladen. Du kannst die Session bearbeiten, solange sie nicht freigegeben ist."}
+          </p>
+        </div>
+      )}
 
       {error && <div className="info-danger"><p>{error}</p></div>}
       {success && <div className="info-success"><p>Session erfolgreich gelogged!</p></div>}
@@ -223,6 +298,7 @@ function SessionLoggingContent() {
             value={sessionDate}
             onChange={(e) => setSessionDate(e.target.value)}
             className="form-input"
+            disabled={formLocked}
             required
           />
         </label>
@@ -235,6 +311,7 @@ function SessionLoggingContent() {
             value={whiteboardId}
             onChange={(e) => setWhiteboardId(e.target.value)}
             className="form-input"
+            disabled={formLocked}
             placeholder="z.B., abc123def456 (von /trainings/session/[id])"
           />
           <small style={{ display: "block", marginTop: "0.5rem", color: "var(--text-muted)" }}>
@@ -324,6 +401,7 @@ function SessionLoggingContent() {
                         type="checkbox"
                         checked={isTheoryChecked}
                         onChange={() => toggleTheory(topic.key)}
+                          disabled={formLocked}
                         style={{ width: "16px", height: "16px" }}
                       />
                       <span style={{ color: THEORY_BLUE, fontWeight: 600 }}>Theorie</span>
@@ -346,6 +424,7 @@ function SessionLoggingContent() {
                           type="checkbox"
                           checked={isPracticeChecked}
                           onChange={() => togglePractice(topic.key)}
+                          disabled={formLocked}
                           style={{ width: "16px", height: "16px" }}
                         />
                         <span style={{ color: PRACTICE_GREEN, fontWeight: 600 }}>Praxis</span>
@@ -361,6 +440,7 @@ function SessionLoggingContent() {
                       onChange={(e) => updateTopicComment(topic.key, e.target.value)}
                       placeholder="Optionale Notiz zu diesem Thema..."
                       className="form-textarea"
+                      disabled={formLocked}
                       style={{ marginTop: "8px", minHeight: "60px" }}
                     />
                   )}
@@ -381,17 +461,22 @@ function SessionLoggingContent() {
             onChange={(e) => setComments(e.target.value)}
             placeholder="Z.B., Gute Fortschritte beim Anflug, du musst aber noch an der Geschwindigkeitskontrolle arbeiten..."
             className="form-textarea"
+            disabled={formLocked}
           />
         </label>
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={formLocked}
           className="button"
           style={{ alignSelf: "flex-start", minWidth: "160px" }}
         >
-          {submitting ? "Session wird gespeichert..." : "Session speichern"}
+          {submitting
+            ? "Session wird gespeichert..."
+            : isEditMode
+            ? "Änderungen speichern"
+            : "Session speichern"}
         </button>
       </form>
 

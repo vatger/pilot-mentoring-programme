@@ -31,6 +31,11 @@ export async function POST(request: NextRequest) {
           where: { result: "INCOMPLETE" },
           orderBy: { createdAt: "desc" },
           take: 1,
+          include: {
+            availability: {
+              select: { id: true, examinerId: true, status: true },
+            },
+          },
         },
       },
     });
@@ -47,8 +52,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (training.checkrides.length > 0) {
+      const reusedCheckride = training.checkrides[0];
+
+      // Legacy safeguard: if an open checkride has no assigned examiner, assign the starter now.
+      if (reusedCheckride.availability && !reusedCheckride.availability.examinerId) {
+        await prisma.checkrideAvailability.update({
+          where: { id: reusedCheckride.availability.id },
+          data: {
+            examinerId: userId,
+            status: "BOOKED",
+          },
+        });
+      }
+
       return NextResponse.json(
-        { checkrideId: training.checkrides[0].id, reused: true },
+        { checkrideId: reusedCheckride.id, reused: true },
         { status: 200 }
       );
     }

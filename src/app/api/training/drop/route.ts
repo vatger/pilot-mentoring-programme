@@ -52,13 +52,19 @@ export async function POST(request: NextRequest) {
         await prisma.trainingMentor.deleteMany({
           where: { trainingId, mentorId },
         });
-        
-        // If no mentors remain, delete the training to avoid orphaned records
+
+        // If no mentors remain, keep the training so it can be reassigned later
         const remainingMentors = await prisma.trainingMentor.count({ where: { trainingId } });
         if (remainingMentors === 0) {
-          // Delete training (preserves sessions/data via soft-delete if configured)
-          await prisma.training.delete({ where: { id: trainingId } });
-          
+          await prisma.training.update({
+            where: { id: trainingId },
+            data: {
+              readyForCheckride: false,
+              checkrideRequestText: null,
+              checkrideRequestedAt: null,
+            },
+          });
+
           // Set trainee back to PENDING_TRAINEE so they can be reassigned
           await prisma.user.update({
             where: { id: training.trainee.id },

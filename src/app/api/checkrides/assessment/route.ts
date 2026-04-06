@@ -10,6 +10,31 @@ function isExaminer(role?: string) {
   return role ? EXAMINER_ROLES.includes(role) : false;
 }
 
+function toBoolean(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return Boolean(value);
+}
+
+function normalizeAssessmentPayload(input: Record<string, unknown>) {
+  const normalized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(input)) {
+    if (key.endsWith("Passed")) {
+      normalized[key] = toBoolean(value);
+      continue;
+    }
+
+    normalized[key] = value;
+  }
+
+  return normalized;
+}
+
 // GET /api/checkrides/assessment?checkrideId=...
 export async function GET(request: NextRequest) {
   try {
@@ -93,6 +118,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const normalizedFields = normalizeAssessmentPayload(rest as Record<string, unknown>);
+
     // Upsert assessment
     const assessment = await db.checkrideAssessment.upsert({
       where: { checkrideId },
@@ -100,12 +127,12 @@ export async function POST(request: NextRequest) {
         checkrideId,
         overallResult: (overallResult as any) || "INCOMPLETE",
         examinernotes: examinernotes || null,
-        ...rest,
+        ...normalizedFields,
       },
       update: {
         overallResult: (overallResult as any) || "INCOMPLETE",
         examinernotes: examinernotes || null,
-        ...rest,
+        ...normalizedFields,
       },
     });
 
@@ -113,10 +140,12 @@ export async function POST(request: NextRequest) {
       result: (overallResult as any) || "INCOMPLETE",
     };
 
-    if (release === true) {
+    const releaseFlag = typeof release === "string" ? toBoolean(release) : release;
+
+    if (releaseFlag === true) {
       checkrideUpdate.isDraft = false;
       checkrideUpdate.releasedAt = new Date();
-    } else if (release === false) {
+    } else if (releaseFlag === false) {
       checkrideUpdate.isDraft = true;
       checkrideUpdate.releasedAt = null;
     }
@@ -128,7 +157,7 @@ export async function POST(request: NextRequest) {
     });
 
     // If checkride passed and released, update trainee status
-    if (release === true && overallResult === "PASSED") {
+    if (releaseFlag === true && overallResult === "PASSED") {
       const training = await db.training.findUnique({
         where: { id: checkride.trainingId },
         select: { traineeId: true },
@@ -153,7 +182,7 @@ export async function POST(request: NextRequest) {
     }
 
     // If checkride failed and released, remove readyForCheckride flag
-    if (release === true && overallResult === "FAILED") {
+    if (releaseFlag === true && overallResult === "FAILED") {
       await db.training.update({
         where: { id: checkride.trainingId },
         data: { readyForCheckride: false },

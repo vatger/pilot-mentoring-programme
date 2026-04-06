@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const db = prisma as any;
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,14 +25,20 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const sessionRecord = await prisma.trainingSession.findUnique({
+    const sessionRecord = await db.trainingSession.findUnique({
       where: { id },
       include: {
+        createdByMentor: {
+          select: { id: true, name: true, cid: true },
+        },
         topics: {
           orderBy: { order: "asc" },
         },
         training: {
           include: {
+            mentors: {
+              select: { mentorId: true },
+            },
             trainee: {
               select: { id: true, cid: true, name: true },
             },
@@ -41,6 +49,14 @@ export async function GET(
 
     if (!sessionRecord) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    const userId = (session.user as any).id;
+    const isLeadership = ["PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(userRole);
+    const isAssignedMentor = (sessionRecord.training.mentors || []).some((m: any) => m.mentorId === userId);
+
+    if (!isLeadership && !isAssignedMentor) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     return NextResponse.json(sessionRecord);
@@ -76,7 +92,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const sessionRecord = await prisma.trainingSession.findUnique({
+    const sessionRecord = await db.trainingSession.findUnique({
       where: { id },
       include: { training: true },
     });
@@ -86,7 +102,7 @@ export async function PATCH(
     }
 
     // Update comments
-    const updated = await prisma.trainingSession.update({
+    const updated = await db.trainingSession.update({
       where: { id },
       data: { comments },
       include: {
@@ -124,7 +140,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const sessionRecord = await prisma.trainingSession.findUnique({
+    const sessionRecord = await db.trainingSession.findUnique({
       where: { id },
     });
 
@@ -141,7 +157,7 @@ export async function DELETE(
     }
 
     // Delete the session (topics will be cascade deleted)
-    await prisma.trainingSession.delete({
+    await db.trainingSession.delete({
       where: { id },
     });
 

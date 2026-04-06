@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const db = prisma as any;
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,7 +25,7 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const training = await prisma.training.findUnique({
+    const training = await db.training.findUnique({
       where: { id },
       include: {
         trainee: {
@@ -47,6 +49,13 @@ export async function GET(
         sessions: {
           orderBy: { sessionDate: "desc" },
           include: {
+            createdByMentor: {
+              select: {
+                id: true,
+                name: true,
+                cid: true,
+              },
+            },
             topics: {
               select: {
                 topic: true,
@@ -64,7 +73,7 @@ export async function GET(
 
     // Verify the user is a mentor for this training
     const isMentorForTraining = training.mentors.some(
-      (tm) => tm.mentor.id === userId
+      (tm: any) => tm.mentor.id === userId
     );
 
     if (!isMentorForTraining && userRole !== "PMP_LEITUNG" && userRole !== "ADMIN" && userRole !== "PMP_PRÜFER") {

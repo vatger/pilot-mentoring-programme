@@ -46,6 +46,9 @@ export async function GET(_request: NextRequest) {
       where: {
         readyForCheckride: true,
         status: "ACTIVE",
+        mentors: {
+          some: {},
+        },
         checkrides: {
           none: {},
         },

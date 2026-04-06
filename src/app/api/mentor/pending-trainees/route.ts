@@ -20,15 +20,29 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get users with PENDING_TRAINEE or TRAINEE role who don't have an active training
+    // Get users with PENDING_TRAINEE or TRAINEE role who are not assigned to any mentor.
+    // Orphaned trainings (training exists, but mentors list is empty) must still appear here.
     const trainees = await prisma.user.findMany({
       where: {
         role: { in: ["PENDING_TRAINEE", "TRAINEE"] },
-        trainingsAsTrainee: {
-          none: {
-            status: { in: ["ACTIVE", "COMPLETED"] },
+        OR: [
+          {
+            trainingsAsTrainee: {
+              none: {
+                mentors: {
+                  some: {},
+                },
+              },
+            },
           },
-        },
+          {
+            trainingsAsTrainee: {
+              none: {
+                status: { in: ["ACTIVE", "COMPLETED"] },
+              },
+            },
+          },
+        ],
       },
       select: {
         id: true,

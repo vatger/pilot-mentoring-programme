@@ -59,6 +59,12 @@ type Training = {
     comments: string | null;
     isDraft: boolean;
     releasedAt: string | null;
+    createdByMentorId?: string | null;
+    createdByMentor?: {
+      id: string;
+      name: string | null;
+      cid: string | null;
+    } | null;
     topics: {
       topic: string;
       checked: boolean;
@@ -285,6 +291,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   };
 
   const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
   const isMentor =
     userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN";
   const isLeadership = userRole === "PMP_LEITUNG" || userRole === "ADMIN";
@@ -836,6 +843,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
               {timelineEntries.map((entry) => {
                 if (entry.type === "session") {
                   const sess = entry.session;
+                  const isOtherMentorSession = Boolean(sess.createdByMentorId && sess.createdByMentorId !== userId);
                   return (
                     <div
                       key={entry.key}
@@ -846,7 +854,14 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                         padding: "0.75rem",
                         borderRadius: "6px",
                         border: "1px solid var(--footer-border)",
-                        borderLeft: `4px solid ${sess.isDraft ? "var(--warning-color)" : "var(--success-color)"}`,
+                        borderLeft: `4px solid ${
+                          sess.isDraft
+                            ? "var(--warning-color)"
+                            : isOtherMentorSession
+                            ? "#8b5cf6"
+                            : "var(--success-color)"
+                        }`,
+                        backgroundColor: isOtherMentorSession ? "rgba(139, 92, 246, 0.05)" : "transparent",
                         opacity: sess.isDraft ? 0.7 : 1,
                         gap: "1rem",
                       }}
@@ -863,9 +878,25 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                             🔧 Entwurf
                           </span>
                         ) : (
-                          <span style={{ color: "var(--success-color)", fontSize: "0.875rem" }}>
-                            ✓ Freigegeben
-                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                            <span style={{ color: isOtherMentorSession ? "#8b5cf6" : "var(--success-color)", fontSize: "0.875rem" }}>
+                              ✓ Freigegeben
+                            </span>
+                            {isOtherMentorSession && (
+                              <span
+                                style={{
+                                  fontSize: "0.72rem",
+                                  fontWeight: 700,
+                                  color: "#5b21b6",
+                                  backgroundColor: "rgba(139, 92, 246, 0.14)",
+                                  borderRadius: "999px",
+                                  padding: "2px 8px",
+                                }}
+                              >
+                                anderer Mentor
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                       <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
@@ -896,6 +927,15 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                         >
                           Details
                         </Link>
+                        {sess.isDraft && (
+                          <Link
+                            href={`/mentor/session?trainingId=${training.id}&sessionId=${sess.id}`}
+                            className="button"
+                            style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                          >
+                            Bearbeiten
+                          </Link>
+                        )}
                         {sess.isDraft && (
                           <Link
                             href={`/trainings/session/${sess.id}?trainingId=${training.id}`}
