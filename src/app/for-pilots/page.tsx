@@ -10,7 +10,7 @@ export default function ForPilotsPage() {
       </p>
 
       <div className="card" style={{ marginBottom: "1.25rem" }}>
-        <h3>PMP - Dein Weg zum Online-Fliegen</h3>
+        <h3>PMP – Dein Weg zum Online-Fliegen</h3>
         <p style={{ color: "var(--text-color)" }}>
           Wir machen dich in unserem PMP fit für das Online-Fliegen auf Vatsim. Die fliegerischen Grundlagen musst du mitbringen. Du musst also wissen, wie du dein Flugzeug bedienst, wie du es vom Start bis zur Landung fliegst und wie du grundsätzlich Flüge planst und navigierst.
         </p>
@@ -37,7 +37,8 @@ export default function ForPilotsPage() {
           </div>
           <div className="card card-link" style={{ margin: 0 }}>
             <h4>Dein Mentor, dein Ansprechpartner</h4>
-            <p>Du möchtest primär einen Ansprechpartner für Fragen zum Online-Fliegen. Du kennst dich schon gut genug auf dem Netzwerk und mit der Fliegerei aus und kommst zurecht, hast aber immer mal wieder Fragen oder möchtest bestimmte Situationen trainieren?</p>
+            <p>Du möchtest nicht das Airliner-Training, sondern hast einen anderen Trainingswunsch? IFR mit kleineren Flugzeugen, VFR, besondere Verfahren wie z.B. RNP-Anflüge, Helikopter?</p>
+            <p>Du möchtest einfach nur einen Ansprechpartner für Fragen zum Online-Fliegen. Du kennst dich schon gut genug auf dem Netzwerk und mit der Fliegerei aus und kommst zurecht, hast aber immer mal wieder Fragen oder möchtest bestimmte Situationen trainieren?</p>
             <p>Dann kannst du hier einen Mentor anfragen, der dann dein Ansprechpartner auf dem Netzwerk ist - so lange ihr beide aktiv seid.</p>
             <p>Natürlich kannst du auch dann immer noch in ein reguläres Training einsteigen.</p>
             <a className="button" href="https://board.vatsim-germany.org/threads/pmp-anmeldung-und-ablauf-bitte-vor-der-anmeldung-lesen.70146/" target="_blank" rel="noreferrer" style={{ marginTop: "8px", display: "inline-block" }}>
