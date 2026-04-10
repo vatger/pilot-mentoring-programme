@@ -29,6 +29,7 @@ function PmpTrackingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [trainings, setTrainings] = useState<TrainingCoverageRow[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -66,6 +67,24 @@ function PmpTrackingContent() {
   const totalTopics = trainingTopics.length;
   const formatPoints = (value: number) =>
     Number.isInteger(value) ? String(value) : value.toFixed(1);
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredTrainings = trainings.filter((row) => {
+    if (!normalizedSearch) return true;
+
+    const traineeName = (row.trainee.name || "").toLowerCase();
+    const traineeCid = (row.trainee.cid || "").toLowerCase();
+    const mentorMatches = row.mentors.some((mentor) => {
+      const mentorName = (mentor.name || "").toLowerCase();
+      const mentorCid = (mentor.cid || "").toLowerCase();
+      return mentorName.includes(normalizedSearch) || mentorCid.includes(normalizedSearch);
+    });
+
+    return (
+      traineeName.includes(normalizedSearch) ||
+      traineeCid.includes(normalizedSearch) ||
+      mentorMatches
+    );
+  });
 
   if (status === "loading" || loading) {
     return (
@@ -141,18 +160,28 @@ function PmpTrackingContent() {
               Alle
             </Link>
           </div>
+          <input
+            className="form-input"
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Suche nach Trainee oder Mentor"
+            style={{ minWidth: "260px", maxWidth: "360px", marginLeft: "auto" }}
+          />
         </div>
       </div>
 
       {loading ? (
         <div className="card"><p style={{ margin: 0 }}>Lädt...</p></div>
-      ) : trainings.length === 0 ? (
+      ) : filteredTrainings.length === 0 ? (
         <div className="card">
-          <p style={{ color: "var(--text-color)", margin: 0 }}>Keine Trainings gefunden.</p>
+          <p style={{ color: "var(--text-color)", margin: 0 }}>
+            {trainings.length === 0 ? "Keine Trainings gefunden." : "Keine Trainings für diese Suche gefunden."}
+          </p>
         </div>
       ) : (
         <div style={{ display: "grid", gap: "0.85rem" }}>
-          {trainings.map((row) => {
+          {filteredTrainings.map((row) => {
             const coveragePercent = Math.round(
               (row.topicsCoveredCount / totalTopics) * 100
             );

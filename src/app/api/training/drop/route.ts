@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const userRole = (session.user as any).role;
     const userId = (session.user as any).id;
 
-    const { trainingId, mentorId, resetCancelledTrainee } = await request.json();
+    const { trainingId, mentorId, resetCancelledTrainee, keepLogsAndSetPending } = await request.json();
 
     // Use case 1: Mentor dropping a co-mentor or trainee
     if (trainingId && !resetCancelledTrainee) {
@@ -44,6 +44,43 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { error: "Only mentors and admins can drop trainees" },
           { status: 403 }
+        );
+      }
+
+      if (keepLogsAndSetPending) {
+        if (!["ADMIN", "PMP_LEITUNG"].includes(userRole)) {
+          return NextResponse.json(
+            { error: "Only PMP leadership can set trainee to pending while keeping logs" },
+            { status: 403 }
+          );
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await tx.trainingMentor.deleteMany({
+            where: { trainingId },
+          });
+
+          await tx.training.update({
+            where: { id: trainingId },
+            data: {
+              readyForCheckride: false,
+              checkrideRequestText: null,
+              checkrideRequestedAt: null,
+            },
+          });
+
+          await tx.user.update({
+            where: { id: training.trainee.id },
+            data: { role: "PENDING_TRAINEE" },
+          });
+        });
+
+        return NextResponse.json(
+          {
+            success: true,
+            message: "Trainee set to pending. Training and logs were kept.",
+          },
+          { status: 200 }
         );
       }
 

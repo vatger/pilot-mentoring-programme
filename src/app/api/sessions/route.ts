@@ -7,6 +7,56 @@ import { NextRequest, NextResponse } from "next/server";
 
 const db = prisma as any;
 
+const normalizeTopicForPersist = (topic: {
+  topic: string;
+  checked?: boolean;
+  theoryCovered?: boolean;
+  practiceCovered?: boolean;
+  coverageMode?: string;
+  comment?: string;
+  order: number;
+}) => {
+  const checked = topic.checked === true;
+  if (!checked) {
+    return {
+      topic: topic.topic as TrainingTopic,
+      checked: false,
+      coverageMode: "THEORIE" as const,
+      theoryCovered: false,
+      practiceCovered: false,
+      comment: topic.comment || null,
+      order: topic.order,
+    };
+  }
+
+  const hasTheoryFlag = typeof topic.theoryCovered === "boolean";
+  const hasPracticeFlag = typeof topic.practiceCovered === "boolean";
+
+  let theoryCovered = false;
+  let practiceCovered = false;
+
+  if (hasTheoryFlag || hasPracticeFlag) {
+    theoryCovered = topic.theoryCovered === true;
+    practiceCovered = topic.practiceCovered === true;
+  } else if (topic.coverageMode === "PRAXIS") {
+    theoryCovered = false;
+    practiceCovered = true;
+  } else {
+    theoryCovered = true;
+    practiceCovered = false;
+  }
+
+  return {
+    topic: topic.topic as TrainingTopic,
+    checked: theoryCovered || practiceCovered,
+    coverageMode: practiceCovered ? ("PRAXIS" as const) : ("THEORIE" as const),
+    theoryCovered,
+    practiceCovered,
+    comment: topic.comment || null,
+    order: topic.order,
+  };
+};
+
 /**
  * POST /api/sessions
  * Create or update a training session with topic checkmarks and comments
@@ -114,40 +164,7 @@ export async function POST(request: NextRequest) {
           isDraft: isDraft !== false, // default true if undefined
           releasedAt: isDraft === false ? new Date() : null,
           topics: {
-            create: normalizedTopics.map(
-              (topic: {
-                topic: string;
-                checked?: boolean;
-                theoryCovered?: boolean;
-                practiceCovered?: boolean;
-                comment?: string;
-                order: number;
-                coverageMode?: string;
-              }) => {
-                const theoryCovered =
-                  topic.theoryCovered !== undefined
-                    ? topic.theoryCovered
-                    : topic.coverageMode
-                    ? topic.coverageMode === "THEORIE"
-                    : !!topic.checked;
-                const practiceCovered =
-                  topic.practiceCovered !== undefined
-                    ? topic.practiceCovered
-                    : topic.coverageMode
-                    ? topic.coverageMode === "PRAXIS"
-                    : !!topic.checked;
-
-                return {
-                  topic: topic.topic as TrainingTopic,
-                  checked: !!(theoryCovered || practiceCovered),
-                  coverageMode: topic.coverageMode === "PRAXIS" ? "PRAXIS" : "THEORIE",
-                  theoryCovered,
-                  practiceCovered,
-                  comment: topic.comment || null,
-                  order: topic.order,
-                };
-              }
-            ),
+            create: normalizedTopics.map(normalizeTopicForPersist),
           },
         },
         include: { topics: true },
@@ -164,40 +181,7 @@ export async function POST(request: NextRequest) {
           isDraft: isDraft !== false, // default true if undefined
           releasedAt: isDraft === false ? new Date() : null,
           topics: {
-            create: normalizedTopics.map(
-              (topic: {
-                topic: string;
-                checked?: boolean;
-                theoryCovered?: boolean;
-                practiceCovered?: boolean;
-                comment?: string;
-                order: number;
-                coverageMode?: string;
-              }) => {
-                const theoryCovered =
-                  topic.theoryCovered !== undefined
-                    ? topic.theoryCovered
-                    : topic.coverageMode
-                    ? topic.coverageMode === "THEORIE"
-                    : !!topic.checked;
-                const practiceCovered =
-                  topic.practiceCovered !== undefined
-                    ? topic.practiceCovered
-                    : topic.coverageMode
-                    ? topic.coverageMode === "PRAXIS"
-                    : !!topic.checked;
-
-                return {
-                  topic: topic.topic as TrainingTopic,
-                  checked: !!(theoryCovered || practiceCovered),
-                  coverageMode: topic.coverageMode === "PRAXIS" ? "PRAXIS" : "THEORIE",
-                  theoryCovered,
-                  practiceCovered,
-                  comment: topic.comment || null,
-                  order: topic.order,
-                };
-              }
-            ),
+            create: normalizedTopics.map(normalizeTopicForPersist),
           },
         },
         include: {
