@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeTopicCoverage } from "@/lib/topicCoverage";
 
 const db = prisma as any;
 
@@ -59,7 +60,10 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    return NextResponse.json(sessionRecord);
+    return NextResponse.json({
+      ...sessionRecord,
+      topics: (sessionRecord.topics || []).map((topic: any) => normalizeTopicCoverage(topic)),
+    });
   } catch (error: any) {
     console.error("Error fetching session:", error);
     return NextResponse.json(

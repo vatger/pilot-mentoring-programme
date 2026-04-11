@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeTopicCoverage } from "@/lib/topicCoverage";
 import { NextRequest, NextResponse } from "next/server";
 
 const LEITUNG_ROLES = ["ADMIN", "PMP_LEITUNG"];
@@ -41,6 +42,9 @@ export async function GET(request: NextRequest) {
               select: {
                 topic: true,
                 checked: true,
+                coverageMode: true,
+                theoryCovered: true,
+                practiceCovered: true,
               },
             },
           },
@@ -78,6 +82,10 @@ export async function GET(request: NextRequest) {
 
         return {
           ...training,
+          sessions: (training.sessions || []).map((session: any) => ({
+            ...session,
+            topics: (session.topics || []).map((topic: any) => normalizeTopicCoverage(topic)),
+          })),
           trainee: {
             ...training.trainee,
             registration,

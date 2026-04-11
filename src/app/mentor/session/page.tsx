@@ -263,7 +263,7 @@ function SessionLoggingContent() {
       praxis: coveredEntries.some(
         (t: SessionLog) =>
           !!t.practiceCovered ||
-          (!t.theoryCovered && !t.practiceCovered && t.checked && (t.coverageMode === "PRAXIS" || !t.coverageMode))
+          (!t.theoryCovered && !t.practiceCovered && t.checked && t.coverageMode === "PRAXIS")
       ),
     };
   };

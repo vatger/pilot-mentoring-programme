@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeTopicCoverage } from "@/lib/topicCoverage";
 
 const db = prisma as any;
 
@@ -60,6 +61,9 @@ export async function GET(
               select: {
                 topic: true,
                 checked: true,
+                coverageMode: true,
+                theoryCovered: true,
+                practiceCovered: true,
               },
             },
           },
@@ -110,6 +114,10 @@ export async function GET(
 
     return NextResponse.json({
       ...training,
+      sessions: (training.sessions || []).map((session: any) => ({
+        ...session,
+        topics: (session.topics || []).map((topic: any) => normalizeTopicCoverage(topic)),
+      })),
       trainee: {
         ...training.trainee,
         registration,

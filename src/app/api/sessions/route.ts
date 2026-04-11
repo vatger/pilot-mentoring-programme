@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeTopicCoverage } from "@/lib/topicCoverage";
 import { trainingTopicKeys, TrainingTopicKey } from "@/lib/trainingTopics";
 import { TrainingTopic } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -317,7 +318,12 @@ export async function GET(request: NextRequest) {
       }));
     }
 
-    return NextResponse.json(sessions, { status: 200 });
+    const normalizedSessions = (sessions || []).map((session: any) => ({
+      ...session,
+      topics: (session.topics || []).map((topic: any) => normalizeTopicCoverage(topic)),
+    }));
+
+    return NextResponse.json(normalizedSessions, { status: 200 });
   } catch (error) {
     console.error("Error fetching sessions:", error);
     return NextResponse.json(

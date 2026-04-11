@@ -31,7 +31,7 @@ export default function ForPilotsPage() {
             <p>Über den Verlauf mehrerer Wochen lernst du alle relevanten Prozeduren und die Kommunikation mit ATC, so dass du sicher am virtuellen Himmel unterwegs bist.</p>
             <p>Wir erwarten von dir zeitliche Verfügbarkeit, Zuverlässigkeit bei der Termineinhaltung und Eigeninitiative beim selbstständigen Lernen und Üben zwischen den Trainingssessions.</p>
             <p>Wenn du das machen möchtest, fülle bitte unsere Anmeldung aus, und es kann sehr bald losgehen!</p>
-            <a className="button" href="https://board.vatsim-germany.org/threads/pmp-anmeldung-und-ablauf-bitte-vor-der-anmeldung-lesen.70146/" target="_blank" rel="noreferrer" style={{ marginTop: "8px", display: "inline-block" }}>
+            <a className="button" href="https://board.vatsim-germany.org/threads/pmp-training-dein-weg-zum-online-piloten.74740/" target="_blank" rel="noreferrer" style={{ marginTop: "8px", display: "inline-block" }}>
               Zur Anmeldung
             </a>
           </div>
@@ -41,7 +41,7 @@ export default function ForPilotsPage() {
             <p>Du möchtest einfach nur einen Ansprechpartner für Fragen zum Online-Fliegen. Du kennst dich schon gut genug auf dem Netzwerk und mit der Fliegerei aus und kommst zurecht, hast aber immer mal wieder Fragen oder möchtest bestimmte Situationen trainieren?</p>
             <p>Dann kannst du hier einen Mentor anfragen, der dann dein Ansprechpartner auf dem Netzwerk ist - so lange ihr beide aktiv seid.</p>
             <p>Natürlich kannst du auch dann immer noch in ein reguläres Training einsteigen.</p>
-            <a className="button" href="https://board.vatsim-germany.org/threads/pmp-anmeldung-und-ablauf-bitte-vor-der-anmeldung-lesen.70146/" target="_blank" rel="noreferrer" style={{ marginTop: "8px", display: "inline-block" }}>
+            <a className="button" href="https://board.vatsim-germany.org/threads/pmp-training-dein-weg-zum-online-piloten.74740/" target="_blank" rel="noreferrer" style={{ marginTop: "8px", display: "inline-block" }}>
               Zur Anmeldung
             </a>
           </div>

@@ -337,7 +337,7 @@ function TraineeProgressContent() {
         current.praxis =
           current.praxis ||
           !!t.practiceCovered ||
-          (!t.theoryCovered && !t.practiceCovered && (t.coverageMode === "PRAXIS" || !t.coverageMode));
+          (!t.theoryCovered && !t.practiceCovered && t.coverageMode === "PRAXIS");
         coverageMap.set(t.topic, current);
       });
     });
