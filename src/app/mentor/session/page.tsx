@@ -21,6 +21,29 @@ interface TopicComment {
   [key: string]: string;
 }
 
+const normalizeTopicSelection = (topic: any) => {
+  const isChecked = topic?.checked === true;
+  if (!isChecked) {
+    return { theory: false, practice: false };
+  }
+
+  const hasTheoryFlag = typeof topic?.theoryCovered === "boolean";
+  const hasPracticeFlag = typeof topic?.practiceCovered === "boolean";
+
+  if (hasTheoryFlag || hasPracticeFlag) {
+    return {
+      theory: topic?.theoryCovered === true,
+      practice: topic?.practiceCovered === true,
+    };
+  }
+
+  if (topic?.coverageMode === "PRAXIS") {
+    return { theory: false, practice: true };
+  }
+
+  return { theory: true, practice: false };
+};
+
 function SessionLoggingContent() {
   const THEORY_BLUE = "#4d8edb";
   const PRACTICE_GREEN = "#4caf50";
@@ -68,6 +91,13 @@ function SessionLoggingContent() {
     fetchPreviousSessions();
     if (sessionId) {
       fetchSessionForEditing(sessionId);
+    } else {
+      setIsEditMode(false);
+      setIsLockedReleased(false);
+      setTopicSelections({});
+      setTopicComments({});
+      setComments("");
+      setSessionDate(new Date().toISOString().split("T")[0]);
     }
   }, [status, isMentor, trainingId, sessionId, router]);
 
@@ -91,24 +121,7 @@ function SessionLoggingContent() {
       const commentsByTopic: TopicComment = {};
 
       (data.topics || []).forEach((topic: any) => {
-        const isChecked = !!topic.checked;
-        const hasTheory =
-          isChecked &&
-          (
-            !!topic.theoryCovered ||
-            (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode || "THEORIE") === "THEORIE")
-          );
-        const hasPractice =
-          isChecked &&
-          (
-            !!topic.practiceCovered ||
-            (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode === "PRAXIS" || !topic.coverageMode))
-          );
-
-        selections[topic.topic] = {
-          theory: hasTheory,
-          practice: hasPractice,
-        };
+        selections[topic.topic] = normalizeTopicSelection(topic);
 
         if (topic.comment) {
           commentsByTopic[topic.topic] = topic.comment;
@@ -186,11 +199,18 @@ function SessionLoggingContent() {
     try {
       const topicData = trainingTopics.map((t, idx) => ({
         theoryCovered: !!topicSelections[t.key]?.theory,
-        practiceCovered: t.category === "THEORY" ? false : !!topicSelections[t.key]?.practice,
+        practiceCovered:
+          t.category === "THEORY"
+            ? false
+            : !!topicSelections[t.key]?.practice,
         topic: t.key,
         checked:
           !!topicSelections[t.key]?.theory ||
           (t.category !== "THEORY" && !!topicSelections[t.key]?.practice),
+        coverageMode:
+          t.category !== "THEORY" && !!topicSelections[t.key]?.practice
+            ? "PRAXIS"
+            : "THEORIE",
         comment: topicComments[t.key] || null,
         order: idx,
       }));
@@ -243,7 +263,7 @@ function SessionLoggingContent() {
       praxis: coveredEntries.some(
         (t: SessionLog) =>
           !!t.practiceCovered ||
-          (!t.theoryCovered && !t.practiceCovered && t.checked && (t.coverageMode === "PRAXIS" || !t.coverageMode))
+          (!t.theoryCovered && !t.practiceCovered && t.checked && t.coverageMode === "PRAXIS")
       ),
     };
   };

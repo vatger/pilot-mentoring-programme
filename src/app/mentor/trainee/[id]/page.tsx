@@ -282,7 +282,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
           current.praxis =
             current.praxis ||
             !!topic.practiceCovered ||
-            (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode === "PRAXIS" || !topic.coverageMode));
+            (!topic.theoryCovered && !topic.practiceCovered && topic.coverageMode === "PRAXIS");
           coverageMap.set(topic.topic, current);
         });
       });

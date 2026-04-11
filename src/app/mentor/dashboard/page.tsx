@@ -62,6 +62,8 @@ export default function MentorDashboard() {
   const [assigning, setAssigning] = useState<string | null>(null);
   const [deletingRequest, setDeletingRequest] = useState<string | null>(null);
   const [addingMentor, setAddingMentor] = useState<string | null>(null);
+  const [removingMentor, setRemovingMentor] = useState<string | null>(null);
+  const [pendingWithLogs, setPendingWithLogs] = useState<string | null>(null);
   const [selectedTrainee, setSelectedTrainee] = useState<TraineeInfo | null>(null);
   const [selectedTrainingId, setSelectedTrainingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -84,6 +86,7 @@ export default function MentorDashboard() {
   const isMentor =
     userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
   const canDeleteRequests = userRole === "PMP_LEITUNG" || userRole === "ADMIN";
+  const canManageAllTrainings = userRole === "PMP_LEITUNG" || userRole === "ADMIN";
 
   useEffect(() => {
     if (status === "loading") return;
@@ -174,6 +177,32 @@ export default function MentorDashboard() {
     }
   };
 
+  const handleSetPendingWithLogs = async (trainingId: string) => {
+    if (!canManageAllTrainings) return;
+    if (!confirm("Trainee auf PENDING_TRAINEE setzen und alle bisherigen Logs behalten?")) return;
+
+    setPendingWithLogs(trainingId);
+    try {
+      const res = await fetch("/api/training/drop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainingId, keepLogsAndSetPending: true }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Fehler beim Zurücksetzen auf Pending-Trainee");
+      }
+
+      await fetchData();
+      setCancelDialogFor(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setPendingWithLogs(null);
+    }
+  };
+
   const handleCancelTraining = async (trainingId: string) => {
     if (!cancellationReason.trim()) {
       setError("Bitte geben Sie einen Grund für den Abbruch an");
@@ -223,6 +252,30 @@ export default function MentorDashboard() {
       alert(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setAddingMentor(null);
+    }
+  };
+
+  const removeMentor = async (trainingId: string, mentorId: string, mentorLabel: string) => {
+    if (!canManageAllTrainings) return;
+    if (!confirm(`Mentor ${mentorLabel} wirklich aus diesem Training entfernen?`)) return;
+
+    const key = `${trainingId}:${mentorId}`;
+    setRemovingMentor(key);
+    try {
+      const res = await fetch("/api/training/drop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainingId, mentorId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Fehler beim Entfernen des Mentors");
+      }
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setRemovingMentor(null);
     }
   };
 
@@ -410,7 +463,9 @@ export default function MentorDashboard() {
         <div className="card" style={{ marginBottom: "1.5rem" }}>
           <h1>Mentoren Dashboard</h1>
           <p style={{ color: "var(--text-color)", margin: "0.5rem 0 0 0" }}>
-            Verwalte deine Trainings und Trainees
+            {canManageAllTrainings
+              ? "Verwalte alle aktiven Trainings und Trainees"
+              : "Verwalte deine Trainings und Trainees"}
           </p>
           <div style={{ marginTop: "1rem" }}>
             <button
@@ -476,8 +531,34 @@ export default function MentorDashboard() {
                             {training.mentors.length > 0 && (
                               <div style={{ fontSize: "0.85em", marginTop: "4px", paddingLeft: "8px" }}>
                                 {training.mentors.map((tm) => (
-                                  <div key={tm.mentorId} style={{ color: "var(--text-color)" }}>
-                                    • {tm.mentor.name} ({tm.mentor.cid})
+                                  <div
+                                    key={tm.mentorId}
+                                    style={{
+                                      color: "var(--text-color)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "8px",
+                                      flexWrap: "wrap",
+                                    }}
+                                  >
+                                    <span>• {tm.mentor.name} ({tm.mentor.cid})</span>
+                                    {canManageAllTrainings && (
+                                      <button
+                                        className="button"
+                                        style={{ margin: 0, padding: "2px 8px", fontSize: "0.78em" }}
+                                        disabled={removingMentor === `${training.id}:${tm.mentorId}`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          removeMentor(
+                                            training.id,
+                                            tm.mentorId,
+                                            tm.mentor.name || tm.mentor.cid || tm.mentorId
+                                          );
+                                        }}
+                                      >
+                                        {removingMentor === `${training.id}:${tm.mentorId}` ? "Entfernt..." : "Entfernen"}
+                                      </button>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -504,6 +585,11 @@ export default function MentorDashboard() {
                                       </option>
                                     ))}
                                 </select>
+                              </div>
+                            )}
+                            {canManageAllTrainings && training.mentors.length >= 3 && (
+                              <div style={{ marginTop: "8px", fontSize: "0.8em", color: "var(--text-color)" }}>
+                                Für Mentorwechsel zuerst einen Mentor entfernen, dann neuen Mentor hinzufügen.
                               </div>
                             )}
                           </div>
@@ -565,6 +651,29 @@ export default function MentorDashboard() {
                                   <button className="button" onClick={() => handleRemoveSelfAsMentor(training.id)}>
                                     Entferne mich als Mentor
                                   </button>
+                                  {canManageAllTrainings && (
+                                    <button
+                                      className="button"
+                                      disabled={pendingWithLogs === training.id}
+                                      onClick={() => handleSetPendingWithLogs(training.id)}
+                                    >
+                                      {pendingWithLogs === training.id
+                                        ? "Setze Pending..."
+                                        : "Auf Pending setzen (Logs behalten)"}
+                                    </button>
+                                  )}
+                                  {canManageAllTrainings && (
+                                    <button
+                                      className="button button--danger"
+                                      onClick={() => {
+                                        if (confirm("Training wirklich komplett löschen?")) {
+                                          handleDropTraining(training.id);
+                                        }
+                                      }}
+                                    >
+                                      Training komplett löschen
+                                    </button>
+                                  )}
                                   <button className="button" onClick={() => setCancelDialogFor(null)}>
                                     Schließen
                                   </button>

@@ -21,30 +21,29 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get trainings where this mentor is assigned OR where they are the trainee
-    // (the latter helps with single-account testing)
-    // Only show ACTIVE trainings in mentor dashboard
+    const isLeadership = ["PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(userRole);
+
+    // Only show ACTIVE trainings in mentor dashboard.
+    // Leadership can see all active trainings; mentors only their own assignments.
     const trainings = await prisma.training.findMany({
       where: {
-        AND: [
-          {
-            status: "ACTIVE",
-          },
-          {
-            OR: [
-              {
-                mentors: {
-                  some: {
-                    mentorId: userId,
+        status: "ACTIVE",
+        ...(isLeadership
+          ? {}
+          : {
+              OR: [
+                {
+                  mentors: {
+                    some: {
+                      mentorId: userId,
+                    },
                   },
                 },
-              },
-              {
-                traineeId: userId,
-              },
-            ],
-          },
-        ],
+                {
+                  traineeId: userId,
+                },
+              ],
+            }),
       },
       include: {
         trainee: {

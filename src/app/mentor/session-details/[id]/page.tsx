@@ -162,7 +162,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
                     (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode || "THEORIE") === "THEORIE");
                   const hasPractice =
                     !!topic.practiceCovered ||
-                    (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode === "PRAXIS" || !topic.coverageMode));
+                    (!topic.theoryCovered && !topic.practiceCovered && topic.coverageMode === "PRAXIS");
 
                   const borderColor = hasPractice && !hasTheory 
                     ? "var(--success-color)" 

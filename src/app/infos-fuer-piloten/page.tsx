@@ -60,8 +60,6 @@ Die Besonderheit der meisten RNAV Transitions ist: Sie dürfen nur nach Freigabe
 
 Das heißt dann: Eine solche RNAV Transition kommt nicht in deinen Flugplan. Dort planst du die passende STAR. Du musst aber vorbereitet sein, die RNAV Transition zu fliegen.
 
-Und keine Regel ohne Ausnahme: EDDB Berlin-Brandenburg. Dort gibt es nur RNAV Transitions, die du dann auch in deinen Flugplan einträgst.
-
 Prüfe also das Vorhandensein der für dich zutreffenden RNAV Transition in den Navdaten deines Flugzeugs.
 
 Sei darauf vorbereitet, jeden beliebigen Waypoint einer solchen Transition direkt anzufliegen, auch schon vor Erreichen des Clearance Limit.

@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeTopicCoverage } from "@/lib/topicCoverage";
 import { NextRequest, NextResponse } from "next/server";
 
 const TRAINEE_ROLES = ["TRAINEE", "PENDING_TRAINEE"];
@@ -46,6 +47,9 @@ export async function GET(request: NextRequest) {
               select: {
                 topic: true,
                 checked: true,
+                coverageMode: true,
+                theoryCovered: true,
+                practiceCovered: true,
               },
             },
           },
@@ -56,7 +60,15 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(trainings, { status: 200 });
+    const normalizedTrainings = trainings.map((training: any) => ({
+      ...training,
+      sessions: (training.sessions || []).map((session: any) => ({
+        ...session,
+        topics: (session.topics || []).map((topic: any) => normalizeTopicCoverage(topic)),
+      })),
+    }));
+
+    return NextResponse.json(normalizedTrainings, { status: 200 });
   } catch (error) {
     console.error("Error fetching trainee trainings:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

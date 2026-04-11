@@ -337,7 +337,7 @@ function TraineeProgressContent() {
         current.praxis =
           current.praxis ||
           !!t.practiceCovered ||
-          (!t.theoryCovered && !t.practiceCovered && (t.coverageMode === "PRAXIS" || !t.coverageMode));
+          (!t.theoryCovered && !t.practiceCovered && t.coverageMode === "PRAXIS");
         coverageMap.set(t.topic, current);
       });
     });
@@ -518,6 +518,18 @@ function TraineeProgressContent() {
               )}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem" }}>
+              <div>
+                <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>Trainee</div>
+                <div style={{ fontSize: "1.05em", fontWeight: 600 }}>
+                  {training.trainee.name || "Unbekannt"}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>CID</div>
+                <div style={{ fontSize: "1.05em", fontWeight: 600, fontFamily: "monospace" }}>
+                  {training.trainee.cid || "N/A"}
+                </div>
+              </div>
               <div>
                 <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>Status</div>
                 <div style={{ fontSize: "1.05em", fontWeight: 600, textTransform: "capitalize" }}>
