@@ -146,6 +146,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const existingAbortedTraining = await prisma.training.findFirst({
+      where: {
+        traineeId: traineeUser.id,
+        status: "ABGEBROCHEN",
+      },
+      include: {
+        mentors: true,
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
     let trainingId: string;
 
     if (existingTraining) {
@@ -166,6 +177,40 @@ export async function POST(request: NextRequest) {
         await prisma.trainingMentor.create({
           data: {
             trainingId: existingTraining.id,
+            mentorId: mentor.id,
+          },
+        });
+      }
+    } else if (existingAbortedTraining) {
+      trainingId = existingAbortedTraining.id;
+
+      await prisma.training.update({
+        where: { id: existingAbortedTraining.id },
+        data: {
+          status: "ACTIVE",
+          cancellationReason: null,
+          cancellationAt: null,
+          readyForCheckride: false,
+          checkrideRequestText: null,
+          checkrideRequestedAt: null,
+        },
+      });
+
+      const mentorAlreadyAssigned = existingAbortedTraining.mentors.some(
+        (entry) => entry.mentorId === mentor.id
+      );
+
+      if (!mentorAlreadyAssigned) {
+        if (existingAbortedTraining.mentors.length >= 3) {
+          return NextResponse.json(
+            { error: "Training hat bereits die maximale Anzahl an Mentoren" },
+            { status: 409 }
+          );
+        }
+
+        await prisma.trainingMentor.create({
+          data: {
+            trainingId: existingAbortedTraining.id,
             mentorId: mentor.id,
           },
         });

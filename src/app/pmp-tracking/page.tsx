@@ -24,6 +24,12 @@ interface TrainingCoverageRow {
   lastSessionDate: string | null;
 }
 
+interface MentorOption {
+  id: string;
+  name: string | null;
+  cid: string | null;
+}
+
 function PmpTrackingContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -32,6 +38,9 @@ function PmpTrackingContent() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [availableMentors, setAvailableMentors] = useState<MentorOption[]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [swapSelection, setSwapSelection] = useState<Record<string, string>>({});
 
   const userRole = (session?.user as any)?.role;
   const isAdminOrLeitung = userRole === "ADMIN" || userRole === "PMP_LEITUNG";
@@ -57,10 +66,156 @@ function PmpTrackingContent() {
       if (!res.ok) throw new Error("Failed to fetch tracking data");
       const data = await res.json();
       setTrainings(data.trainings || []);
+
+      const usersRes = await fetch("/api/admin/users");
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        const mentors = (usersData || [])
+          .filter((u: any) => ["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(u.role))
+          .map((u: any) => ({ id: u.id, name: u.name, cid: u.cid }))
+          .sort((a: MentorOption, b: MentorOption) => (a.name || "").localeCompare(b.name || ""));
+        setAvailableMentors(mentors);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cancelTraining = async (trainingId: string, traineeLabel: string) => {
+    const reason = prompt(`Grund fuer den Abbruch von ${traineeLabel}:`);
+    if (reason === null) return;
+
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+      setError("Bitte einen Abbruchgrund eingeben.");
+      return;
+    }
+
+    setActionLoading(`cancel-${trainingId}`);
+    setError("");
+    try {
+      const res = await fetch("/api/training/drop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trainingId,
+          setVisitorKeepLogs: true,
+          cancellationReason: trimmedReason,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Fehler beim Abbrechen des Trainings");
+      }
+
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const deleteTraining = async (trainingId: string, traineeLabel: string) => {
+    if (!confirm(`Training von ${traineeLabel} wirklich komplett loeschen? Alle Daten werden entfernt.`)) return;
+
+    setActionLoading(`delete-${trainingId}`);
+    setError("");
+    try {
+      const res = await fetch("/api/training/drop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainingId, deleteEverything: true }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Fehler beim Loeschen aller Trainingsdaten");
+      }
+
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const removeMentor = async (
+    trainingId: string,
+    mentorId: string,
+    mentorLabel: string,
+    traineeLabel: string
+  ) => {
+    if (!confirm(`Mentor ${mentorLabel} von ${traineeLabel} entfernen?`)) return;
+
+    setActionLoading(`remove-${trainingId}-${mentorId}`);
+    setError("");
+    try {
+      const res = await fetch("/api/training/drop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainingId, mentorId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Fehler beim Entfernen des Mentors");
+      }
+
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const swapMentor = async (
+    trainingId: string,
+    oldMentorId: string,
+    oldMentorLabel: string,
+    traineeLabel: string
+  ) => {
+    const selected = swapSelection[`${trainingId}:${oldMentorId}`];
+    if (!selected) {
+      setError("Bitte einen Ersatz-Mentor auswaehlen.");
+      return;
+    }
+
+    if (!confirm(`Mentor ${oldMentorLabel} bei ${traineeLabel} durch den gewaehlten Mentor ersetzen?`)) return;
+
+    setActionLoading(`swap-${trainingId}-${oldMentorId}`);
+    setError("");
+    try {
+      const res = await fetch("/api/training/swap-mentor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trainingId,
+          oldMentorId,
+          newMentorId: selected,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Fehler beim Tauschen des Mentors");
+      }
+
+      setSwapSelection((prev) => {
+        const next = { ...prev };
+        delete next[`${trainingId}:${oldMentorId}`];
+        return next;
+      });
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -185,6 +340,10 @@ function PmpTrackingContent() {
             const coveragePercent = Math.round(
               (row.topicsCoveredCount / totalTopics) * 100
             );
+            const traineeLabel = row.trainee.name || row.trainee.cid || "Unbekannt";
+            const isCancelling = actionLoading === `cancel-${row.trainingId}`;
+            const isDeleting = actionLoading === `delete-${row.trainingId}`;
+            const isActionBusy = isCancelling || isDeleting;
             return (
               <div
                 key={row.trainingId}
@@ -262,6 +421,108 @@ function PmpTrackingContent() {
                   </span>
                   <span style={{ whiteSpace: "nowrap" }}>Sessions: {row.sessionsCount}</span>
                 </div>
+
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {row.status === "ACTIVE" && (
+                    <button
+                      className="button"
+                      type="button"
+                      onClick={() => cancelTraining(row.trainingId, traineeLabel)}
+                      disabled={isActionBusy}
+                      style={{
+                        margin: 0,
+                        padding: "5px 10px",
+                        fontSize: "0.85em",
+                        opacity: isActionBusy ? 0.6 : 1,
+                      }}
+                    >
+                      {isCancelling ? "Abbrechen..." : "Training Abbrechen"}
+                    </button>
+                  )}
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={() => deleteTraining(row.trainingId, traineeLabel)}
+                    disabled={isActionBusy}
+                    style={{
+                      margin: 0,
+                      padding: "5px 10px",
+                      fontSize: "0.85em",
+                      background: "#a93131",
+                      borderColor: "#a93131",
+                      opacity: isActionBusy ? 0.6 : 1,
+                    }}
+                  >
+                    {isDeleting ? "Loeschen..." : "Training Loeschen"}
+                  </button>
+                </div>
+
+                {row.status === "ACTIVE" && row.mentors.length > 0 && (
+                  <div style={{ display: "grid", gap: "0.5rem", marginTop: "0.25rem" }}>
+                    {row.mentors.map((mentor) => {
+                      const mentorLabel = mentor.name || mentor.cid || "Unbekannt";
+                      const removeKey = `remove-${row.trainingId}-${mentor.id}`;
+                      const swapKey = `swap-${row.trainingId}-${mentor.id}`;
+                      const selectionKey = `${row.trainingId}:${mentor.id}`;
+                      const mentorAlternatives = availableMentors.filter((m) =>
+                        m.id !== mentor.id && !row.mentors.some((assigned) => assigned.id === m.id)
+                      );
+
+                      return (
+                        <div
+                          key={mentor.id}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr auto auto auto",
+                            gap: "0.5rem",
+                            alignItems: "center",
+                          }}
+                        >
+                          <span style={{ fontSize: "0.9em", color: "var(--text-color)" }}>
+                            Mentor: {mentorLabel}
+                          </span>
+                          <button
+                            className="button"
+                            type="button"
+                            onClick={() => removeMentor(row.trainingId, mentor.id, mentorLabel, traineeLabel)}
+                            disabled={actionLoading === removeKey || !!actionLoading}
+                            style={{ margin: 0, padding: "5px 10px", fontSize: "0.82em" }}
+                          >
+                            {actionLoading === removeKey ? "Entferne..." : "Mentor entfernen"}
+                          </button>
+                          <select
+                            className="form-input"
+                            value={swapSelection[selectionKey] || ""}
+                            onChange={(e) =>
+                              setSwapSelection((prev) => ({
+                                ...prev,
+                                [selectionKey]: e.target.value,
+                              }))
+                            }
+                            disabled={!!actionLoading || mentorAlternatives.length === 0}
+                            style={{ minWidth: "180px", margin: 0, fontSize: "0.82em", padding: "5px 8px" }}
+                          >
+                            <option value="">Ersatz-Mentor...</option>
+                            {mentorAlternatives.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {(m.name || "Unbekannt") + (m.cid ? ` (${m.cid})` : "")}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            className="button"
+                            type="button"
+                            onClick={() => swapMentor(row.trainingId, mentor.id, mentorLabel, traineeLabel)}
+                            disabled={actionLoading === swapKey || !!actionLoading || mentorAlternatives.length === 0}
+                            style={{ margin: 0, padding: "5px 10px", fontSize: "0.82em" }}
+                          >
+                            {actionLoading === swapKey ? "Tausche..." : "Mentor tauschen"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}

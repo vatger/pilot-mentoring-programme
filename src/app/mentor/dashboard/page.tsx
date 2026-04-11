@@ -84,9 +84,9 @@ export default function MentorDashboard() {
 
   const userRole = (session?.user as any)?.role;
   const isMentor =
-    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "ADMIN" || userRole === "PMP_PRÜFER";
-  const canDeleteRequests = userRole === "PMP_LEITUNG" || userRole === "ADMIN";
-  const canManageAllTrainings = userRole === "PMP_LEITUNG" || userRole === "ADMIN";
+    userRole === "MENTOR" || userRole === "PMP_LEITUNG" || userRole === "PMP_PRÜFER" || userRole === "ADMIN";
+  const canDeleteRequests = userRole === "PMP_LEITUNG";
+  const canManageAllTrainings = userRole === "PMP_LEITUNG";
 
   useEffect(() => {
     if (status === "loading") return;
@@ -1078,7 +1078,7 @@ export default function MentorDashboard() {
             )}
 
             <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-              {selectedTrainee.role === "PENDING_TRAINEE" && (
+              {(["PENDING_TRAINEE", "TRAINEE"] as const).includes(selectedTrainee.role as any) && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

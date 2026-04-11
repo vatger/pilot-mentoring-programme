@@ -19,7 +19,15 @@ export async function POST(request: NextRequest) {
     const userRole = (session.user as any).role;
     const userId = (session.user as any).id;
 
-    const { trainingId, mentorId, resetCancelledTrainee, keepLogsAndSetPending } = await request.json();
+    const {
+      trainingId,
+      mentorId,
+      resetCancelledTrainee,
+      keepLogsAndSetPending,
+      setVisitorKeepLogs,
+      deleteEverything,
+      cancellationReason,
+    } = await request.json();
 
     // Use case 1: Mentor dropping a co-mentor or trainee
     if (trainingId && !resetCancelledTrainee) {
@@ -31,7 +39,7 @@ export async function POST(request: NextRequest) {
       // Get the training with mentors and traineeId
       const training = await prisma.training.findUnique({
         where: { id: trainingId },
-        include: { mentors: true, trainee: { select: { id: true, role: true } } },
+        include: { mentors: true, trainee: { select: { id: true, role: true, cid: true } } },
       });
 
       if (!training) {
@@ -80,6 +88,76 @@ export async function POST(request: NextRequest) {
             success: true,
             message: "Trainee set to pending. Training and logs were kept.",
           },
+          { status: 200 }
+        );
+      }
+
+      if (setVisitorKeepLogs) {
+        if (!["ADMIN", "PMP_LEITUNG"].includes(userRole)) {
+          return NextResponse.json(
+            { error: "Only PMP leadership can abort training while keeping logs" },
+            { status: 403 }
+          );
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await tx.trainingMentor.deleteMany({
+            where: { trainingId },
+          });
+
+          await tx.training.update({
+            where: { id: trainingId },
+            data: {
+              status: "ABGEBROCHEN",
+              cancellationReason: String(cancellationReason || "").trim() || "Training abgebrochen",
+              cancellationAt: new Date(),
+              readyForCheckride: false,
+              checkrideRequestText: null,
+              checkrideRequestedAt: null,
+            },
+          });
+
+          await tx.user.update({
+            where: { id: training.trainee.id },
+            data: {
+              role: "VISITOR",
+              userStatus: "Cancelled Trainee",
+            },
+          });
+        });
+
+        return NextResponse.json(
+          {
+            success: true,
+            message: "Training aborted. Logs were kept and trainee set to VISITOR.",
+          },
+          { status: 200 }
+        );
+      }
+
+      if (deleteEverything) {
+        if (!["ADMIN", "PMP_LEITUNG"].includes(userRole)) {
+          return NextResponse.json(
+            { error: "Only PMP leadership can delete all trainee data" },
+            { status: 403 }
+          );
+        }
+
+        await prisma.$transaction(async (tx) => {
+          if (training.trainee.cid) {
+            await tx.registration.deleteMany({
+              where: { cid: training.trainee.cid },
+            });
+          }
+
+          // Cascade deletes all trainee-linked trainings, sessions, checkrides, etc.
+          await tx.user.delete({
+            where: { id: training.trainee.id },
+          });
+        });
+
+        return NextResponse.json(
+          { success: true, message: "Trainee and all related data deleted" },
           { status: 200 }
         );
       }
