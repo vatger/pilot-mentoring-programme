@@ -35,8 +35,12 @@ function SignInContent() {
       }
 
       const role = (session.user as any).role;
-      const mentorOrHigherRoles = ["MENTOR", "PMP_PRÜFER", "PMP_LEITUNG", "ADMIN"];
-      const redirectUrl = mentorOrHigherRoles.includes(role) ? "/mentor/dashboard" : "/";
+      const redirectUrl =
+        role === "ADMIN" || role === "PMP_LEITUNG"
+          ? "/pmp-tracking"
+          : ["MENTOR", "PMP_PRÜFER"].includes(role)
+            ? "/mentor/dashboard"
+            : "/";
 
       router.push(redirectUrl);
       return;
