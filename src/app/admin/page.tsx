@@ -22,10 +22,10 @@ interface PendingCancellation {
   cancellationAt: string;
 }
 
-type UserRole = "ADMIN" | "PMP_LEITUNG" | "PMP_PRÜFER" | "MENTOR" | "TRAINEE" | "PENDING_TRAINEE" | "COMPLETED_TRAINEE" | "VISITOR";
+type UserRole = "ADMIN" | "PMP_LEITUNG" | "PMP_PRÜFER" | "MENTOR" | "TRAINEE" | "PENDING_TRAINEE" | "COMPLETED_TRAINEE" | "CHECKRIDE_COMPLETED" | "VISITOR";
 type UserStatus = "" | "Pausierter Mentor" | "Deleted Mentor" | "Cancelled Trainee" | "Completed Trainee";
 
-const roles: UserRole[] = ["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER", "MENTOR", "TRAINEE", "PENDING_TRAINEE", "COMPLETED_TRAINEE", "VISITOR"];
+const roles: UserRole[] = ["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER", "MENTOR", "TRAINEE", "PENDING_TRAINEE", "COMPLETED_TRAINEE", "CHECKRIDE_COMPLETED", "VISITOR"];
 const userStatuses: UserStatus[] = ["", "Pausierter Mentor", "Deleted Mentor", "Cancelled Trainee", "Completed Trainee"];
 
 export default function AdminPage() {

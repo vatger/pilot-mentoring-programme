@@ -37,6 +37,7 @@ type RegistrationData = {
 type Training = {
   id: string;
   status: string;
+  trainingType: string;
   readyForCheckride: boolean;
   createdAt: string;
   trainee: Trainee;
@@ -62,6 +63,8 @@ export default function MentorTraineePage() {
   const [editableAnmeldetext, setEditableAnmeldetext] = useState("");
   const [savingAnmeldetext, setSavingAnmeldetext] = useState(false);
   const [anmeldetextError, setAnmeldetextError] = useState("");
+  const [actioningTrainingId, setActioningTrainingId] = useState<string | null>(null);
+  const [actioningType, setActioningType] = useState<"finish" | "migrate" | null>(null);
   const [editingAnmeldetext, setEditingAnmeldetext] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -119,6 +122,64 @@ export default function MentorTraineePage() {
     setEditableAnmeldetext("");
     setAnmeldetextError("");
     setEditingAnmeldetext(false);
+  };
+
+  const finishCoachingTraining = async (trainingId: string) => {
+    if (!confirm("Möchtest du diese Coaching-Ausbildung wirklich abschließen? Der Trainee wird als COMPLETED_TRAINEE markiert.")) {
+      return;
+    }
+
+    setActioningTrainingId(trainingId);
+    setActioningType("finish");
+
+    try {
+      const res = await fetch(`/api/trainings/${trainingId}/finish-coaching`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Fehler beim Abschließen der Coaching-Ausbildung");
+      }
+
+      setError("");
+      await fetchTrainings();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setActioningTrainingId(null);
+      setActioningType(null);
+    }
+  };
+
+  const migrateToStandardTraining = async (trainingId: string) => {
+    if (!confirm("Möchtest du diese Coaching-Ausbildung wirklich zu Standard PMP migrieren? Der Trainee kann dann Checkrides ablegen.")) {
+      return;
+    }
+
+    setActioningTrainingId(trainingId);
+    setActioningType("migrate");
+
+    try {
+      const res = await fetch(`/api/trainings/${trainingId}/migrate-to-standard`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Fehler beim Migrieren zur Standard-Ausbildung");
+      }
+
+      setError("");
+      await fetchTrainings();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setActioningTrainingId(null);
+      setActioningType(null);
+    }
   };
 
   const saveAnmeldetext = async () => {
@@ -280,6 +341,25 @@ export default function MentorTraineePage() {
 
                       <div>
                         <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
+                          Training Type
+                        </div>
+                        <div
+                          style={{
+                            display: "inline-block",
+                            margin: "0.25rem 0 0 0",
+                            padding: "4px 10px",
+                            fontSize: "0.85em",
+                            borderRadius: "4px",
+                            background: training.trainingType === "ONLINE_COACHING" ? "rgba(76, 175, 80, 0.15)" : "rgba(77, 142, 219, 0.15)",
+                            color: training.trainingType === "ONLINE_COACHING" ? "#4caf50" : "#4d8edb",
+                          }}
+                        >
+                          {training.trainingType === "ONLINE_COACHING" ? "Online Coaching" : "Standard PMP"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
                           Progress
                         </div>
                         <div
@@ -366,20 +446,62 @@ export default function MentorTraineePage() {
                       minWidth: "180px",
                     }}
                   >
-                    <Link
-                      href={`/mentor/session?trainingId=${training.id}`}
-                      className="button"
-                      style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
-                    >
-                      Log Session
-                    </Link>
-                    <Link
-                      href={`/trainee/progress?trainingId=${training.id}`}
-                      className="button"
-                      style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
-                    >
-                      Fortschritt ansehen
-                    </Link>
+                    {training.trainingType === "ONLINE_COACHING" ? (
+                      <>
+                        <Link
+                          href={`/mentor/session?trainingId=${training.id}`}
+                          className="button"
+                          style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
+                        >
+                          Log Session
+                        </Link>
+                        <button
+                          onClick={() => finishCoachingTraining(training.id)}
+                          disabled={actioningTrainingId === training.id && actioningType === "finish"}
+                          className="button"
+                          style={{ 
+                            margin: 0, 
+                            padding: "8px 12px", 
+                            fontSize: "0.9em",
+                            opacity: actioningTrainingId === training.id && actioningType === "finish" ? 0.6 : 1,
+                            cursor: actioningTrainingId === training.id && actioningType === "finish" ? "default" : "pointer",
+                          }}
+                        >
+                          {actioningTrainingId === training.id && actioningType === "finish" ? "Wird abgeschlossen..." : "Training abschließen"}
+                        </button>
+                        <button
+                          onClick={() => migrateToStandardTraining(training.id)}
+                          disabled={actioningTrainingId === training.id && actioningType === "migrate"}
+                          className="button"
+                          style={{ 
+                            margin: 0, 
+                            padding: "8px 12px", 
+                            fontSize: "0.9em",
+                            opacity: actioningTrainingId === training.id && actioningType === "migrate" ? 0.6 : 1,
+                            cursor: actioningTrainingId === training.id && actioningType === "migrate" ? "default" : "pointer",
+                          }}
+                        >
+                          {actioningTrainingId === training.id && actioningType === "migrate" ? "Wird migriert..." : "Zu Standard PMP migrieren"}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Link
+                          href={`/mentor/session?trainingId=${training.id}`}
+                          className="button"
+                          style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
+                        >
+                          Log Session
+                        </Link>
+                        <Link
+                          href={`/trainee/progress?trainingId=${training.id}`}
+                          className="button"
+                          style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
+                        >
+                          Fortschritt ansehen
+                        </Link>
+                      </>
+                    )}
                     <button
                       onClick={() => openRegistrationDetails(training.trainee, training.id)}
                       className="button"

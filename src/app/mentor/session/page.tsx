@@ -58,6 +58,7 @@ function SessionLoggingContent() {
   const [sessionDate, setSessionDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+  const [sessionType, setSessionType] = useState<"STANDARD" | "ONLINE_COACHING">("STANDARD");
   const [comments, setComments] = useState("");
   const [whiteboardId, setWhiteboardId] = useState(whiteboardSessionId || "");
   const [topicSelections, setTopicSelections] = useState<Record<string, { theory: boolean; practice: boolean }>>({});
@@ -94,6 +95,7 @@ function SessionLoggingContent() {
     } else {
       setIsEditMode(false);
       setIsLockedReleased(false);
+      setSessionType("STANDARD");
       setTopicSelections({});
       setTopicComments({});
       setComments("");
@@ -114,6 +116,7 @@ function SessionLoggingContent() {
       setIsEditMode(true);
       setIsLockedReleased(!data.isDraft);
       setSessionDate(new Date(data.sessionDate).toISOString().split("T")[0]);
+      setSessionType(data.sessionType || "STANDARD");
       setComments(data.comments || "");
       setWhiteboardId(data.whiteboardSessionId || "");
 
@@ -197,7 +200,7 @@ function SessionLoggingContent() {
     setSuccess(false);
 
     try {
-      const topicData = trainingTopics.map((t, idx) => ({
+      const topicData = sessionType === "STANDARD" ? trainingTopics.map((t, idx) => ({
         theoryCovered: !!topicSelections[t.key]?.theory,
         practiceCovered:
           t.category === "THEORY"
@@ -213,7 +216,7 @@ function SessionLoggingContent() {
             : "THEORIE",
         comment: topicComments[t.key] || null,
         order: idx,
-      }));
+      })) : [];
 
       const res = await fetch("/api/sessions", {
         method: "POST",
@@ -221,6 +224,7 @@ function SessionLoggingContent() {
         body: JSON.stringify({
           trainingId,
           sessionId,
+          sessionType,
           sessionDate,
           comments,
           whiteboardSessionId: whiteboardId || null,
@@ -323,6 +327,21 @@ function SessionLoggingContent() {
           />
         </label>
 
+        {/* Session Type Selector */}
+        <label className="form-label">
+          Art des Trainings
+          <select
+            value={sessionType}
+            onChange={(e) => setSessionType(e.target.value as "STANDARD" | "ONLINE_COACHING")}
+            className="form-input"
+            disabled={formLocked}
+            required
+          >
+            <option value="STANDARD">Standard PMP-Airlinertraining (mit Themen-Tracking)</option>
+            <option value="ONLINE_COACHING">Online Coaching (Notiz)</option>
+          </select>
+        </label>
+
         {/* Whiteboard Session (Optional) */}
         <label className="form-label">
           Link zur Whiteboard-Session (Zukunftsmusik, Optional)
@@ -339,94 +358,72 @@ function SessionLoggingContent() {
           </small>
         </label>
 
-        {/* Topics */}
-        <div>
-          <h2 style={{ marginBottom: "12px" }}>Abgedeckte Themen</h2>
-          <p style={{ fontSize: "0.95em", marginBottom: "16px", color: "var(--text-color)" }}>
-            Standard ist keine Auswahl. Setze die Checkboxen pro Thema: Theorie (blau) und Praxis (grün). Bei Theorie-Themen gibt es keine Praxis-Checkbox.
-          </p>
+        {/* Topics - Only for STANDARD sessions */}
+        {sessionType === "STANDARD" && (
+          <div>
+            <h2 style={{ marginBottom: "12px" }}>Abgedeckte Themen</h2>
+            <p style={{ fontSize: "0.95em", marginBottom: "16px", color: "var(--text-color)" }}>
+              Standard ist keine Auswahl. Setze die Checkboxen pro Thema: Theorie (blau) und Praxis (grün). Bei Theorie-Themen gibt es keine Praxis-Checkbox.
+            </p>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {trainingTopics.map((topic) => {
-              const previousCoverage = getCoverageStatus(topic.key);
-              const isPreviouslyCovered = previousCoverage.theorie || previousCoverage.praxis;
-              const cardColor = previousCoverage.praxis
-                ? PRACTICE_GREEN
-                : previousCoverage.theorie
-                ? THEORY_BLUE
-                : "var(--footer-border)";
-              const cardBackground = previousCoverage.praxis
-                ? "rgba(46, 125, 50, 0.08)"
-                : previousCoverage.theorie
-                ? "rgba(0, 95, 163, 0.06)"
-                : "var(--container-bg)";
-              const isTheoryChecked = !!topicSelections[topic.key]?.theory;
-              const isPracticeChecked = topic.category === "THEORY" ? false : !!topicSelections[topic.key]?.practice;
-              const isChecked = isTheoryChecked || isPracticeChecked;
-              return (
-                <div
-                  key={topic.key}
-                  style={{
-                    padding: "14px",
-                    borderRadius: "8px",
-                    border: `1.5px solid ${cardColor}`,
-                    background: cardBackground,
-                    transition: "all 0.2s",
-                  }}
-                >
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {trainingTopics.map((topic) => {
+                const previousCoverage = getCoverageStatus(topic.key);
+                const isPreviouslyCovered = previousCoverage.theorie || previousCoverage.praxis;
+                const cardColor = previousCoverage.praxis
+                  ? PRACTICE_GREEN
+                  : previousCoverage.theorie
+                  ? THEORY_BLUE
+                  : "var(--footer-border)";
+                const cardBackground = previousCoverage.praxis
+                  ? "rgba(46, 125, 50, 0.08)"
+                  : previousCoverage.theorie
+                  ? "rgba(0, 95, 163, 0.06)"
+                  : "var(--container-bg)";
+                const isTheoryChecked = !!topicSelections[topic.key]?.theory;
+                const isPracticeChecked = topic.category === "THEORY" ? false : !!topicSelections[topic.key]?.practice;
+                const isChecked = isTheoryChecked || isPracticeChecked;
+                return (
                   <div
+                    key={topic.key}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      marginBottom: "10px",
-                      gap: "10px",
+                      padding: "14px",
+                      borderRadius: "8px",
+                      border: `1.5px solid ${cardColor}`,
+                      background: cardBackground,
+                      transition: "all 0.2s",
                     }}
                   >
-                    <span
-                      style={{
-                        fontWeight: 500,
-                        color: isPreviouslyCovered ? cardColor : "var(--text-color)",
-                        flex: 1,
-                      }}
-                    >
-                      {topic.label}
-                    </span>
-                    {previousCoverage.theorie && (
-                      <span style={{ fontSize: "0.75em", background: THEORY_BLUE, color: "white", padding: "3px 8px", borderRadius: "4px" }}>
-                        Theorie vorhanden
-                      </span>
-                    )}
-                    {previousCoverage.praxis && (
-                      <span style={{ fontSize: "0.75em", background: PRACTICE_GREEN, color: "white", padding: "3px 8px", borderRadius: "4px" }}>
-                        Praxis vorhanden
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: isChecked ? "10px" : "0" }}>
-                    <label
+                    <div
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "6px",
-                        fontSize: "0.9em",
-                        padding: "4px 8px",
-                        borderRadius: "6px",
-                        border: `1px solid ${THEORY_BLUE}`,
-                        background: isTheoryChecked ? "rgba(0, 95, 163, 0.12)" : "transparent",
+                        marginBottom: "10px",
+                        gap: "10px",
                       }}
                     >
-                      <input
-                        className="topic-checkbox topic-checkbox--theory"
-                        type="checkbox"
-                        checked={isTheoryChecked}
-                        onChange={() => toggleTheory(topic.key)}
-                          disabled={formLocked}
-                        style={{ width: "16px", height: "16px" }}
-                      />
-                      <span style={{ color: THEORY_BLUE, fontWeight: 600 }}>Theorie</span>
-                    </label>
-                    {topic.category !== "THEORY" ? (
+                      <span
+                        style={{
+                          fontWeight: 500,
+                          color: isPreviouslyCovered ? cardColor : "var(--text-color)",
+                          flex: 1,
+                        }}
+                      >
+                        {topic.label}
+                      </span>
+                      {previousCoverage.theorie && (
+                        <span style={{ fontSize: "0.75em", background: THEORY_BLUE, color: "white", padding: "3px 8px", borderRadius: "4px" }}>
+                          Theorie vorhanden
+                        </span>
+                      )}
+                      {previousCoverage.praxis && (
+                        <span style={{ fontSize: "0.75em", background: PRACTICE_GREEN, color: "white", padding: "3px 8px", borderRadius: "4px" }}>
+                          Praxis vorhanden
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: isChecked ? "10px" : "0" }}>
                       <label
                         style={{
                           display: "flex",
@@ -435,55 +432,95 @@ function SessionLoggingContent() {
                           fontSize: "0.9em",
                           padding: "4px 8px",
                           borderRadius: "6px",
-                          border: `1px solid ${PRACTICE_GREEN}`,
-                          background: isPracticeChecked ? "rgba(46, 125, 50, 0.12)" : "transparent",
+                          border: `1px solid ${THEORY_BLUE}`,
+                          background: isTheoryChecked ? "rgba(0, 95, 163, 0.12)" : "transparent",
                         }}
                       >
                         <input
-                          className="topic-checkbox topic-checkbox--practice"
+                          className="topic-checkbox topic-checkbox--theory"
                           type="checkbox"
-                          checked={isPracticeChecked}
-                          onChange={() => togglePractice(topic.key)}
+                          checked={isTheoryChecked}
+                          onChange={() => toggleTheory(topic.key)}
                           disabled={formLocked}
                           style={{ width: "16px", height: "16px" }}
                         />
-                        <span style={{ color: PRACTICE_GREEN, fontWeight: 600 }}>Praxis</span>
+                        <span style={{ color: THEORY_BLUE, fontWeight: 600 }}>Theorie</span>
                       </label>
-                    ) : (
-                      <span style={{ fontSize: "0.8em", color: "var(--text-muted)" }}>Nur Theorie</span>
+                      {topic.category !== "THEORY" ? (
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "0.9em",
+                            padding: "4px 8px",
+                            borderRadius: "6px",
+                            border: `1px solid ${PRACTICE_GREEN}`,
+                            background: isPracticeChecked ? "rgba(46, 125, 50, 0.12)" : "transparent",
+                          }}
+                        >
+                          <input
+                            className="topic-checkbox topic-checkbox--practice"
+                            type="checkbox"
+                            checked={isPracticeChecked}
+                            onChange={() => togglePractice(topic.key)}
+                            disabled={formLocked}
+                            style={{ width: "16px", height: "16px" }}
+                          />
+                          <span style={{ color: PRACTICE_GREEN, fontWeight: 600 }}>Praxis</span>
+                        </label>
+                      ) : (
+                        <span style={{ fontSize: "0.8em", color: "var(--text-muted)" }}>Nur Theorie</span>
+                      )}
+                    </div>
+
+                    {isChecked && (
+                      <textarea
+                        value={topicComments[topic.key] || ""}
+                        onChange={(e) => updateTopicComment(topic.key, e.target.value)}
+                        placeholder="Optionale Notiz zu diesem Thema..."
+                        className="form-textarea"
+                        disabled={formLocked}
+                        style={{ marginTop: "8px", minHeight: "60px" }}
+                      />
                     )}
                   </div>
-
-                  {isChecked && (
-                    <textarea
-                      value={topicComments[topic.key] || ""}
-                      onChange={(e) => updateTopicComment(topic.key, e.target.value)}
-                      placeholder="Optionale Notiz zu diesem Thema..."
-                      className="form-textarea"
-                      disabled={formLocked}
-                      style={{ marginTop: "8px", minHeight: "60px" }}
-                    />
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Comments */}
-        <label className="form-label">
-          Notizen zur Session
-          <p style={{ fontSize: "0.9em", color: "var(--text-color)", margin: "4px 0 0 0" }}>
-            Füge Erinnerungen oder Notizen für den Trainee hinzu. Z.B. was gut lief oder woran noch gearbeitet werden muss. Du kannst diese später noch ändern.
-          </p>
-          <textarea
-            value={comments}
-            onChange={(e) => setComments(e.target.value)}
-            placeholder="Z.B., Gute Fortschritte beim Anflug, du musst aber noch an der Geschwindigkeitskontrolle arbeiten..."
-            className="form-textarea"
-            disabled={formLocked}
-          />
-        </label>
+        {/* Online Coaching Note - Only for ONLINE_COACHING sessions */}
+        {sessionType === "ONLINE_COACHING" && (
+          <label className="form-label">
+            Was wurde in der Session durchgenommen?
+            <textarea
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              placeholder="Beschreibe, was in dieser Online Coaching Session durchgenommen wurde..."
+              className="form-textarea"
+              disabled={formLocked}
+            />
+          </label>
+        )}
+
+        {/* Comments - Only for STANDARD sessions */}
+        {sessionType === "STANDARD" && (
+          <label className="form-label">
+            Notizen zur Session
+            <p style={{ fontSize: "0.9em", color: "var(--text-color)", margin: "4px 0 0 0" }}>
+              Füge Erinnerungen oder Notizen für den Trainee hinzu. Z.B. was gut lief oder woran noch gearbeitet werden muss. Du kannst diese später noch ändern.
+            </p>
+            <textarea
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              placeholder="Z.B., Gute Fortschritte beim Anflug, du musst aber noch an der Geschwindigkeitskontrolle arbeiten..."
+              className="form-textarea"
+              disabled={formLocked}
+            />
+          </label>
+        )}
 
         {/* Submit Button */}
         <button

@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const traineeCid = String(body?.traineeCid || "").trim();
     const anmeldetext = String(body?.anmeldetext || "").trim();
+    const trainingType = String(body?.trainingType || "STANDARD").trim();
 
     if (!traineeCid || !/^\d+$/.test(traineeCid)) {
       return NextResponse.json({ error: "traineeCid must be numeric" }, { status: 400 });
@@ -70,12 +71,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "anmeldetext is required" }, { status: 400 });
     }
 
+    const normalizedTrainingType =
+      trainingType && ["STANDARD", "ONLINE_COACHING"].includes(trainingType)
+        ? trainingType
+        : "STANDARD";
+
     const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
     const invite = await prisma.mentorInvite.create({
       data: {
         mentorId,
         traineeCid,
         anmeldetext,
+        trainingType: normalizedTrainingType as any,
         expiresAt,
       },
       select: { id: true },

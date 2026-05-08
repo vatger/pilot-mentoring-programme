@@ -74,6 +74,7 @@ export default function MentorDashboard() {
   const [showDirectAddModal, setShowDirectAddModal] = useState(false);
   const [directTraineeCid, setDirectTraineeCid] = useState("");
   const [directAnmeldetext, setDirectAnmeldetext] = useState("");
+  const [directTrainingType, setDirectTrainingType] = useState<"STANDARD" | "ONLINE_COACHING">("STANDARD");
   const [creatingInvite, setCreatingInvite] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const [inviteError, setInviteError] = useState("");
@@ -398,7 +399,7 @@ export default function MentorDashboard() {
       const res = await fetch("/api/training/direct-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ traineeCid, anmeldetext }),
+        body: JSON.stringify({ traineeCid, anmeldetext, trainingType: directTrainingType }),
       });
 
       const data = await res.json();
@@ -418,6 +419,7 @@ export default function MentorDashboard() {
     setShowDirectAddModal(false);
     setDirectTraineeCid("");
     setDirectAnmeldetext("");
+    setDirectTrainingType("STANDARD");
     setInviteLink("");
     setInviteError("");
   };
@@ -801,6 +803,18 @@ export default function MentorDashboard() {
             <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>Mir einen Trainee hinzufügen</h2>
 
             <div style={{ display: "grid", gap: "0.75rem" }}>
+              <label className="form-label">
+                Art des Trainings
+                <select
+                  className="form-input"
+                  value={directTrainingType}
+                  onChange={(e) => setDirectTrainingType(e.target.value as "STANDARD" | "ONLINE_COACHING")}
+                >
+                  <option value="STANDARD">Standard PMP (mit Themen-Tracking)</option>
+                  <option value="ONLINE_COACHING">Online Coaching (Notiz)</option>
+                </select>
+              </label>
+
               <label className="form-label">
                 Trainee CID
                 <input
