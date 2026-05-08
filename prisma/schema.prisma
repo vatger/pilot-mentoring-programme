@@ -9,6 +9,7 @@ enum UserRole {
   TRAINEE
   PENDING_TRAINEE
   COMPLETED_TRAINEE
+  CHECKRIDE_COMPLETED
   VISITOR
 }
 
@@ -16,6 +17,16 @@ enum LessonType {
   THEORIE_TRAINING
   OFFLINE_FLUG
   ONLINE_FLUG
+}
+
+enum TrainingType {
+  STANDARD
+  ONLINE_COACHING
+}
+
+enum SessionType {
+  STANDARD
+  ONLINE_COACHING
 }
 
 enum TopicCoverageMode {
@@ -101,6 +112,7 @@ model MentorInvite {
   mentorId    String
   traineeCid  String
   anmeldetext String   @db.Text
+  trainingType TrainingType @default(STANDARD)
   expiresAt   DateTime
   usedAt      DateTime?
   createdAt   DateTime @default(now())
@@ -178,6 +190,7 @@ model User {
 model Training {
   id                  String   @id @default(cuid())
   traineeId           String
+  trainingType        TrainingType @default(STANDARD)
   status              TrainingStatus @default(ACTIVE) // ACTIVE, COMPLETED, ABGEBROCHEN
   readyForCheckride   Boolean @default(false)
   checkrideRequestText String?  @db.Text
@@ -216,6 +229,7 @@ model TrainingSession {
   id                  String      @id @default(cuid())
   trainingId          String
   createdByMentorId   String?
+  sessionType         SessionType @default(STANDARD)
   lessonType          LessonType  // THEORIE_TRAINING, OFFLINE_FLUG, ONLINE_FLUG
   sessionDate         DateTime
   comments            String?     @db.Text // General session comments

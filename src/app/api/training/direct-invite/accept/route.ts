@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
         mentorId: true,
         traineeCid: true,
         anmeldetext: true,
+        trainingType: true,
         expiresAt: true,
         usedAt: true,
       },
@@ -219,6 +220,7 @@ export async function POST(request: NextRequest) {
       const training = await prisma.training.create({
         data: {
           traineeId: traineeUser.id,
+          trainingType: invite.trainingType as any,
           mentors: {
             create: {
               mentorId: mentor.id,

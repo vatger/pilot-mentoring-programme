@@ -79,15 +79,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { trainingId, sessionId, lessonType, sessionDate, comments, whiteboardSessionId, checkedTopics, isDraft } =
+    const { trainingId, sessionId, lessonType, sessionType, sessionDate, comments, whiteboardSessionId, checkedTopics, isDraft } =
       await request.json();
 
-    if (!trainingId || !sessionDate || !Array.isArray(checkedTopics)) {
+    if (!trainingId || !sessionDate) {
       return NextResponse.json(
-        { error: "trainingId, sessionDate, and checkedTopics array are required" },
+        { error: "trainingId and sessionDate are required" },
         { status: 400 }
       );
     }
+
+    // For STANDARD sessions, checkedTopics is required; for ONLINE_COACHING, it's optional
+    const isOnlineCoaching = sessionType === "ONLINE_COACHING";
+    if (!isOnlineCoaching && !Array.isArray(checkedTopics)) {
+      return NextResponse.json(
+        { error: "checkedTopics array is required for STANDARD sessions" },
+        { status: 400 }
+      );
+    }
+
+    const normalizedSessionType =
+      sessionType && ["STANDARD", "ONLINE_COACHING"].includes(sessionType)
+        ? sessionType
+        : "STANDARD";
 
     const normalizedLessonType =
       lessonType && ["THEORIE_TRAINING", "OFFLINE_FLUG", "ONLINE_FLUG"].includes(lessonType)
@@ -157,6 +171,7 @@ export async function POST(request: NextRequest) {
       trainingSession = await db.trainingSession.update({
         where: { id: sessionId },
         data: {
+          sessionType: normalizedSessionType,
           lessonType: normalizedLessonType,
           sessionDate: new Date(sessionDate),
           comments: comments || null,
@@ -164,9 +179,11 @@ export async function POST(request: NextRequest) {
           createdByMentorId: existing.createdByMentorId || userId,
           isDraft: isDraft !== false, // default true if undefined
           releasedAt: isDraft === false ? new Date() : null,
-          topics: {
-            create: normalizedTopics.map(normalizeTopicForPersist),
-          },
+          ...(normalizedSessionType === "STANDARD" && {
+            topics: {
+              create: normalizedTopics.map(normalizeTopicForPersist),
+            },
+          }),
         },
         include: { topics: true },
       });
@@ -174,6 +191,7 @@ export async function POST(request: NextRequest) {
       trainingSession = await db.trainingSession.create({
         data: {
           trainingId,
+          sessionType: normalizedSessionType,
           lessonType: normalizedLessonType,
           sessionDate: new Date(sessionDate),
           comments: comments || null,
@@ -181,9 +199,11 @@ export async function POST(request: NextRequest) {
           createdByMentorId: userId,
           isDraft: isDraft !== false, // default true if undefined
           releasedAt: isDraft === false ? new Date() : null,
-          topics: {
-            create: normalizedTopics.map(normalizeTopicForPersist),
-          },
+          ...(normalizedSessionType === "STANDARD" && {
+            topics: {
+              create: normalizedTopics.map(normalizeTopicForPersist),
+            },
+          }),
         },
         include: {
           topics: true,
