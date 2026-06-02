@@ -104,10 +104,7 @@ export async function GET(request: NextRequest) {
       if (!a.lastSessionDate && !b.lastSessionDate) return 0;
       if (!a.lastSessionDate) return 1;
       if (!b.lastSessionDate) return -1;
-      return (
-        new Date(b.lastSessionDate).getTime() -
-        new Date(a.lastSessionDate).getTime()
-      );
+      return new Date(b.lastSessionDate).getTime() - new Date(a.lastSessionDate).getTime();
     });
 
     return NextResponse.json(mentorActivity, { status: 200 });

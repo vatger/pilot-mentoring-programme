@@ -18,6 +18,7 @@ export default function MentorsActivityPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mentors, setMentors] = useState<MentorActivity[]>([]);
+  const [sortMode, setSortMode] = useState<"activity" | "cid">("activity");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -46,6 +47,30 @@ export default function MentorsActivityPage() {
     }
   };
 
+  const sortedMentors = [...mentors].sort((a, b) => {
+    if (sortMode === "cid") {
+      const cidA = a.cid ?? "";
+      const cidB = b.cid ?? "";
+
+      if (cidA && cidB) {
+        const cidCompare = cidA.localeCompare(cidB, "de", { numeric: true, sensitivity: "base" });
+        if (cidCompare !== 0) return cidCompare;
+      } else if (!cidA) {
+        return 1;
+      } else if (!cidB) {
+        return -1;
+      }
+    }
+
+    const timeA = a.lastSessionDate ? new Date(a.lastSessionDate).getTime() : Number.NEGATIVE_INFINITY;
+    const timeB = b.lastSessionDate ? new Date(b.lastSessionDate).getTime() : Number.NEGATIVE_INFINITY;
+    if (timeA !== timeB) {
+      return timeB - timeA;
+    }
+
+    return (a.name || "").localeCompare(b.name || "", "de", { sensitivity: "base" });
+  });
+
   if (status === "loading" || loading) {
     return (
       <PageLayout>
@@ -67,10 +92,47 @@ export default function MentorsActivityPage() {
   return (
     <PageLayout>
       <div className="card" style={{ marginBottom: "1.5rem" }}>
-        <h1>Mentoren Aktivität</h1>
-        <p style={{ color: "var(--text-color)", margin: "0.5rem 0 0 0" }}>
-          Übersicht aller Mentoren sortiert nach letzter Aktivität
-        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <h1 style={{ marginBottom: "0.35rem" }}>Mentoren Aktivität</h1>
+            <p style={{ color: "var(--text-color)", margin: 0 }}>
+              Standard: neueste Aktivität. Optional: Sortierung nach CID.
+            </p>
+          </div>
+
+          <div style={{ display: "inline-flex", gap: "0.5rem", padding: "0.25rem", backgroundColor: "rgba(0,0,0,0.05)", borderRadius: "999px" }}>
+            <button
+              type="button"
+              onClick={() => setSortMode("activity")}
+              style={{
+                border: "none",
+                borderRadius: "999px",
+                padding: "0.6rem 1rem",
+                cursor: "pointer",
+                backgroundColor: sortMode === "activity" ? "var(--accent-color)" : "transparent",
+                color: sortMode === "activity" ? "white" : "var(--text-color)",
+                fontWeight: 600,
+              }}
+            >
+              Neueste Aktivität
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortMode("cid")}
+              style={{
+                border: "none",
+                borderRadius: "999px",
+                padding: "0.6rem 1rem",
+                cursor: "pointer",
+                backgroundColor: sortMode === "cid" ? "var(--accent-color)" : "transparent",
+                color: sortMode === "cid" ? "white" : "var(--text-color)",
+                fontWeight: 600,
+              }}
+            >
+              CID
+            </button>
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -85,7 +147,7 @@ export default function MentorsActivityPage() {
         </div>
       ) : (
         <div style={{ display: "grid", gap: "1rem" }}>
-          {mentors.map((mentor) => (
+          {sortedMentors.map((mentor) => (
             <div key={mentor.id} className="card" style={{ cursor: "pointer" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "2rem", alignItems: "center" }}>
                 <div>
@@ -158,7 +220,8 @@ export default function MentorsActivityPage() {
         <ul style={{ marginTop: "0.5rem", marginBottom: 0 }}>
           <li>Trainees = Anzahl aktiver Trainings des Mentors</li>
           <li>Letzte Session = Zeitpunkt der letzten eingereichten Trainingssession</li>
-          <li>Sortierung nach Aktivität (neueste zuerst)</li>
+          <li>Standard ist Sortierung nach letzter Aktivität</li>
+          <li>Optional kann nach CID sortiert werden</li>
         </ul>
       </div>
     </PageLayout>
