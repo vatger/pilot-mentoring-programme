@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
+import { getTrainingTypeColors, getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
 
 interface RegistrationData {
   cid: string;
@@ -44,6 +45,7 @@ interface Training {
   traineeId: string;
   trainee: TraineeInfo;
   status: string;
+  trainingType: "STANDARD" | "ONLINE_COACHING";
   createdAt: string;
   mentors: Array<{
     mentorId: string;
@@ -513,9 +515,26 @@ export default function MentorDashboard() {
                     <div key={training.id} className="card">
                       <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "1.5rem", alignItems: "start" }}>
                         <div>
-                          <h3 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "1.15em" }}>
-                            {training.trainee.name}
-                          </h3>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+                                    <h3 style={{ marginTop: 0, marginBottom: 0, fontSize: "1.15em" }}>
+                                      {training.trainee.name}
+                                    </h3>
+                                    <span
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        padding: "4px 10px",
+                                        borderRadius: "999px",
+                                        fontSize: "0.78em",
+                                        fontWeight: 700,
+                                        background: getTrainingTypeColors(training.trainingType).background,
+                                        color: getTrainingTypeColors(training.trainingType).color,
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      {getTrainingTypeLabel(training.trainingType)}
+                                    </span>
+                                  </div>
                           <div style={{ display: "grid", gap: "4px", fontSize: "0.95em" }}>
                             <div>
                               <span style={{ color: "var(--text-color)" }}>CID:</span>{" "}
@@ -620,7 +639,9 @@ export default function MentorDashboard() {
                             className="button"
                             style={{ margin: 0 }}
                           >
-                            Fortschritt ansehen
+                            {isCoachingTraining(training.trainingType)
+                              ? "Session-Details"
+                              : "Fortschritt ansehen"}
                           </button>
                           <button
                             onClick={() => setShowCancellationReasonModal(training.id)}
@@ -810,7 +831,7 @@ export default function MentorDashboard() {
                   value={directTrainingType}
                   onChange={(e) => setDirectTrainingType(e.target.value as "STANDARD" | "ONLINE_COACHING")}
                 >
-                  <option value="STANDARD">Standard PMP (mit Themen-Tracking)</option>
+                  <option value="STANDARD">Airliner-Training (mit Themen-Tracking)</option>
                   <option value="ONLINE_COACHING">Online Coaching (Notiz)</option>
                 </select>
               </label>

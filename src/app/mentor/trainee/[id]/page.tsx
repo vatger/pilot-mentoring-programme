@@ -13,10 +13,12 @@ import {
   RUBRIC_ROW_TINTS,
 } from "@/lib/checkrideRubric";
 import { trainingTopics } from "@/lib/trainingTopics";
+import { getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
 
 type Training = {
   id: string;
   status: string;
+  trainingType: string;
   readyForCheckride: boolean;
   checkrideRequestText?: string | null;
   checkrideRequestedAt?: string | null;
@@ -531,20 +533,23 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
 
   const completedSessions = training.sessions.filter(s => !s.isDraft).length;
   const totalSessions = training.sessions.length;
-  const topicCoverage = getTopicCoverage();
-  const progressPoints = trainingTopics.reduce((points, topicDef) => {
-    const coverage = topicCoverage.get(topicDef.key) || { theorie: false, praxis: false };
+  const coachingTraining = isCoachingTraining(training.trainingType);
+  const topicCoverage = coachingTraining ? new Map() : getTopicCoverage();
+  const progressPoints = coachingTraining
+    ? 0
+    : trainingTopics.reduce((points, topicDef) => {
+        const coverage = topicCoverage.get(topicDef.key) || { theorie: false, praxis: false };
 
-    if (topicDef.category === "THEORY") {
-      return points + (coverage.theorie ? 1 : 0);
-    }
+        if (topicDef.category === "THEORY") {
+          return points + (coverage.theorie ? 1 : 0);
+        }
 
-    if (coverage.theorie) points += 0.5;
-    if (coverage.praxis) points += 0.5;
-    return points;
-  }, 0);
+        if (coverage.theorie) points += 0.5;
+        if (coverage.praxis) points += 0.5;
+        return points;
+      }, 0);
   const formatPoints = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
-  const progressPercent = Math.round((progressPoints / trainingTopics.length) * 100);
+  const progressPercent = coachingTraining ? 0 : Math.round((progressPoints / trainingTopics.length) * 100);
   const timelineEntries = [
     ...training.sessions.map((sess) => ({
       type: "session" as const,
@@ -580,6 +585,21 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
         {/* Trainee Info Card */}
         <div className="card" style={{ marginBottom: "2rem" }}>
           <h2>{training.trainee.name || "Unknown Trainee"}</h2>
+          <p style={{ marginTop: "0.5rem" }}>
+            <strong>Trainingstyp:</strong>{" "}
+            <span
+              style={{
+                display: "inline-block",
+                padding: "4px 10px",
+                borderRadius: "999px",
+                background: coachingTraining ? "rgba(76, 175, 80, 0.15)" : "rgba(77, 142, 219, 0.15)",
+                color: coachingTraining ? "#4caf50" : "#4d8edb",
+                fontWeight: 700,
+              }}
+            >
+              {getTrainingTypeLabel(training.trainingType)}
+            </span>
+          </p>
           <p><strong>CID:</strong> {training.trainee.cid || "N/A"}</p>
           <p>
             <strong>Status:</strong>{" "}
@@ -690,125 +710,129 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
           )}
         </div>
 
-        <div className="card" style={{ marginBottom: "2rem" }}>
-          <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Gesamtfortschritt</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "1.5rem", alignItems: "center" }}>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "2.2em", fontWeight: 700, color: "var(--accent-color)" }}>
-                {progressPercent}%
-              </div>
-              <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
-                {formatPoints(progressPoints)} / {trainingTopics.length} Themen
-              </div>
-            </div>
-            <div>
-              <div
-                style={{
-                  width: "100%",
-                  height: "16px",
-                  backgroundColor: "var(--footer-border)",
-                  borderRadius: "999px",
-                  overflow: "hidden",
-                  border: "1px solid var(--footer-border)",
-                }}
-              >
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${progressPercent}%`,
-                    backgroundColor: "var(--accent-color)",
-                    transition: "width 0.5s ease-in-out",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card" style={{ marginBottom: "2rem" }}>
-          <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Trainingsthemen</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "8px" }}>
-            {trainingTopics.map((topic) => {
-              const coverage = topicCoverage.get(topic.key) || {
-                theorie: false,
-                praxis: false,
-              };
-              const isCovered = coverage.theorie || coverage.praxis;
-
-              return (
-                <div
-                  key={topic.key}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: "6px",
-                    border: `1.5px solid ${isCovered ? "var(--accent-color)" : "var(--footer-border)"}`,
-                    backgroundColor: isCovered ? "rgba(0, 95, 163, 0.06)" : "transparent",
-                    transition: "all 0.3s ease",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
+        {!coachingTraining && (
+          <>
+            <div className="card" style={{ marginBottom: "2rem" }}>
+              <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Gesamtfortschritt</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "1.5rem", alignItems: "center" }}>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: "2.2em", fontWeight: 700, color: "var(--accent-color)" }}>
+                    {progressPercent}%
+                  </div>
+                  <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
+                    {formatPoints(progressPoints)} / {trainingTopics.length} Themen
+                  </div>
+                </div>
+                <div>
                   <div
                     style={{
-                      width: "18px",
-                      height: "18px",
-                      borderRadius: "50%",
-                      backgroundColor: isCovered ? "var(--accent-color)" : "var(--footer-border)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
-                      fontWeight: "bold",
-                      fontSize: "0.9em",
-                      flexShrink: 0,
+                      width: "100%",
+                      height: "16px",
+                      backgroundColor: "var(--footer-border)",
+                      borderRadius: "999px",
+                      overflow: "hidden",
+                      border: "1px solid var(--footer-border)",
                     }}
                   >
-                    {isCovered ? "✓" : ""}
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${progressPercent}%`,
+                        backgroundColor: "var(--accent-color)",
+                        transition: "width 0.5s ease-in-out",
+                      }}
+                    />
                   </div>
-                  <span
-                    style={{
-                      fontWeight: isCovered ? 600 : 500,
-                      color: "var(--text-color)",
-                      fontSize: "0.9em",
-                      flex: 1,
-                    }}
-                  >
-                    {topic.label}
-                  </span>
-                  {coverage.theorie && (
-                    <span
-                      style={{
-                        backgroundColor: "#005fa3",
-                        color: "white",
-                        padding: "2px 6px",
-                        borderRadius: "4px",
-                        fontSize: "0.72em",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Theorie
-                    </span>
-                  )}
-                  {coverage.praxis && (
-                    <span
-                      style={{
-                        backgroundColor: "#2e7d32",
-                        color: "white",
-                        padding: "2px 6px",
-                        borderRadius: "4px",
-                        fontSize: "0.72em",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Praxis
-                    </span>
-                  )}
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              </div>
+            </div>
+
+            <div className="card" style={{ marginBottom: "2rem" }}>
+              <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Trainingsthemen</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "8px" }}>
+                {trainingTopics.map((topic) => {
+                  const coverage = topicCoverage.get(topic.key) || {
+                    theorie: false,
+                    praxis: false,
+                  };
+                  const isCovered = coverage.theorie || coverage.praxis;
+
+                  return (
+                    <div
+                      key={topic.key}
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: "6px",
+                        border: `1.5px solid ${isCovered ? "var(--accent-color)" : "var(--footer-border)"}`,
+                        backgroundColor: isCovered ? "rgba(0, 95, 163, 0.06)" : "transparent",
+                        transition: "all 0.3s ease",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          borderRadius: "50%",
+                          backgroundColor: isCovered ? "var(--accent-color)" : "var(--footer-border)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "white",
+                          fontWeight: "bold",
+                          fontSize: "0.9em",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {isCovered ? "✓" : ""}
+                      </div>
+                      <span
+                        style={{
+                          fontWeight: isCovered ? 600 : 500,
+                          color: "var(--text-color)",
+                          fontSize: "0.9em",
+                          flex: 1,
+                        }}
+                      >
+                        {topic.label}
+                      </span>
+                      {coverage.theorie && (
+                        <span
+                          style={{
+                            backgroundColor: "#005fa3",
+                            color: "white",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontSize: "0.72em",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Theorie
+                        </span>
+                      )}
+                      {coverage.praxis && (
+                        <span
+                          style={{
+                            backgroundColor: "#2e7d32",
+                            color: "white",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontSize: "0.72em",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Praxis
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
 
         {isLeadership && training.status !== "COMPLETED" && checkrideLogs.length === 0 && (
           <div className="card" style={{ marginBottom: "2rem" }}>
@@ -843,6 +867,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
               {timelineEntries.map((entry) => {
                 if (entry.type === "session") {
                   const sess = entry.session;
+                  const sessionTopicCount = coachingTraining ? 0 : sess.topics.filter((t) => t.checked).length;
                   const isOtherMentorSession = Boolean(sess.createdByMentorId && sess.createdByMentorId !== userId);
                   return (
                     <div
@@ -871,7 +896,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                           {new Date(sess.sessionDate).toLocaleDateString()}
                         </span>
                         <span style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
-                          {sess.topics.filter((t) => t.checked).length} Themen
+                          {coachingTraining ? "Kommentar-Session" : `${sessionTopicCount} Themen`}
                         </span>
                         {sess.isDraft ? (
                           <span style={{ color: "var(--warning-color)", fontSize: "0.875rem" }}>
@@ -899,6 +924,11 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                           </div>
                         )}
                       </div>
+                      {sess.comments && (
+                        <div style={{ margin: "-0.15rem 0 0.25rem 0", fontSize: "0.9rem", color: "var(--text-color)", fontStyle: "italic" }}>
+                          {sess.comments}
+                        </div>
+                      )}
                       <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
                         {sess.isDraft && (
                           <>

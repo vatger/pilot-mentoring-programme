@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 import Link from "next/link";
 import { trainingTopics } from "@/lib/trainingTopics";
+import { getTrainingTypeColors, getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
 
 type Trainee = {
   id: string;
@@ -287,6 +288,7 @@ export default function MentorTraineePage() {
           }}
         >
           {trainings.map((training) => {
+            const coachingTraining = isCoachingTraining(training.trainingType);
             const covered = new Set(
               training.sessions
                 .flatMap((s) => s.topics)
@@ -296,6 +298,7 @@ export default function MentorTraineePage() {
             const coveragePercent = Math.round(
               (covered.size / trainingTopics.length) * 100
             );
+            const trainingTypeColors = getTrainingTypeColors(training.trainingType);
 
             return (
               <div key={training.id} className="card">
@@ -308,9 +311,26 @@ export default function MentorTraineePage() {
                   }}
                 >
                   <div>
-                    <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.15em" }}>
-                      {training.trainee.name || "Trainee"}
-                    </h3>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+                      <h3 style={{ margin: 0, fontSize: "1.15em" }}>
+                        {training.trainee.name || "Trainee"}
+                      </h3>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "4px 10px",
+                          borderRadius: "999px",
+                          fontSize: "0.78em",
+                          fontWeight: 700,
+                          background: trainingTypeColors.background,
+                          color: trainingTypeColors.color,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {getTrainingTypeLabel(training.trainingType)}
+                      </span>
+                    </div>
 
                     <div style={{ display: "grid", gap: "8px", marginBottom: "1rem" }}>
                       <div>
@@ -358,41 +378,43 @@ export default function MentorTraineePage() {
                         </div>
                       </div>
 
-                      <div>
-                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
-                          Progress
-                        </div>
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr auto",
-                            gap: "0.5rem",
-                            alignItems: "center",
-                          }}
-                        >
+                      {!coachingTraining && (
+                        <div>
+                          <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
+                            Progress
+                          </div>
                           <div
                             style={{
-                              width: "100%",
-                              height: "8px",
-                              background: "var(--footer-border)",
-                              borderRadius: "999px",
-                              overflow: "hidden",
+                              display: "grid",
+                              gridTemplateColumns: "1fr auto",
+                              gap: "0.5rem",
+                              alignItems: "center",
                             }}
                           >
                             <div
                               style={{
-                                width: `${coveragePercent}%`,
-                                height: "100%",
-                                background: "var(--accent-color)",
-                                transition: "width 0.3s ease",
+                                width: "100%",
+                                height: "8px",
+                                background: "var(--footer-border)",
+                                borderRadius: "999px",
+                                overflow: "hidden",
                               }}
-                            />
-                          </div>
-                          <div style={{ fontSize: "0.8em", fontWeight: 600, minWidth: "35px" }}>
-                            {covered.size}/{trainingTopics.length}
+                            >
+                              <div
+                                style={{
+                                  width: `${coveragePercent}%`,
+                                  height: "100%",
+                                  background: "var(--accent-color)",
+                                  transition: "width 0.3s ease",
+                                }}
+                              />
+                            </div>
+                            <div style={{ fontSize: "0.8em", fontWeight: 600, minWidth: "35px" }}>
+                              {covered.size}/{trainingTopics.length}
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
 
                       <div>
                         <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontWeight: 500 }}>
@@ -494,11 +516,15 @@ export default function MentorTraineePage() {
                           Log Session
                         </Link>
                         <Link
-                          href={`/trainee/progress?trainingId=${training.id}`}
+                          href={
+                            coachingTraining
+                              ? `/mentor/trainee/${training.trainee.id}?trainingId=${training.id}`
+                              : `/trainee/progress?trainingId=${training.id}`
+                          }
                           className="button"
                           style={{ margin: 0, padding: "8px 12px", fontSize: "0.9em" }}
                         >
-                          Fortschritt ansehen
+                          Session-Details
                         </Link>
                       </>
                     )}
