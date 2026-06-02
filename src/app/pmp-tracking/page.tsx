@@ -6,9 +6,11 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
 import { trainingTopics } from "@/lib/trainingTopics";
+import { getTrainingTypeColors, getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
 
 interface TrainingCoverageRow {
   trainingId: string;
+  trainingType: "STANDARD" | "ONLINE_COACHING";
   status: string;
   trainee: { id: string; name: string | null; cid: string | null };
   mentors: { id: string; name: string | null; cid: string | null }[];
@@ -337,9 +339,11 @@ function PmpTrackingContent() {
       ) : (
         <div style={{ display: "grid", gap: "0.85rem" }}>
           {filteredTrainings.map((row) => {
-            const coveragePercent = Math.round(
-              (row.topicsCoveredCount / totalTopics) * 100
-            );
+            const coachingTraining = isCoachingTraining(row.trainingType);
+            const coveragePercent = coachingTraining
+              ? 0
+              : Math.round((row.topicsCoveredCount / totalTopics) * 100);
+            const trainingTypeColors = getTrainingTypeColors(row.trainingType);
             const traineeLabel = row.trainee.name || row.trainee.cid || "Unbekannt";
             const isCancelling = actionLoading === `cancel-${row.trainingId}`;
             const isDeleting = actionLoading === `delete-${row.trainingId}`;
@@ -365,34 +369,59 @@ function PmpTrackingContent() {
                     <span style={{ color: "var(--text-color)", fontFamily: "monospace", fontSize: "0.9em" }}>
                       ({row.trainee.cid || "N/A"})
                     </span>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", width: "100%" }}>
-                    <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                      {formatPoints(row.topicsCoveredCount)} / {totalTopics}
-                    </span>
-                    <div
+                    <span
                       style={{
-                        width: "100%",
-                        height: "8px",
-                        background: "var(--footer-border)",
+                        marginLeft: "0.25rem",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "4px 10px",
                         borderRadius: "999px",
-                        overflow: "hidden",
+                        fontSize: "0.78em",
+                        fontWeight: 700,
+                        background: trainingTypeColors.background,
+                        color: trainingTypeColors.color,
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      <div
-                        style={{
-                          width: `${coveragePercent}%`,
-                          height: "100%",
-                          background: "var(--accent-color)",
-                          transition: "width 0.3s ease",
-                        }}
-                      />
-                    </div>
-                    <span style={{ fontSize: "0.9em", color: "var(--text-color)", whiteSpace: "nowrap" }}>
-                      {coveragePercent}%
+                      {getTrainingTypeLabel(row.trainingType)}
                     </span>
                   </div>
+
+                  {coachingTraining ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", width: "100%" }}>
+                      <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>Nur Session-Kommentare</span>
+                      <span style={{ fontSize: "0.9em", color: "var(--text-color)", whiteSpace: "nowrap" }}>
+                        {row.sessionsCount} Sessions
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", width: "100%" }}>
+                      <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+                        {formatPoints(row.topicsCoveredCount)} / {totalTopics}
+                      </span>
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "8px",
+                          background: "var(--footer-border)",
+                          borderRadius: "999px",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${coveragePercent}%`,
+                            height: "100%",
+                            background: "var(--accent-color)",
+                            transition: "width 0.3s ease",
+                          }}
+                        />
+                      </div>
+                      <span style={{ fontSize: "0.9em", color: "var(--text-color)", whiteSpace: "nowrap" }}>
+                        {coveragePercent}%
+                      </span>
+                    </div>
+                  )}
 
                   <Link
                     href={`/trainee/progress?trainingId=${row.trainingId}`}
@@ -414,7 +443,9 @@ function PmpTrackingContent() {
                   }}
                 >
                   <span style={{ whiteSpace: "nowrap" }}>
-                    Fortschritt: {formatPoints(row.topicsCoveredCount)} Themen
+                    {coachingTraining
+                      ? "Coaching: keine Themenwertung"
+                      : `Fortschritt: ${formatPoints(row.topicsCoveredCount)} Themen`}
                   </span>
                   <span style={{ whiteSpace: "nowrap" }}>
                     Mentor: {row.mentors.length > 0 ? row.mentors.map((m) => m.name || m.cid).join(", ") : "—"}

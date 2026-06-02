@@ -6,6 +6,7 @@ import { useEffect, useState, Suspense } from "react";
 import PageLayout from "@/components/PageLayout";
 import { trainingTopics } from "@/lib/trainingTopics";
 import { CHECKRIDE_RUBRIC, parseRubricNotes, RUBRIC_CODE_COLORS, RUBRIC_ROW_TINTS } from "@/lib/checkrideRubric";
+import { getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
 
 interface Mentor {
   mentorId: string;
@@ -60,6 +61,7 @@ interface Training {
   id: string;
   traineeId: string;
   status: string;
+  trainingType: string;
   createdAt: string;
   mentors: Mentor[];
   trainee: {
@@ -344,9 +346,12 @@ function TraineeProgressContent() {
     return coverageMap;
   };
 
-  const topicCoverage = getTopicCoverage();
+  const coachingTraining = Boolean(training && isCoachingTraining(training.trainingType));
+  const topicCoverage = coachingTraining ? new Map<string, { theorie: boolean; praxis: boolean }>() : getTopicCoverage();
 
   const calculateProgressPoints = () => {
+    if (coachingTraining) return 0;
+
     let points = 0;
 
     trainingTopics.forEach((topicDef) => {
@@ -465,7 +470,7 @@ function TraineeProgressContent() {
     );
   }
 
-  const progressPercent = training ? Math.round(
+  const progressPercent = training && !coachingTraining ? Math.round(
     (progressPoints / trainingTopics.length) * 100
   ) : 0;
 
@@ -534,6 +539,12 @@ function TraineeProgressContent() {
                 <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>Status</div>
                 <div style={{ fontSize: "1.05em", fontWeight: 600, textTransform: "capitalize" }}>
                   {training.status}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>Training Type</div>
+                <div style={{ fontSize: "1.05em", fontWeight: 700, color: coachingTraining ? "#4caf50" : "#4d8edb" }}>
+                  {getTrainingTypeLabel(training.trainingType)}
                 </div>
               </div>
               <div>
@@ -808,124 +819,6 @@ function TraineeProgressContent() {
                   if (entry.type === "session") {
                     const s = entry.session;
                     return (
-                    <div
-                      key={entry.key}
-                      style={{
-                        padding: "1rem 1.25rem",
-                        backgroundColor: "var(--container-bg)",
-                        borderRadius: "8px",
-                        border: "1px solid var(--footer-border)",
-                        borderLeft: "4px solid var(--accent-color)",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr auto",
-                          gap: "1rem",
-                          alignItems: "start",
-                          marginBottom: "1rem",
-                          paddingBottom: "1rem",
-                          borderBottom: "1px solid var(--footer-border)",
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: "0.8em", color: "var(--text-color)", marginBottom: "0.25rem" }}>
-                            Trainingssession
-                          </div>
-                          <div style={{ fontWeight: 600, fontSize: "1.05em" }}>
-                            {new Date(s.sessionDate).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: "0.85em", color: "var(--text-color)" }}>
-                            {s.topics.filter((t) => t.checked).length} Themen abgedeckt
-                          </div>
-                        </div>
-                      </div>
-
-                      {s.comments && (
-                        <div
-                          style={{
-                            marginBottom: "1rem",
-                            padding: "10px 12px",
-                            backgroundColor: "var(--card-bg)",
-                            borderRadius: "6px",
-                            borderLeft: "3px solid var(--accent-color)",
-                          }}
-                        >
-                          <div style={{ fontSize: "0.8em", fontWeight: 600, marginBottom: "0.25rem", color: "var(--text-color)" }}>
-                            Anmerkungen deines Mentors:
-                          </div>
-                          <div style={{ fontSize: "0.9em", color: "var(--text-color)", fontStyle: "italic" }}>
-                            "{s.comments}"
-                          </div>
-                        </div>
-                      )}
-
-                      {s.topics.filter((t) => t.checked).length > 0 && (
-                        <div>
-                          <div style={{ fontSize: "0.85em", fontWeight: 600, marginBottom: "0.5rem", color: "var(--text-color)" }}>
-                            Themen abgedeckt:
-                          </div>
-                          <div style={{ display: "grid", gap: "6px" }}>
-                            {s.topics.map((topic) =>
-                              topic.checked ? (
-                                <div
-                                  key={topic.order}
-                                  style={{
-                                    backgroundColor: "var(--card-bg)",
-                                    padding: "8px 10px",
-                                    borderRadius: "6px",
-                                    border: "1px solid var(--footer-border)",
-                                  }}
-                                >
-                                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
-                                    <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0, marginTop: "1px" }}>
-                                      <span
-                                        style={{
-                                          backgroundColor:
-                                            (topic.practiceCovered || (!topic.theoryCovered && topic.coverageMode === "PRAXIS"))
-                                              ? PRACTICE_GREEN
-                                              : THEORY_BLUE,
-                                          color: "white",
-                                          padding: "2px 6px",
-                                          borderRadius: "4px",
-                                          fontSize: "0.72em",
-                                          fontWeight: 600,
-                                        }}
-                                      >
-                                        {topic.practiceCovered || (!topic.theoryCovered && topic.coverageMode === "PRAXIS") ? "Praxis" : "Theorie"}
-                                      </span>
-                                    </div>
-                                    <div style={{ fontSize: "0.9em" }}>
-                                      <div style={{ fontWeight: 500, marginBottom: topic.comment ? "0.25rem" : "0" }}>
-                                        {
-                                          trainingTopics.find(
-                                            (t) => t.key === topic.topic
-                                          )?.label
-                                        }
-                                      </div>
-                                      {topic.comment && (
-                                        <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontStyle: "italic" }}>
-                                          "{topic.comment}"
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : null
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                  }
-
-                  const log = entry.log;
-                  if (!entry.released) {
-                    return (
                       <div
                         key={entry.key}
                         style={{
@@ -933,7 +826,7 @@ function TraineeProgressContent() {
                           backgroundColor: "var(--container-bg)",
                           borderRadius: "8px",
                           border: "1px solid var(--footer-border)",
-                          borderLeft: "4px solid var(--warning-color)",
+                          borderLeft: "4px solid var(--accent-color)",
                         }}
                       >
                         <div
@@ -942,34 +835,115 @@ function TraineeProgressContent() {
                             gridTemplateColumns: "1fr auto",
                             gap: "1rem",
                             alignItems: "start",
+                            marginBottom: "1rem",
+                            paddingBottom: "1rem",
+                            borderBottom: "1px solid var(--footer-border)",
                           }}
                         >
                           <div>
                             <div style={{ fontSize: "0.8em", color: "var(--text-color)", marginBottom: "0.25rem" }}>
-                              Checkride-Session
+                              Trainingssession
                             </div>
                             <div style={{ fontWeight: 600, fontSize: "1.05em" }}>
-                              {new Date(log.scheduledDate).toLocaleDateString()}
-                            </div>
-                            <div style={{ marginTop: "0.4rem", fontSize: "0.9em", color: "var(--text-color)" }}>
-                              Pruefer: {log.availability.examiner?.name || "Unbekannt"} ({log.availability.examiner?.cid || "N/A"})
+                              {new Date(s.sessionDate).toLocaleDateString()}
                             </div>
                           </div>
-                          <div
-                            style={{
-                              textAlign: "right",
-                              fontSize: "0.88em",
-                              fontWeight: 700,
-                              color: "var(--warning-color)",
-                            }}
-                          >
-                            Entwurf / noch nicht freigegeben
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: "0.85em", color: "var(--text-muted)" }}>
+                              {s.topics.filter((t) => t.checked).length} Themen abgedeckt
+                            </div>
+                            {s.isDraft ? (
+                              <div style={{ color: "var(--warning-color)", fontSize: "0.875rem" }}>
+                                🔧 Entwurf
+                              </div>
+                            ) : (
+                              <div style={{ color: "var(--success-color)", fontSize: "0.875rem" }}>
+                                ✓ Freigegeben
+                              </div>
+                            )}
                           </div>
                         </div>
+
+                        {s.comments && (
+                          <div
+                            style={{
+                              marginBottom: "1rem",
+                              padding: "10px 12px",
+                              backgroundColor: "var(--card-bg)",
+                              borderRadius: "6px",
+                              borderLeft: "3px solid var(--accent-color)",
+                            }}
+                          >
+                            <div style={{ fontSize: "0.8em", fontWeight: 600, marginBottom: "0.25rem", color: "var(--text-color)" }}>
+                              Anmerkungen deines Mentors:
+                            </div>
+                            <div style={{ fontSize: "0.9em", color: "var(--text-color)", fontStyle: "italic" }}>
+                              "{s.comments}"
+                            </div>
+                          </div>
+                        )}
+
+                        {s.topics.filter((t) => t.checked).length > 0 && (
+                          <div>
+                            <div style={{ fontSize: "0.85em", fontWeight: 600, marginBottom: "0.5rem", color: "var(--text-color)" }}>
+                              Themen abgedeckt:
+                            </div>
+                            <div style={{ display: "grid", gap: "6px" }}>
+                              {s.topics.map((topic) =>
+                                topic.checked ? (
+                                  <div
+                                    key={topic.order}
+                                    style={{
+                                      backgroundColor: "var(--card-bg)",
+                                      padding: "8px 10px",
+                                      borderRadius: "6px",
+                                      border: "1px solid var(--footer-border)",
+                                    }}
+                                  >
+                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
+                                      <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0, marginTop: "1px" }}>
+                                        <span
+                                          style={{
+                                            backgroundColor:
+                                              (topic.practiceCovered || (!topic.theoryCovered && topic.coverageMode === "PRAXIS"))
+                                                ? PRACTICE_GREEN
+                                                : THEORY_BLUE,
+                                            color: "white",
+                                            padding: "2px 6px",
+                                            borderRadius: "4px",
+                                            fontSize: "0.72em",
+                                            fontWeight: 600,
+                                          }}
+                                        >
+                                          {topic.practiceCovered || (!topic.theoryCovered && topic.coverageMode === "PRAXIS") ? "Praxis" : "Theorie"}
+                                        </span>
+                                      </div>
+                                      <div style={{ fontSize: "0.9em" }}>
+                                        <div style={{ fontWeight: 500, marginBottom: topic.comment ? "0.25rem" : "0" }}>
+                                          {
+                                            trainingTopics.find(
+                                              (t) => t.key === topic.topic
+                                            )?.label
+                                          }
+                                        </div>
+                                        {topic.comment && (
+                                          <div style={{ fontSize: "0.85em", color: "var(--text-color)", fontStyle: "italic" }}>
+                                            "{topic.comment}"
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : null
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   }
 
+                  const log = entry.log;
                   const assessment = log.assessment || {};
                   const parsedNotes = parseRubricNotes(assessment?.examinernotes);
                   return (

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import PageLayout from "@/components/PageLayout";
 import { trainingTopics } from "@/lib/trainingTopics";
+import { getTrainingTypeLabel, isCoachingTraining, TrainingTypeValue } from "@/lib/trainingMode";
 
 interface SessionLog {
   id: string;
@@ -58,7 +59,8 @@ function SessionLoggingContent() {
   const [sessionDate, setSessionDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  const [sessionType, setSessionType] = useState<"STANDARD" | "ONLINE_COACHING">("STANDARD");
+  const [trainingType, setTrainingType] = useState<TrainingTypeValue>("STANDARD");
+  const [sessionType, setSessionType] = useState<TrainingTypeValue>("STANDARD");
   const [comments, setComments] = useState("");
   const [whiteboardId, setWhiteboardId] = useState(whiteboardSessionId || "");
   const [topicSelections, setTopicSelections] = useState<Record<string, { theory: boolean; practice: boolean }>>({});
@@ -95,6 +97,7 @@ function SessionLoggingContent() {
     } else {
       setIsEditMode(false);
       setIsLockedReleased(false);
+      setTrainingType("STANDARD");
       setSessionType("STANDARD");
       setTopicSelections({});
       setTopicComments({});
@@ -115,6 +118,7 @@ function SessionLoggingContent() {
 
       setIsEditMode(true);
       setIsLockedReleased(!data.isDraft);
+      setTrainingType(data.training?.trainingType || "STANDARD");
       setSessionDate(new Date(data.sessionDate).toISOString().split("T")[0]);
       setSessionType(data.sessionType || "STANDARD");
       setComments(data.comments || "");
@@ -148,6 +152,8 @@ function SessionLoggingContent() {
       if (!res.ok) throw new Error("Failed to fetch training details");
       const data = await res.json();
       setTraineeId(data.trainee?.cid || "");
+      setTrainingType(data.trainingType || "STANDARD");
+      setSessionType(data.trainingType || "STANDARD");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     }
@@ -200,7 +206,15 @@ function SessionLoggingContent() {
     setSuccess(false);
 
     try {
-      const topicData = sessionType === "STANDARD" ? trainingTopics.map((t, idx) => ({
+      const effectiveSessionType: TrainingTypeValue = isCoachingTraining(trainingType)
+        ? "ONLINE_COACHING"
+        : sessionType;
+
+      if (effectiveSessionType === "ONLINE_COACHING" && !comments.trim()) {
+        throw new Error("Bitte einen Kommentar zur Coaching-Session eingeben.");
+      }
+
+      const topicData = effectiveSessionType === "STANDARD" ? trainingTopics.map((t, idx) => ({
         theoryCovered: !!topicSelections[t.key]?.theory,
         practiceCovered:
           t.category === "THEORY"
@@ -224,7 +238,7 @@ function SessionLoggingContent() {
         body: JSON.stringify({
           trainingId,
           sessionId,
-          sessionType,
+          sessionType: effectiveSessionType,
           sessionDate,
           comments,
           whiteboardSessionId: whiteboardId || null,
@@ -281,6 +295,8 @@ function SessionLoggingContent() {
   }
 
   const formLocked = submitting || isLockedReleased;
+  const coachingTraining = isCoachingTraining(trainingType);
+  const coachingSession = coachingTraining || sessionType === "ONLINE_COACHING";
 
   if (!isMentor) {
     return (
@@ -297,6 +313,9 @@ function SessionLoggingContent() {
       <div className="header-container">
         <div className="header">
           <h1>{isEditMode ? "Trainingssession bearbeiten" : "Trainingssession loggen"}</h1>
+          <p style={{ marginTop: "0.5rem", color: "var(--text-color)" }}>
+            {getTrainingTypeLabel(trainingType)}
+          </p>
         </div>
       </div>
 
@@ -328,42 +347,51 @@ function SessionLoggingContent() {
         </label>
 
         {/* Session Type Selector */}
-        <label className="form-label">
-          Art des Trainings
-          <select
-            value={sessionType}
-            onChange={(e) => setSessionType(e.target.value as "STANDARD" | "ONLINE_COACHING")}
-            className="form-input"
-            disabled={formLocked}
-            required
-          >
-            <option value="STANDARD">Standard PMP-Airlinertraining (mit Themen-Tracking)</option>
-            <option value="ONLINE_COACHING">Online Coaching (Notiz)</option>
-          </select>
-        </label>
+        {coachingTraining ? (
+          <div className="card" style={{ marginBottom: 0, padding: "0.9rem 1rem" }}>
+            <strong style={{ color: "var(--text-color)" }}>Art des Trainings:</strong>{" "}
+            <span style={{ color: "#4caf50", fontWeight: 700 }}>Online Coaching</span>
+          </div>
+        ) : (
+          <label className="form-label">
+            Art des Trainings
+            <select
+              value={sessionType}
+              onChange={(e) => setSessionType(e.target.value as TrainingTypeValue)}
+              className="form-input"
+              disabled={formLocked}
+              required
+            >
+              <option value="STANDARD">Airliner-Training (mit Themen-Tracking)</option>
+              <option value="ONLINE_COACHING">Online Coaching (Notiz)</option>
+            </select>
+          </label>
+        )}
 
         {/* Whiteboard Session (Optional) */}
-        <label className="form-label">
-          Link zur Whiteboard-Session (Zukunftsmusik, Optional)
-          <input
-            type="text"
-            value={whiteboardId}
-            onChange={(e) => setWhiteboardId(e.target.value)}
-            className="form-input"
-            disabled={formLocked}
-            placeholder="z.B., abc123def456 (von /trainings/session/[id])"
-          />
-          <small style={{ display: "block", marginTop: "0.5rem", color: "var(--text-muted)" }}>
-            Falls du das Whiteboard während des Trainings genutzt hast, füge hier die Session ID ein. Es wird eine Woche lang gespeichert, damit dein Trainee es sich noch einmal ansehen kann.
-          </small>
-        </label>
+        {!coachingSession && (
+          <label className="form-label">
+            Link zur Whiteboard-Session (Zukunftsmusik, Optional)
+            <input
+              type="text"
+              value={whiteboardId}
+              onChange={(e) => setWhiteboardId(e.target.value)}
+              className="form-input"
+              disabled={formLocked}
+              placeholder="z.B., abc123def456 (von /trainings/session/[id])"
+            />
+            <small style={{ display: "block", marginTop: "0.5rem", color: "var(--text-muted)" }}>
+              Falls du das Whiteboard während des Trainings genutzt hast, füge hier die Session ID ein. Es wird eine Woche lang gespeichert, damit dein Trainee es sich noch einmal ansehen kann.
+            </small>
+          </label>
+        )}
 
         {/* Topics - Only for STANDARD sessions */}
-        {sessionType === "STANDARD" && (
+        {coachingSession ? null : (
           <div>
             <h2 style={{ marginBottom: "12px" }}>Abgedeckte Themen</h2>
             <p style={{ fontSize: "0.95em", marginBottom: "16px", color: "var(--text-color)" }}>
-              Standard ist keine Auswahl. Setze die Checkboxen pro Thema: Theorie (blau) und Praxis (grün). Bei Theorie-Themen gibt es keine Praxis-Checkbox.
+              Setze die Checkboxen pro Thema: Theorie (blau) und Praxis (grün). Bei Theorie-Themen gibt es keine Praxis-Checkbox.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -492,21 +520,22 @@ function SessionLoggingContent() {
         )}
 
         {/* Online Coaching Note - Only for ONLINE_COACHING sessions */}
-        {sessionType === "ONLINE_COACHING" && (
+        {coachingSession && (
           <label className="form-label">
-            Was wurde in der Session durchgenommen?
+            Kommentar zur Session
             <textarea
               value={comments}
               onChange={(e) => setComments(e.target.value)}
-              placeholder="Beschreibe, was in dieser Online Coaching Session durchgenommen wurde..."
+              placeholder="Beschreibe kurz, was in dieser Coaching-Session besprochen wurde..."
               className="form-textarea"
               disabled={formLocked}
+              required
             />
           </label>
         )}
 
         {/* Comments - Only for STANDARD sessions */}
-        {sessionType === "STANDARD" && (
+        {!coachingSession && (
           <label className="form-label">
             Notizen zur Session
             <p style={{ fontSize: "0.9em", color: "var(--text-color)", margin: "4px 0 0 0" }}>
@@ -544,20 +573,22 @@ function SessionLoggingContent() {
           <p style={{ margin: "8px 0" }}>
             Insgesamt erfasste Sessions: {previousSessions.length}
           </p>
-          <p style={{ margin: "8px 0" }}>
-            Insgesamt behandelte Themen:{" "}
-            <span style={{ fontWeight: 600 }}>
-              {
-                new Set(
-                  previousSessions
-                    .flat()
-                    .filter((t: SessionLog) => t.checked)
-                    .map((t: SessionLog) => t.topic)
-                ).size
-              }
-              /{trainingTopics.length}
-            </span>
-          </p>
+          {!coachingTraining && (
+            <p style={{ margin: "8px 0" }}>
+              Insgesamt behandelte Themen:{" "}
+              <span style={{ fontWeight: 600 }}>
+                {
+                  new Set(
+                    previousSessions
+                      .flat()
+                      .filter((t: SessionLog) => t.checked)
+                      .map((t: SessionLog) => t.topic)
+                  ).size
+                }
+                /{trainingTopics.length}
+              </span>
+            </p>
+          )}
         </div>
       )}
     </PageLayout>

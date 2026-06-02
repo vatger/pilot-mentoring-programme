@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 import Link from "next/link";
 import { trainingTopicLabelMap } from "@/lib/trainingTopics";
+import { getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
 
 type SessionDetails = {
   id: string;
@@ -25,6 +26,7 @@ type SessionDetails = {
   }[];
   training: {
     id: string;
+    trainingType: string;
     trainee: {
       id: string;
       cid: string | null;
@@ -116,6 +118,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
   const backUrl = trainingId 
     ? `/mentor/trainee/${sessionDetails.training.trainee.id}?trainingId=${trainingId}`
     : "/mentor/trainee";
+  const coachingSession = isCoachingTraining(sessionDetails.training.trainingType);
 
   return (
     <PageLayout>
@@ -126,6 +129,9 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
 
         <div className="card" style={{ marginBottom: "2rem" }}>
           <h1>Session Details</h1>
+          <p style={{ marginTop: "0.5rem", color: "var(--text-color)" }}>
+            <strong>Trainingstyp:</strong> {getTrainingTypeLabel(sessionDetails.training.trainingType)}
+          </p>
           
           <div style={{ marginTop: "1rem", display: "grid", gap: "0.5rem" }}>
             <p>
@@ -147,85 +153,86 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
 
-        {/* Topics */}
-        <div className="card" style={{ marginBottom: "2rem" }}>
-          <h3>Abgedeckte Themen ({sessionDetails.topics.filter(t => t.checked).length} / {sessionDetails.topics.length})</h3>
-          {sessionDetails.topics.filter(t => t.checked).length === 0 ? (
-            <p style={{ color: "var(--text-muted)" }}>Keine Themen abgedeckt</p>
-          ) : (
-            <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
-              {sessionDetails.topics
-                .filter(t => t.checked)
-                .map((topic) => {
-                  const hasTheory =
-                    !!topic.theoryCovered ||
-                    (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode || "THEORIE") === "THEORIE");
-                  const hasPractice =
-                    !!topic.practiceCovered ||
-                    (!topic.theoryCovered && !topic.practiceCovered && topic.coverageMode === "PRAXIS");
+        {!coachingSession && (
+          <div className="card" style={{ marginBottom: "2rem" }}>
+            <h3>Abgedeckte Themen ({sessionDetails.topics.filter(t => t.checked).length} / {sessionDetails.topics.length})</h3>
+            {sessionDetails.topics.filter(t => t.checked).length === 0 ? (
+              <p style={{ color: "var(--text-muted)" }}>Keine Themen abgedeckt</p>
+            ) : (
+              <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
+                {sessionDetails.topics
+                  .filter(t => t.checked)
+                  .map((topic) => {
+                    const hasTheory =
+                      !!topic.theoryCovered ||
+                      (!topic.theoryCovered && !topic.practiceCovered && (topic.coverageMode || "THEORIE") === "THEORIE");
+                    const hasPractice =
+                      !!topic.practiceCovered ||
+                      (!topic.theoryCovered && !topic.practiceCovered && topic.coverageMode === "PRAXIS");
 
-                  const borderColor = hasPractice && !hasTheory 
-                    ? "var(--success-color)" 
-                    : "var(--accent-color)";
-                  const bgColor = hasPractice && !hasTheory
-                    ? "rgba(40, 167, 69, 0.05)"
-                    : "rgba(0, 95, 163, 0.05)";
+                    const borderColor = hasPractice && !hasTheory 
+                      ? "var(--success-color)" 
+                      : "var(--accent-color)";
+                    const bgColor = hasPractice && !hasTheory
+                      ? "rgba(40, 167, 69, 0.05)"
+                      : "rgba(0, 95, 163, 0.05)";
 
-                  return (
-                  <div
-                    key={topic.id}
-                    style={{
-                      padding: "0.75rem",
-                      borderRadius: "6px",
-                      border: `1px solid ${borderColor}`,
-                      background: bgColor,
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
-                      {hasTheory && (
-                        <span
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
-                            color: "white",
-                            background: "var(--accent-color)",
-                            borderRadius: "4px",
-                            padding: "2px 6px",
-                            flexShrink: 0,
-                          }}
-                        >
-                          Theorie
+                    return (
+                    <div
+                      key={topic.id}
+                      style={{
+                        padding: "0.75rem",
+                        borderRadius: "6px",
+                        border: `1px solid ${borderColor}`,
+                        background: bgColor,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
+                        {hasTheory && (
+                          <span
+                            style={{
+                              fontSize: "0.75rem",
+                              fontWeight: 600,
+                              color: "white",
+                              background: "var(--accent-color)",
+                              borderRadius: "4px",
+                              padding: "2px 6px",
+                              flexShrink: 0,
+                            }}
+                          >
+                            Theorie
+                          </span>
+                        )}
+                        {hasPractice && (
+                          <span
+                            style={{
+                              fontSize: "0.75rem",
+                              fontWeight: 600,
+                              color: "white",
+                              background: "var(--success-color)",
+                              borderRadius: "4px",
+                              padding: "2px 6px",
+                              flexShrink: 0,
+                            }}
+                          >
+                            Praxis
+                          </span>
+                        )}
+                        <span style={{ fontWeight: 600 }}>
+                          {trainingTopicLabelMap[topic.topic] || topic.topic}
                         </span>
-                      )}
-                      {hasPractice && (
-                        <span
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
-                            color: "white",
-                            background: "var(--success-color)",
-                            borderRadius: "4px",
-                            padding: "2px 6px",
-                            flexShrink: 0,
-                          }}
-                        >
-                          Praxis
-                        </span>
-                      )}
-                      <span style={{ fontWeight: 600 }}>
-                        {trainingTopicLabelMap[topic.topic] || topic.topic}
-                      </span>
-                    </div>
-                    {topic.comment && (
-                      <div style={{ fontSize: "0.875rem", fontStyle: "italic", color: "var(--text-muted)" }}>
-                        "{topic.comment}"
                       </div>
-                    )}
-                  </div>
-                )})}
-            </div>
-          )}
-        </div>
+                      {topic.comment && (
+                        <div style={{ fontSize: "0.875rem", fontStyle: "italic", color: "var(--text-muted)" }}>
+                          "{topic.comment}"
+                        </div>
+                      )}
+                    </div>
+                  )})}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* General Comments */}
         {sessionDetails.comments && (
