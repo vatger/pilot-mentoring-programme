@@ -583,6 +583,7 @@ function TraineeProgressContent() {
           </div>
 
           {/* Progress Section */}
+          {!coachingTraining && (
           <div className="card" style={{ marginBottom: "1.5rem" }}>
             <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Gesamtfortschritt</h3>
             <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "1.5rem", alignItems: "center" }}>
@@ -617,8 +618,10 @@ function TraineeProgressContent() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Topics Grid */}
+          {!coachingTraining && (
           <div className="card" style={{ marginBottom: "1.5rem" }}>
             <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Trainingsthemen</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "8px" }}>
@@ -708,6 +711,7 @@ function TraineeProgressContent() {
               })}
             </div>
           </div>
+          )}
 
           {/* Session History */}
           {false && checkrideLogs.length > 0 && (
