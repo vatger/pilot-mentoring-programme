@@ -25,15 +25,6 @@ export async function POST(request: NextRequest) {
     const payload = verifyMentorInviteToken(inviteToken);
     const invite = await prisma.mentorInvite.findUnique({
       where: { id: payload.inviteId },
-      select: {
-        id: true,
-        mentorId: true,
-        traineeCid: true,
-        anmeldetext: true,
-        trainingType: true,
-        expiresAt: true,
-        usedAt: true,
-      },
     });
 
     if (!invite) {
@@ -219,8 +210,8 @@ export async function POST(request: NextRequest) {
     } else {
       const training = await prisma.training.create({
         data: {
-          traineeId: traineeUser.id,
-          trainingType: invite.trainingType as any,
+            traineeId: traineeUser.id,
+            trainingType: (invite as any).trainingType,
           mentors: {
             create: {
               mentorId: mentor.id,
