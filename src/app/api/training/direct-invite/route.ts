@@ -78,13 +78,13 @@ export async function POST(request: NextRequest) {
 
     const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
     const invite = await prisma.mentorInvite.create({
-      data: {
+      data: ({
         mentorId,
         traineeCid,
         anmeldetext,
-        trainingType: normalizedTrainingType as any,
+        trainingType: normalizedTrainingType,
         expiresAt,
-      },
+      } as any),
       select: { id: true },
     });
 
