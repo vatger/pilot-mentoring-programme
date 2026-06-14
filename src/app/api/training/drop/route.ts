@@ -150,14 +150,21 @@ export async function POST(request: NextRequest) {
             });
           }
 
-          // Cascade deletes all trainee-linked trainings, sessions, checkrides, etc.
-          await tx.user.delete({
+          await tx.training.deleteMany({
+            where: { traineeId: training.trainee.id },
+          });
+
+          await tx.user.update({
             where: { id: training.trainee.id },
+            data: {
+              role: "VISITOR",
+              userStatus: "Cancelled Trainee",
+            },
           });
         });
 
         return NextResponse.json(
-          { success: true, message: "Trainee and all related data deleted" },
+          { success: true, message: "Training history removed and trainee marked as cancelled" },
           { status: 200 }
         );
       }
@@ -220,7 +227,7 @@ export async function POST(request: NextRequest) {
       // Check if user has "Cancelled Trainee" status
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { userStatus: true, role: true },
+        select: { userStatus: true, role: true, cid: true },
       });
 
       if (user?.userStatus !== "Cancelled Trainee") {
@@ -230,30 +237,24 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Delete all old training sessions, checkrides for this user's cancelled trainings
-      const oldTrainings = await prisma.training.findMany({
-        where: { 
-          traineeId: userId,
-          status: "ABGEBROCHEN"
-        },
-        select: { id: true },
-      });
+      await prisma.$transaction(async (tx) => {
+        if (user?.cid) {
+          await tx.registration.deleteMany({
+            where: { cid: user.cid },
+          });
+        }
 
-      // Delete old cancelled trainings (this will cascade delete sessions, checkrides, etc.)
-      await prisma.training.deleteMany({
-        where: { 
-          traineeId: userId,
-          status: "ABGEBROCHEN"
-        },
-      });
+        await tx.training.deleteMany({
+          where: { traineeId: userId },
+        });
 
-      // Reset user status to allow reapplication
-      await prisma.user.update({
-        where: { id: userId },
-        data: { 
-          userStatus: null,
-          role: "VISITOR" // They'll get PENDING_TRAINEE when registration is approved
-        },
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            userStatus: null,
+            role: "VISITOR",
+          },
+        });
       });
 
       return NextResponse.json(

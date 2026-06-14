@@ -117,6 +117,7 @@ export const authOptions: NextAuthOptions = {
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
           where: { cid },
+          select: { id: true, role: true, userStatus: true },
         });
 
         let userRecord;
@@ -125,7 +126,10 @@ export const authOptions: NextAuthOptions = {
             where: { cid },
             data: {
               name: (user as any).name,
-              role: existingUser.role === "VISITOR" ? (roleFromTeams as any) : undefined,
+              role:
+                existingUser.role === "VISITOR" && !existingUser.userStatus
+                  ? (roleFromTeams as any)
+                  : undefined,
             },
           });
         } else {
@@ -157,7 +161,7 @@ export const authOptions: NextAuthOptions = {
       // Fetch latest user data from database to check for role changes
       const currentUser = await prisma.user.findUnique({
         where: { id: token.id as string },
-        select: { role: true },
+        select: { role: true, userStatus: true },
       });
 
       const sessionUser = {
@@ -166,6 +170,7 @@ export const authOptions: NextAuthOptions = {
         name: token.name,
         rating: token.rating,
         role: currentUser?.role || token.role || "VISITOR",
+        userStatus: currentUser?.userStatus || null,
         fir: token.fir || "",
         teams: token.teams || [],
       };

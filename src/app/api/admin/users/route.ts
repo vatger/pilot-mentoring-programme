@@ -84,10 +84,11 @@ export async function PATCH(request: NextRequest) {
     // Handle userStatus changes
     if (newUserStatus !== undefined) {
       updateData.userStatus = newUserStatus || null;
-      
-      // If setting special status, change role to VISITOR
-      const specialStatuses = ["Pausierter Mentor", "Deleted Mentor", "Cancelled Trainee", "Completed Trainee"];
-      if (specialStatuses.includes(newUserStatus)) {
+      if (newUserStatus === "Cancelled Trainee") {
+        updateData.role = "VISITOR";
+      } else if (newUserStatus === "Completed Trainee") {
+        updateData.role = "COMPLETED_TRAINEE";
+      } else if (newUserStatus === "Pausierter Mentor" || newUserStatus === "Deleted Mentor") {
         updateData.role = "VISITOR";
       }
     }

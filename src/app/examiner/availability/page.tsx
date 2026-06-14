@@ -136,13 +136,12 @@ export default function ExaminerAvailabilityPage() {
       if (!res.ok) {
         throw new Error(payload.error || `Fehler: ${res.status}`);
       }
-      const checkrideId = payload.checkrideId;
-      if (!checkrideId) {
+      if (!payload.checkrideId) {
         throw new Error("Kein Checkride konnte erstellt werden");
       }
-      window.location.href = `/examiner/assessment/${checkrideId}`;
+      await load();
     } catch (e: any) {
-      setError(e.message || "Fehler beim Starten des Checkrides");
+      setError(e.message || "Fehler beim Zuweisen des Checkrides");
     } finally {
       setStarting(null);
     }
@@ -268,7 +267,7 @@ export default function ExaminerAvailabilityPage() {
                         onClick={() => startCheckride(req.id)}
                         disabled={isStarting}
                       >
-                        {isStarting ? "Startet..." : "Assessment starten"}
+                        {isStarting ? "Zuweisung..." : "Mir zuweisen"}
                       </button>
                     </div>
                   );
