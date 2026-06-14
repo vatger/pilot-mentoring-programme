@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * POST /api/training/cancel/approve
  * PMP_LEITUNG approves a cancellation and either:
- * 1. Deletes the trainee entirely (with all training data), OR
+ * 1. Removes the trainee's training history and marks the account as CANCELLED_TRAINEE, OR
  * 2. Resets trainee to PENDING_TRAINEE status (available for other mentors)
  */
 export async function POST(request: NextRequest) {
@@ -60,14 +60,28 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "delete") {
-      // Delete the trainee and all associated data
-      // Cascade deletes will handle: trainings, sessions, checkrides, etc.
-      await prisma.user.delete({
-        where: { id: training.traineeId },
+      await prisma.$transaction(async (tx) => {
+        if (training.trainee.cid) {
+          await tx.registration.deleteMany({
+            where: { cid: training.trainee.cid },
+          });
+        }
+
+        await tx.training.deleteMany({
+          where: { traineeId: training.traineeId },
+        });
+
+        await tx.user.update({
+          where: { id: training.traineeId },
+          data: {
+            role: "VISITOR",
+            userStatus: "Cancelled Trainee",
+          },
+        });
       });
 
       return NextResponse.json(
-        { success: true, message: "Trainee and all data deleted" },
+        { success: true, message: "Trainee history removed and account marked as cancelled" },
         { status: 200 }
       );
     } else if (action === "reactivate") {

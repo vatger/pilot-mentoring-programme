@@ -35,11 +35,14 @@ function SignInContent() {
       }
 
       const role = (session.user as any).role;
+      const userStatus = (session.user as any).userStatus;
       const redirectUrl =
         role === "ADMIN" || role === "PMP_LEITUNG"
           ? "/pmp-tracking"
           : ["MENTOR", "PMP_PRÜFER"].includes(role)
             ? "/mentor/dashboard"
+            : userStatus === "Cancelled Trainee"
+              ? "/anmeldung"
             : "/";
 
       router.push(redirectUrl);

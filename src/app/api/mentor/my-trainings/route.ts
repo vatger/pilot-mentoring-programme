@@ -21,29 +21,22 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const canViewAllActiveTrainings = ["PMP_LEITUNG", "PMP_PRÜFER"].includes(userRole);
-
-    // Only show ACTIVE trainings in mentor dashboard.
-    // Leadership can see all active trainings; mentors only their own assignments.
+    // Only show the current user's ACTIVE trainings in the mentor dashboard.
     const trainings = await prisma.training.findMany({
       where: {
         status: "ACTIVE",
-        ...(canViewAllActiveTrainings
-          ? {}
-          : {
-              OR: [
-                {
-                  mentors: {
-                    some: {
-                      mentorId: userId,
-                    },
-                  },
-                },
-                {
-                  traineeId: userId,
-                },
-              ],
-            }),
+        OR: [
+          {
+            mentors: {
+              some: {
+                mentorId: userId,
+              },
+            },
+          },
+          {
+            traineeId: userId,
+          },
+        ],
       },
       include: {
         trainee: {
