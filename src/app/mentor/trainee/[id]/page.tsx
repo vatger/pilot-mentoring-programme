@@ -258,6 +258,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState("");
   const [updatingCheckride, setUpdatingCheckride] = useState(false);
   const [finishingWithoutCheckride, setFinishingWithoutCheckride] = useState(false);
+  const [downgradingToCoaching, setDowngradingToCoaching] = useState(false);
   const [checkrideRequestText, setCheckrideRequestText] = useState("");
   const [showCheckrideRequestInput, setShowCheckrideRequestInput] = useState(false);
   const [savingSession, setSavingSession] = useState(false);
@@ -415,6 +416,30 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const downgradeToCoaching = async () => {
+    if (!training || downgradingToCoaching) return;
+    if (!confirm("Möchtest du dieses Standard-Training wirklich zu Coaching downgraden? Checkride-Tracking würde zurückgesetzt.")) {
+      return;
+    }
+
+    setDowngradingToCoaching(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/trainings/${training.id}/downgrade-to-coaching`, {
+        method: "POST",
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload.error || "Training konnte nicht zu Coaching umgewandelt werden");
+      }
+      await fetchTrainingDetails();
+    } catch (err: any) {
+      setError(err.message || "Unknown error");
+    } finally {
+      setDowngradingToCoaching(false);
+    }
+  };
+
   const releaseSession = async (sessionId: string) => {
     setSavingSession(true);
     try {
@@ -550,6 +575,8 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       }, 0);
   const formatPoints = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
   const progressPercent = coachingTraining ? 0 : Math.round((progressPoints / trainingTopics.length) * 100);
+  const isAssignedMentor = training.mentors.some((assignment) => assignment.mentor.id === userId);
+  const canFinishWithoutCheckride = !coachingTraining && (isLeadership || isAssignedMentor);
   const timelineEntries = [
     ...training.sessions.map((sess) => ({
       type: "session" as const,
@@ -663,6 +690,32 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                     : "Bereit markieren"}
                 </button>
               </div>
+            </div>
+          )}
+
+          {canFinishWithoutCheckride && training.status === "ACTIVE" && (
+            <div style={{ marginTop: "1rem" }}>
+              <button
+                type="button"
+                className="button button--danger"
+                onClick={finishWithoutCheckride}
+                disabled={finishingWithoutCheckride}
+              >
+                {finishingWithoutCheckride ? "Wird abgeschlossen..." : "Training ohne Checkride abschließen"}
+              </button>
+            </div>
+          )}
+
+          {!coachingTraining && (isLeadership || isAssignedMentor) && training.status === "ACTIVE" && (
+            <div style={{ marginTop: "1rem" }}>
+              <button
+                type="button"
+                className="button"
+                onClick={downgradeToCoaching}
+                disabled={downgradingToCoaching}
+              >
+                {downgradingToCoaching ? "Wird zu Coaching umgewandelt..." : "Zu Coaching umwandeln"}
+              </button>
             </div>
           )}
 
