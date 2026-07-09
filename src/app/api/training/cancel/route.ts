@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const userId = (session.user as any).id;
 
     // Only MENTOR, PMP_LEITUNG, and ADMIN can initiate cancellation
-    if (!["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"].includes(userRole)) {
+    if (!["MENTOR", "PMP_LEITUNG", "ADMIN"].includes(userRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -48,11 +48,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Training not found" }, { status: 404 });
     }
 
-    // Check if requester is a mentor or admin
+    // Check if requester is the assigned mentor or leadership/admin
     const isMentor = training.mentors.some((m) => m.mentorId === userId);
-    if (!isMentor && !["ADMIN", "PMP_LEITUNG", "PMP_PRÜFER"].includes(userRole)) {
+    if (!isMentor && !["ADMIN", "PMP_LEITUNG"].includes(userRole)) {
       return NextResponse.json(
-        { error: "Only mentors and admins can cancel trainings" },
+        { error: "Only assigned mentors, leadership, and admins can cancel trainings" },
         { status: 403 }
       );
     }

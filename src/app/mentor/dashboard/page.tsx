@@ -66,6 +66,8 @@ export default function MentorDashboard() {
   const [addingMentor, setAddingMentor] = useState<string | null>(null);
   const [removingMentor, setRemovingMentor] = useState<string | null>(null);
   const [pendingWithLogs, setPendingWithLogs] = useState<string | null>(null);
+  const [downgradingToCoaching, setDowngradingToCoaching] = useState<string | null>(null);
+  const [migratingToStandard, setMigratingToStandard] = useState<string | null>(null);
   const [selectedTrainee, setSelectedTrainee] = useState<TraineeInfo | null>(null);
   const [selectedTrainingId, setSelectedTrainingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -203,6 +205,52 @@ export default function MentorDashboard() {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setPendingWithLogs(null);
+    }
+  };
+
+  const handleDowngradeToCoaching = async (trainingId: string) => {
+    if (!confirm("Training wirklich zu Coaching umwandeln? Checkride-Tracking wird dabei zurückgesetzt.")) return;
+
+    setDowngradingToCoaching(trainingId);
+    try {
+      const res = await fetch(`/api/trainings/${trainingId}/downgrade-to-coaching`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Fehler beim Umwandeln zu Coaching");
+      }
+
+      await fetchData();
+      setCancelDialogFor(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setDowngradingToCoaching(null);
+    }
+  };
+
+  const handleMigrateToStandard = async (trainingId: string) => {
+    if (!confirm("Training wirklich in ein Airliner-Training umwandeln? Checkride-Freigaben werden dabei zurückgesetzt.")) return;
+
+    setMigratingToStandard(trainingId);
+    try {
+      const res = await fetch(`/api/trainings/${trainingId}/migrate-to-standard`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Fehler beim Umwandeln zu Airliner-Training");
+      }
+
+      await fetchData();
+      setCancelDialogFor(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setMigratingToStandard(null);
     }
   };
 
@@ -683,6 +731,28 @@ export default function MentorDashboard() {
                                       {pendingWithLogs === training.id
                                         ? "Setze Pending..."
                                         : "Auf Pending setzen (Logs behalten)"}
+                                    </button>
+                                  )}
+                                  {training.trainingType === "STANDARD" && (
+                                    <button
+                                      className="button"
+                                      disabled={downgradingToCoaching === training.id}
+                                      onClick={() => handleDowngradeToCoaching(training.id)}
+                                    >
+                                      {downgradingToCoaching === training.id
+                                        ? "Wird zu Coaching..."
+                                        : "In coaching umwandeln"}
+                                    </button>
+                                  )}
+                                  {training.trainingType === "ONLINE_COACHING" && (
+                                    <button
+                                      className="button"
+                                      disabled={migratingToStandard === training.id}
+                                      onClick={() => handleMigrateToStandard(training.id)}
+                                    >
+                                      {migratingToStandard === training.id
+                                        ? "Wird zu Airliner..."
+                                        : "In Airliner umwandeln"}
                                     </button>
                                   )}
                                   {canManageAllTrainings && (
