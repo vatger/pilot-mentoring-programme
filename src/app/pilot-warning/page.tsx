@@ -129,12 +129,12 @@ export default function HomePage() {
 
         <p>
           {language === 'en'
-            ? `This does <strong>not</strong> mean that new pilots are unwelcome. Quite
+            ? `This does not mean that new pilots are unwelcome. Quite
               the opposite: VATSIM is a network for everyone. We simply encourage new
               pilots to gain experience at quieter airports first, where there is more
               time to learn procedures, practise communication and build confidence
               before flying into the busiest airspace.`
-            : `Das bedeutet <strong>nicht</strong>, dass neue Piloten auf VATSIM nicht
+            : `Das bedeutet nicht, dass neue Piloten auf VATSIM nicht
               willkommen sind – ganz im Gegenteil. VATSIM ist ein Netzwerk für alle mit dem Ziel,
               gemeinsam zu lernen und viele gerade junge Menschen für die Luftfahrt zu begeistern.
               Wir empfehlen lediglich, die ersten Erfahrungen an ruhigeren Flughäfen zu
