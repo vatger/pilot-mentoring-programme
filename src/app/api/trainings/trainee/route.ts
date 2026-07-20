@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { normalizeTopicCoverage } from "@/lib/topicCoverage";
 import { NextRequest, NextResponse } from "next/server";
 
-const TRAINEE_ROLES = ["TRAINEE", "PENDING_TRAINEE"];
+const TRAINEE_ROLES = ["TRAINEE", "PENDING_TRAINEE", "COMPLETED_TRAINEE", "CHECKRIDE_COMPLETED"];
 
 // GET /api/trainings/trainee - Get all trainings for the current trainee
 export async function GET(request: NextRequest) {

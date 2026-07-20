@@ -92,42 +92,43 @@ export default function Header() {
   isManualToggleRef.current = true;
   };
 
-  const teams = (session?.user as any)?.teams || [];
-  const userRole = (session?.user as any)?.role;
-  
-  // Role-based access determination
-  const isAdmin = userRole === "ADMIN";
-  const isLeitung = userRole === "PMP_LEITUNG";
-  const isExaminer = userRole === "PMP_PRÜFER" || isAdmin || isLeitung;
-  const isMentor = userRole === "MENTOR" || userRole === "PMP_PRÜFER" || isLeitung || isAdmin;
-  const isTrainee = userRole === "TRAINEE" || userRole === "PENDING_TRAINEE";
-  const isPendingTrainee = userRole === "PENDING_TRAINEE";
-  const isVisitor = userRole === "VISITOR";
+const teams = (session?.user as any)?.teams || [];
+const userRole = (session?.user as any)?.role;
 
-  useEffect(() => {
-    if (status !== 'authenticated') {
-      setHasCheckrideInfo(false);
-      setIsCheckrideReady(false);
-      return;
-    }
-    if (userRole === 'TRAINEE') {
-      (async () => {
-        try {
-          const res = await fetch('/api/checkrides/me', { cache: 'no-store' });
-          if (!res.ok) throw new Error('Load failed');
-          const data = await res.json();
-          setIsCheckrideReady(Boolean(data?.training?.readyForCheckride));
-          setHasCheckrideInfo(true);
-        } catch {
-          setIsCheckrideReady(false);
-          setHasCheckrideInfo(false);
-        }
-      })();
-    } else {
-      setHasCheckrideInfo(false);
-      setIsCheckrideReady(false);
-    }
-  }, [status, userRole]);
+// Role-based access determination
+const isAdmin = userRole === "ADMIN";
+const isLeitung = userRole === "PMP_LEITUNG";
+const isExaminer = userRole === "PMP_PRÜFER" || isAdmin || isLeitung;
+const isMentor = userRole === "MENTOR" || userRole === "PMP_PRÜFER" || isLeitung || isAdmin;
+const isTrainee = userRole === "TRAINEE" || userRole === "PENDING_TRAINEE";
+const isPendingTrainee = userRole === "PENDING_TRAINEE";
+const isVisitor = userRole === "VISITOR";
+const isCompletedTrainee = userRole === "COMPLETED_TRAINEE" || userRole === "CHECKRIDE_COMPLETED";
+
+useEffect(() => {
+  if (status !== 'authenticated') {
+    setHasCheckrideInfo(false);
+    setIsCheckrideReady(false);
+    return;
+  }
+  if (userRole === 'TRAINEE' || isCompletedTrainee) {
+    (async () => {
+      try {
+        const res = await fetch('/api/checkrides/me', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Load failed');
+        const data = await res.json();
+        setIsCheckrideReady(Boolean(data?.training?.readyForCheckride));
+        setHasCheckrideInfo(true);
+      } catch {
+        setIsCheckrideReady(false);
+        setHasCheckrideInfo(false);
+      }
+    })();
+  } else {
+    setHasCheckrideInfo(false);
+    setIsCheckrideReady(false);
+  }
+}, [status, userRole]);
 
   if (!isHydrated || shouldRedirect) {
     return null;
@@ -201,16 +202,7 @@ export default function Header() {
             <h1>Piloten-Mentoren-Programm</h1>
           </div>
         {showInternal ? (
-          <div
-            className="nav"
-            style={{
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px',
-              width: '100%',
-              padding: '12px 0',
-            }}
-          >
+          <div className="nav" style={{ flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 0', }}>
             {status === 'loading' && <div className="card"><p style={{ margin: 0 }}>Lade Session...</p></div>}
 
             {status !== 'loading' && !session && (
@@ -283,7 +275,7 @@ export default function Header() {
                     </div>
                   )}
 
-                  {isTrainee && (
+                  {isTrainee || isCompletedTrainee && (
                     <div className="card" style={{ marginBottom: 0, padding: '12px 14px' }}>
                       <h3 style={{ margin: '0 0 6px 0' }}>Trainee</h3>
                       <p style={{ margin: '0 0 8px 0' }}>Deinen Fortschritt und Checkride verwalten.</p>
