@@ -250,7 +250,6 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const searchParams = useSearchParams();
   const trainingId = searchParams.get("trainingId");
-
   const [training, setTraining] = useState<Training | null>(null);
   const [checkride, setCheckride] = useState<Checkride | null>(null);
   const [checkrideLogs, setCheckrideLogs] = useState<CheckrideLog[]>([]);
@@ -266,6 +265,8 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const [savingAnmeldetext, setSavingAnmeldetext] = useState(false);
   const [anmeldetextError, setAnmeldetextError] = useState("");
   const [expandedCheckrideIds, setExpandedCheckrideIds] = useState<Record<string, boolean>>({});
+  const [actioningTrainingId, setActioningTrainingId] = useState<string | null>(null);
+  const [actioningType, setActioningType] = useState<"finish" | "migrate" | null>(null);
 
   const getTopicCoverage = () => {
     const coverageMap = new Map<string, { theorie: boolean; praxis: boolean }>();
@@ -310,7 +311,19 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       fetchTrainingDetails();
     }
   }, [status, isMentor, router, trainingId]);
-
+  const fetchTrainings = async () => {
+    try {
+      const endpoint = isLeadership ? "/api/trainings/leitung" : "/api/trainings/mentor";
+      const res = await fetch(endpoint);
+      if (!res.ok) throw new Error("Failed to fetch trainings");
+      const data = await res.json();
+      setTraining(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
   const fetchTrainingDetails = async () => {
     try {
       setLoading(true);
@@ -391,7 +404,34 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const submitReadyForCheckride = async () => {
     await updateReadyForCheckride(true);
   };
+  const finishCoachingTraining = async (trainingId: string) => {
+    if (!confirm("Möchtest du diese Coaching-Ausbildung wirklich abschließen? Der Trainee wird als COMPLETED_TRAINEE markiert.")) {
+      return;
+    }
 
+    setActioningTrainingId(trainingId);
+    setActioningType("finish");
+
+    try {
+      const res = await fetch(`/api/trainings/${trainingId}/finish-coaching`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Fehler beim Abschließen der Coaching-Ausbildung");
+      }
+
+      setError("");
+      await fetchTrainings();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setActioningTrainingId(null);
+      setActioningType(null);
+    }
+  };
   const finishWithoutCheckride = async () => {
     if (!training || finishingWithoutCheckride) return;
     if (!confirm("Training ohne Checkride abschliessen? Diese Aktion ist fuer den regulären Flow nicht rueckgaengig.")) {
@@ -648,6 +688,8 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
               {training.status}
             </span>
           </p>
+        {!coachingTraining && training.status === "ACTIVE" && (
+          <>
           <p style={{ marginTop: "1rem" }}>
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
               <input
@@ -692,6 +734,8 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
           )}
+          </>
+        )}
 
           {canFinishWithoutCheckride && training.status === "ACTIVE" && (
             <div style={{ marginTop: "1rem" }}>
@@ -718,7 +762,22 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
               </button>
             </div>
           )}
-
+          {coachingTraining && training.status === "ACTIVE" && (
+              <button
+                onClick={() => finishCoachingTraining(training.id)}
+                disabled={actioningTrainingId === training.id && actioningType === "finish"}
+                className="button"
+                  style={{ 
+                    margin: 0, 
+                    padding: "8px 12px", 
+                    fontSize: "0.9em",
+                    opacity: actioningTrainingId === training.id && actioningType === "finish" ? 0.6 : 1,
+                    cursor: actioningTrainingId === training.id && actioningType === "finish" ? "default" : "pointer",
+                  }}
+                >
+                {actioningTrainingId === training.id && actioningType === "finish" ? "Wird abgeschlossen..." : "Coaching abschließen"}
+              </button>
+              )}
           {training.trainee.registration?.category === "Direkte Mentor-Anmeldung" && (
             <div style={{ marginTop: "1rem" }}>
               <label className="form-label" style={{ marginBottom: "0.5rem", display: "block" }}>
