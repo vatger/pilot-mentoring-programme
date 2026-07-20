@@ -5,65 +5,9 @@ import Link from 'next/link';
 import PageLayout from '@/components/PageLayout';
 import Modal from '@/components/Modal';
 
-type CardKey = 'card1' | 'card2' | 'card3';
-
-const englishDetails: Record<CardKey, { title: string; content: string; ctas?: { text: string; href: string }[] }> = {
-  card1: {
-    title: 'Card Title 1',
-    content: `Placeholder content for card 1. This is where you can add detailed information or instructions.`,
-    ctas: [
-      { text: 'Placeholder CTA 1', href: '/placeholder-link-1' },
-    ],
-  },
-  card2: {
-    title: 'Card Title 2',
-    content: `Placeholder content for card 2. This is where you can add detailed information or instructions.`,
-    ctas: [
-      { text: 'Placeholder CTA 2', href: '/placeholder-link-2' },
-    ],
-  },
-  card3: {
-    title: 'Card Title 3',
-    content: `Placeholder content for card 3. This is where you can add detailed information or instructions.`,
-    ctas: [
-      { text: 'Placeholder CTA 3', href: '/placeholder-link-3' },
-    ],
-  },
-};
-
-const germanDetails: Record<CardKey, { title: string; content: string; ctas?: { text: string; href: string }[] }> = {
-  card1: {
-    title: 'Karten Titel 1',
-    content: `Platzhalterinhalt für Karte 1. Hier können Sie detaillierte Informationen oder Anleitungen hinzufügen.`,
-    ctas: [
-      { text: 'Platzhalter-CTA 1', href: '/placeholder-link-1' },
-    ],
-  },
-  card2: {
-    title: 'Karten Titel 2',
-    content: `Platzhalterinhalt für Karte 2. Hier können Sie detaillierte Informationen oder Anleitungen hinzufügen.`,
-    ctas: [
-      { text: 'Platzhalter-CTA 2', href: '/placeholder-link-2' },
-    ],
-  },
-  card3: {
-    title: 'Karten Titel 3',
-    content: `Platzhalterinhalt für Karte 3. Hier können Sie detaillierte Informationen oder Anleitungen hinzufügen.`,
-    ctas: [
-      { text: 'Platzhalter-CTA 3', href: '/placeholder-link-3' },
-    ],
-  },
-};
 
 export default function HomePage() {
-  const [open, setOpen] = useState<CardKey | null>(null);
   const [language, setLanguage] = useState<'en' | 'de'>('de');
-
-  function openCard(key: CardKey) {
-    setOpen(key);
-  }
-
-  const details = language === 'en' ? englishDetails : germanDetails;
 
   return (
     <PageLayout>
@@ -258,17 +202,6 @@ export default function HomePage() {
               </>
             )}
         </div>
-
-        <Modal isOpen={open !== null} onClose={() => setOpen(null)} title={open ? details[open as CardKey].title : undefined} variant={open ?? undefined}>
-          {open ? (
-            <>
-              <p>{details[open as CardKey].content}</p>
-              {details[open as CardKey].ctas?.map((cta, i) => (
-                <p className="modal-cta" key={i}><Link href={cta.href}>{cta.text}</Link></p>
-              ))}
-            </>
-          ) : null}
-        </Modal>
       </>
     </PageLayout>
   );
