@@ -7,6 +7,9 @@ import Script from 'next/script';
 export const metadata: Metadata = {
   title: 'VATSIM Germany PMP',
   description: 'Piloten-Mentoren-Programm von VATSIM Germany',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

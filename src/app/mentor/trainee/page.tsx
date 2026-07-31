@@ -1,5 +1,5 @@
 "use client";
-
+import { AlertTriangle } from 'lucide-react';
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -52,6 +52,7 @@ type Training = {
   }[];
   sessions: { id: string; topics: { topic: string; checked: boolean }[] }[];
 };
+
 
 export default function MentorTraineePage() {
   const { data: session, status } = useSession();
@@ -482,6 +483,8 @@ export default function MentorTraineePage() {
                           disabled={actioningTrainingId === training.id && actioningType === "finish"}
                           className="button"
                           style={{ 
+                            background: "var(--amber)",
+                            color: "var(--accent-color)",
                             margin: 0, 
                             padding: "8px 12px", 
                             fontSize: "0.9em",
@@ -489,6 +492,7 @@ export default function MentorTraineePage() {
                             cursor: actioningTrainingId === training.id && actioningType === "finish" ? "default" : "pointer",
                           }}
                         >
+                          <AlertTriangle style={{ marginRight: "6px", width: "16px", height: "16px" }} />
                           {actioningTrainingId === training.id && actioningType === "finish" ? "Wird abgeschlossen..." : "Training abschließen"}
                         </button>
                         <button
@@ -496,6 +500,8 @@ export default function MentorTraineePage() {
                           disabled={actioningTrainingId === training.id && actioningType === "migrate"}
                           className="button"
                           style={{ 
+                            background: "var(--amber)",
+                            color: "var(--accent-color)",
                             margin: 0, 
                             padding: "8px 12px", 
                             fontSize: "0.9em",
@@ -503,6 +509,7 @@ export default function MentorTraineePage() {
                             cursor: actioningTrainingId === training.id && actioningType === "migrate" ? "default" : "pointer",
                           }}
                         >
+                          <AlertTriangle style={{ marginRight: "6px", width: "16px", height: "16px" }} />
                           {actioningTrainingId === training.id && actioningType === "migrate" ? "Wird migriert..." : "Zu Standard PMP migrieren"}
                         </button>
                       </>

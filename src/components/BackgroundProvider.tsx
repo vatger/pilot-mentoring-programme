@@ -16,7 +16,6 @@ export default function BackgroundProvider({
   const [isReady, setIsReady] = useState(false);
   const isReadyRef = useRef(false);
   const [hasGlobalBg, setHasGlobalBg] = useState(false);
-  const transitioningRef = useRef(false);
   const baseIdxRef = useRef<number>(0);
   const mountedRef = useRef(false);
   const pathname = usePathname();

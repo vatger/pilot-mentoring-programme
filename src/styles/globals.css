@@ -1,59 +1,88 @@
 /* ---------------------------------------------------
    Imports
 --------------------------------------------------- */
-/* Adobe Typekit removed (no longer permitted in production), alltough I should be allowed to use it, but idk...
- */
+@import './vatger_vars.css';
+
+/* ---------------------------------------------------
+   Fonts
+--------------------------------------------------- */
+@font-face {
+
+    font-family: 'Vatger';
+    src: url('./fonts/Vatger-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vatger';
+    src: url('./fonts/Vatger-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vatger';
+    src: url('./fonts/Vatger-Italic.woff2') format('woff2');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
 
 /* ---------------------------------------------------
    CSS Variables (Light / Dark)
 --------------------------------------------------- */
 :root {
-    --bg-gradient-start: #dbe6f3;
-    --bg-gradient-end: #e6eaf0;
+    --bg-gradient-start: oklch(0.958 0.003 264.69);
+    --bg-gradient-end: oklch(0.922 0.007 268.62);
     --container-bg: #f6f8fa;
-    --text-color: #222a36;
-    --card-bg: #c7d4e6;
+    --text-color: oklch(0.251 0.031 249.13);
+    --card-bg: oklch(0.967 0.012 17.51);
     --footer-border: #cfd8e3;
     --footer-text: #444;
-    --nav-bg: #eaf0f7;
+    --nav-bg: oklch(0.967 0.012 17.51);
     --shadow-color: rgba(0,0,0,0.10);
     --shadow-light: rgba(0,0,0,0.05);
-    --accent-color: #005fa3;
-    --link-color: #005fa3;
+    --accent-color: oklch(0.654 0.181 18.94);
+    --link-color: oklch(0.654 0.181 18.94);
     --header-color: #0077b6;
-    --button-bg: #005fa3;
-    --button-text: #f6f8fa;
+    --button-bg: oklch(0.654 0.181 18.94);
+    --button-text: oklch(0.251 0.031 249.13);
     --card-shadow: 0 4px 12px var(--shadow-color);
     --overlay-bg: rgba(240, 245, 255, 0.70);
     /* semantic colors */
-    --success-color: #28a745;
-    --danger-bg: #c62828;
+    --success-color: oklch(0.692 0.105 153.28);
+    --danger-bg: oklch(0.58 0.164 25.81);
     --danger-bg-hover: #b71c1c;
     --danger-text: #ffffff;
+    --primary: oklch(0.361 0.046 251.47);
+    --secondary: oklch(0.281 0.017 266.38);
+    --amber: oklch(0.839 0.147 88.09);
 }
 
 [data-theme="dark"] {
-    --bg-gradient-start: #232a45;
-    --bg-gradient-end: #2e3757;
-    --container-bg: #0d1626;
+    --container-bg: oklch(0.217 0.011 260.68);
     --text-color: #ffffff;
-    --card-bg: #151d35;
+    --card-bg: oklch(0.281 0.017 266.38);
     --footer-border: #1e2a47;
     --footer-text: #b8c5d9;
-    --nav-bg: #0f1629;
+    --nav-bg: oklch(19.236% 0.07455 21.294);
     --shadow-color: rgba(0,0,0,0.5);
     --shadow-light: rgba(0,0,0,0.3);
-    --accent-color: #4d8edb;
-    --link-color: #4d8edb;
-    --header-color: #4d8edb;
-    --button-bg: #0d60c7;
+    --accent-color: oklch(0.654 0.181 18.94);
+    --link-color: oklch(0.654 0.181 18.94);
+    --header-color: oklch(0.196 0.065 20.49);
+    --button-bg: oklch(0.45 0.148 19.96);
     --button-text: #ffffff;
     --card-shadow: 0 4px 12px var(--shadow-color);
     --overlay-bg: rgba(0, 10, 30, 0.85);
-    /* semantic colors */
-    --danger-bg: #b71c1c;
+    --danger-bg: oklch(0.705 0.127 22.57);
     --danger-bg-hover: #8e1414;
     --danger-text: #ffffff;
+    --primary:oklch(0.958 0.003 264.69);
+    --secondary: oklch(0.281 0.017 266.38);
 }
 
 /* ---------------------------------------------------
@@ -73,7 +102,7 @@ body {
 
 body {
     /* Use a robust system font stack instead of Adobe Typekit */
-    font-family: "Segoe UI", Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    font-family: "Vatger", "Segoe UI", Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
     font-weight: 500;
     font-style: normal;
     margin: 0;
@@ -91,7 +120,7 @@ body {
    Typography
 --------------------------------------------------- */
 h1, h2, h3, h4, h5, h6 {
-    color: var(--header-color);
+    color: var(--primary);
     margin-top: 0;
     font-weight: 600;
 }
@@ -115,8 +144,19 @@ a {
     transition: color 0.2s;
 }
 a:hover { text-decoration: underline; }
+a:hover .linkArrow { transform: translateX(0.5rem) translateY(-0.5rem); }
 
 p { margin-bottom: 20px; }
+
+.linkArrow {
+    display: inline-block;
+    margin-left: 6px;
+    margin-bottom: -5px;
+    transition: transform 0.2s;
+}
+.linkArrow:hover {
+    transform: translateX(0.5rem) translateY(-0.5rem);
+}
 
 /* ---------------------------------------------------
    Layout: container, header, logo, nav
@@ -140,6 +180,7 @@ p { margin-bottom: 20px; }
     border-radius: 12px;
     box-shadow: 0 3px 15px var(--shadow-color);
     transition: all 0.3s;
+    justify-content: center;
 }
 
 .header {
@@ -164,8 +205,9 @@ p { margin-bottom: 20px; }
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0;
-    margin: 0 auto;
+    padding: 25px 0 10px;
+    margin-left: -75px;
+    /* margin: 0 auto; */
 }
 .logo-img {
   max-width: 320px;
@@ -173,7 +215,7 @@ p { margin-bottom: 20px; }
   height: auto;
   display: block;
   margin: 0 auto;
-  margin-top: 15px;
+  margin-top: 20px;
   margin-bottom: 2px;
   object-fit: contain;
 }
@@ -188,8 +230,8 @@ p { margin-bottom: 20px; }
     background-position: center center;
     display: block;
 }
-:root .logo-visual { background-image: url('/VATGer-Logo-Colour.png'); }
-[data-theme="dark"] .logo-visual { background-image: url('/VATGer-Logo-White.png'); }
+:root .logo-visual { background-image: url('/vatger_pmp_light.svg'); }
+[data-theme="dark"] .logo-visual { background-image: url('/vatger_pmp_dark.svg'); }
 
 /* Nav */
 .nav {
@@ -208,7 +250,7 @@ p { margin-bottom: 20px; }
     transition: background 0.2s, color 0.2s;
 }
 .nav a:hover, .nav a.active {
-    background: var(--card-bg);
+    background: oklch(0.925 0.029 15.09);
     color: var(--accent-color);
 }
 
@@ -273,15 +315,15 @@ p { margin-bottom: 20px; }
     margin-bottom: 18px;
     color: var(--accent-color);
     /* Improve light-mode contrast for readability */
-    background: #eaf4fb; /* subtle but distinct from card bg */
-    border: 1px solid rgba(0,95,163,0.25);
+    background: oklch(0.967 0.012 17.51);
+    border: 1px solid var(--accent-color);
     padding: 8px 12px;
     border-radius: 8px;
     display: inline-block;
 }
 [data-theme="dark"] .stepper-progress {
-    background: rgba(77,142,219,0.18);
-    border: 1px solid rgba(77,142,219,0.35);
+    background: var(--card-bg);
+    border: 1px solid var(--accent-color);
 }
 .step {
     display: flex;
@@ -364,8 +406,8 @@ p { margin-bottom: 20px; }
 
 .info-danger {
     background: #ffd1d1;
-    border-left: 5px solid #e53935;
-    color: #420505;
+    border-left: 5px solid oklch(0.58 0.164 25.81);
+    color: oklch(0.45 0.148 19.96);
     padding: 16px 20px;
     border-radius: 7px;
     margin: 18px 0;
@@ -377,8 +419,8 @@ p { margin-bottom: 20px; }
 
 .info-success {
     background: #d0fddc;
-    border-left: 5px solid #4caf50;
-    color: #18421a;
+    border-left: 5px solid oklch(0.692 0.105 153.28);
+    color: oklch(0.51 0.078 153.57);
     padding: 16px 20px;
     border-radius: 7px;
     margin: 18px 0;
@@ -415,7 +457,7 @@ p { margin-bottom: 20px; }
     border-bottom-right-radius: 10px;
     pointer-events: none;
 }
-.card-link { display: block; color: inherit; text-decoration: none; cursor: pointer; }
+.card-link { display: block; color: #fff; text-decoration: none; cursor: pointer; }
 .card h3 { margin-top: 0; margin-bottom: 15px; }
 
 .grid {
@@ -479,7 +521,7 @@ p { margin-bottom: 20px; }
     display: flex;
     flex-direction: column;
     font-weight: 500;
-    color: var(--header-color);
+    color: var(--accent-color);
     margin-bottom: 8px;
     gap: 7px;
 }
@@ -741,7 +783,7 @@ input[type="file"]::file-selector-button {
     margin-right: 12px;
 }
 input[type="file"]::file-selector-button:hover {
-    background: #0d60c7;
+    background: oklch(0.351 0.115 20.29);
 }
 
 [data-theme="dark"] input[type="file"]::file-selector-button {
@@ -844,7 +886,7 @@ input[type="file"]::file-selector-button:hover {
 .modal--not .modal-header h3 { color: #7f1d1d; }
 .modal--pilot .modal-header h3 { color: #2e7d32; }
 
-[data-theme="dark"] .modal { background: #0d1626; color: #fff; }
+[data-theme="dark"] .modal { background: var(--container-bg); color: #fff; }
 
 /* ---------------------------------------------------
    Background slider & overlays
@@ -998,9 +1040,10 @@ input[type="file"]::file-selector-button:hover {
     white-space: nowrap;
 }
 .button:hover:not(:disabled) {
-    background: #0d60c7;
+    background: oklch(0.351 0.115 20.29);
     box-shadow: 0 4px 12px rgba(0, 95, 163, 0.2);
     transform: translateY(-1px);
+    color: oklch(0.958 0.003 264.69);
 }
 .button:active:not(:disabled) {
     transform: translateY(0);
@@ -1021,10 +1064,11 @@ input[type="file"]::file-selector-button:hover {
 }
 
 [data-theme="dark"] .button {
-    background: #0d60c7;
+    background: "var(--accent-color)";
 }
 [data-theme="dark"] .button:hover:not(:disabled) {
-    background: #1a73e8;
+    background: #fff;
+    color: var(--accent-color);
 }
 [data-theme="dark"] .button--danger {
     background: #c62828;
@@ -1043,6 +1087,8 @@ input[type="file"]::file-selector-button:hover {
 .card:hover .link-like,
 .card:focus-within .link-like { text-decoration: underline; }
 
+.link-like:hover .linkArrow { transform: translateX(0.5rem) translateY(-0.5rem);}
+
 /* ---------------------------------------------------
    Additional visual enhancements
 --------------------------------------------------- */
@@ -1054,7 +1100,6 @@ input[type="file"]::file-selector-button:hover {
 .container > h2, .content > h2 {
     display: inline-block;
     padding: 6px 12px;
-    background: linear-gradient(90deg, rgba(77,142,219,0.06), transparent);
     border-radius: 8px;
 }
 
@@ -1121,6 +1166,7 @@ input[type="file"]::file-selector-button:hover {
     .modal-body { max-height: calc(100vh - 160px); }
     .form-card { padding: 18px 8px; max-width: 100%; }
     .form-submit { min-width: 100px; }
+    .logo { margin-top: -20px; }
 }
 
 /* ---------------------------------------------------

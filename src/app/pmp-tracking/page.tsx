@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
 import { trainingTopics } from "@/lib/trainingTopics";
 import { getTrainingTypeColors, getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
+import { AlertTriangle } from "lucide-react";
 
 interface TrainingCoverageRow {
   trainingId: string;
@@ -461,12 +462,15 @@ function PmpTrackingContent() {
                       onClick={() => cancelTraining(row.trainingId, traineeLabel)}
                       disabled={isActionBusy}
                       style={{
+                        background: "var(--amber)",
+                        color: "var(--accent-color)",
                         margin: 0,
                         padding: "5px 10px",
                         fontSize: "0.85em",
                         opacity: isActionBusy ? 0.6 : 1,
                       }}
                     >
+                      <AlertTriangle style={{ marginRight: "6px", width: "16px", height: "16px" }} />
                       {isCancelling ? "Abbrechen..." : "Training Abbrechen"}
                     </button>
                   )}
@@ -479,12 +483,14 @@ function PmpTrackingContent() {
                       margin: 0,
                       padding: "5px 10px",
                       fontSize: "0.85em",
-                      background: "#a93131",
-                      borderColor: "#a93131",
+                      background: "var(--amber)",
+                      borderColor: "var(--accent-color)",
+                      color: "var(--accent-color)",
                       opacity: isActionBusy ? 0.6 : 1,
                     }}
                   >
-                    {isDeleting ? "Loeschen..." : "Training Loeschen"}
+                    <AlertTriangle style={{ marginRight: "6px", width: "16px", height: "16px" }} />
+                    {isDeleting ? "Löschen..." : "Training Löschen"}
                   </button>
                 </div>
 
@@ -517,8 +523,9 @@ function PmpTrackingContent() {
                             type="button"
                             onClick={() => removeMentor(row.trainingId, mentor.id, mentorLabel, traineeLabel)}
                             disabled={actionLoading === removeKey || !!actionLoading}
-                            style={{ margin: 0, padding: "5px 10px", fontSize: "0.82em" }}
+                            style={{ background: "var(--amber)", color: "var(--accent-color)", margin: 0, padding: "5px 10px", fontSize: "0.82em" }}
                           >
+                            <AlertTriangle style={{ marginRight: "6px", width: "16px", height: "16px" }} />
                             {actionLoading === removeKey ? "Entferne..." : "Mentor entfernen"}
                           </button>
                           <select

@@ -8,7 +8,7 @@ export default function KontaktPage() {
         Du möchtest mit der Leitung des PMP in Kontakt treten? Das geht über das Vatsim Germany Forum. Gerne per PN.
       </p>
       
-      <div className="card">
+      <div className="card" style={{ color: "oklch(0.557 0.183 20.14)" }}>
         <p>
           Boris Pilecki (955179)
         </p>
@@ -17,7 +17,7 @@ export default function KontaktPage() {
         </p>
       </div>
       <p>Du möchtest etwas über das PMP loswerden, aber nicht bei uns? Das PMP ist dem Vatsim Germany Pilot Training Department (PTD) zugeordnet, und du wendest dich am besten an</p>
-      <div className="card">
+      <div className="card" style={{ color: "oklch(0.557 0.183 20.14)" }}>
         <p>
           Tim Fuchs (1342244)
         </p>
