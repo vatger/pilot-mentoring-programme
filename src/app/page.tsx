@@ -1,5 +1,5 @@
 "use client";
-
+import { ArrowUpRight, Check, Flag, Moon, Sun, X } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import PageLayout from '@/components/PageLayout';
@@ -159,15 +159,15 @@ export default function HomePage() {
       <div className="three-col-grid">
         <div className="card" role="button" tabIndex={0} onClick={() => openCard('vatsim')} onKeyDown={(e) => e.key === 'Enter' && openCard('vatsim')}>
           <h3>Was ist VATSIM?</h3>
-          <p className="link-like" aria-hidden="true">Mehr erfahren</p>
+          <p className="link-like" aria-hidden="true">Mehr erfahren <ArrowUpRight className='linkArrow'></ArrowUpRight></p>
         </div>
         <div className="card" role="button" tabIndex={0} onClick={() => openCard('not')} onKeyDown={(e) => e.key === 'Enter' && openCard('not')}>
           <h3>Was ist VATSIM nicht?</h3>
-          <p className="link-like" aria-hidden="true">Mehr erfahren</p>
+          <p className="link-like" aria-hidden="true">Mehr erfahren <ArrowUpRight className='linkArrow'></ArrowUpRight></p>
         </div>
         <div className="card" role="button" tabIndex={0} onClick={() => openCard('pilot')} onKeyDown={(e) => e.key === 'Enter' && openCard('pilot')}>
           <h3>Was du als Pilot wissen solltest:</h3>
-          <p className="link-like" aria-hidden="true">Mehr erfahren</p>
+          <p className="link-like" aria-hidden="true">Mehr erfahren <ArrowUpRight className='linkArrow'></ArrowUpRight></p>
         </div>
       </div>
 
@@ -183,7 +183,7 @@ export default function HomePage() {
 
       <div className="card">
         <h3 style={{ textAlign: 'center' }}>
-          <Link href="/pmp">Und jetzt sieh dir das PMP näher an!</Link>
+          <Link href="/pmp">Und jetzt sieh dir das PMP näher an! <ArrowUpRight className='linkArrow'></ArrowUpRight></Link>
         </h3>
       </div>
 

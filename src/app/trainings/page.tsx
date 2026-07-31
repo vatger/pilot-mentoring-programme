@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
-import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 
 const FILE_RULES = [

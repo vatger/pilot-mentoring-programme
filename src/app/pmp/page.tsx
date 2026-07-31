@@ -1,6 +1,6 @@
 import PageLayout from '@/components/PageLayout';
 import Link from 'next/link';
-
+import { ArrowUpRight } from 'lucide-react';
 export default function PMPPage() {
   return (
     <PageLayout>
@@ -33,13 +33,13 @@ export default function PMPPage() {
         </ul>
       </div>
       <Link href="/for-pilots" className="card card-link">
-        <h3>Ja, möchte ich machen.</h3>
-        <p>Weiter zu For Pilots</p>
+        <h3 style={{ color: 'var(--accent-color)' }}>Ja, möchte ich machen.</h3>
+        <p style={{ color: 'var(--accent-color)' }}>Weiter zu For Pilots <ArrowUpRight className="linkArrow" /></p>
       </Link>
 
       <Link href="/mentorenbewerbung" className="card card-link">
-        <h3>Du möchtest selber Mentor werden?</h3>
-        <p>Dann klick hier!</p>
+        <h3 style={{ color: 'var(--accent-color)' }}>Du möchtest selber Mentor werden?</h3>
+        <p style={{ color: 'var(--accent-color)' }}>Dann klick hier! <ArrowUpRight className="linkArrow" /></p>
       </Link>
     </PageLayout>
   );

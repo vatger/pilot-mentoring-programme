@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import PageLayout from '@/components/PageLayout';
-import Modal from '@/components/Modal';
+import { ArrowUpRight } from 'lucide-react';
 
 
 export default function HomePage() {
@@ -55,13 +55,13 @@ export default function HomePage() {
 
         <p>
           {language === 'en'
-            ? `A single aircraft that is unable to follow instructions correctly or in
+            ? `A single pilot who is unable to follow instructions correctly or in
               a timely manner can have a significant impact on the entire operation.
               Controllers may need to delay departures, extend approaches, issue
               additional vectors or even instruct other aircraft to go around. This
               increases workload for everyone and reduces the airport's overall
               capacity.`
-            : `Bereits ein einziges Flugzeug, das Anweisungen nicht korrekt oder
+            : `Bereits ein einziger Pilot, der Anweisungen nicht korrekt oder
               rechtzeitig umsetzen kann, kann den gesamten Ablauf erheblich
               beeinflussen. Lotsen müssen dann möglicherweise Starts verzögern,
               Anflüge verlängern, zusätzliche Radarvektoren vergeben oder andere
@@ -90,25 +90,25 @@ export default function HomePage() {
     </div>
 <div className="card">
         <div className="info-danger">
-        <strong>In deinem eigenen Interesse: Lass zunächst die Finger von den Major Airports:</strong>
-        <div style={{paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
-          <li>EDDF</li>
-          <li>EDDM</li>
-          <li>EDDH</li>
-          <li>EDDL</li>
-          <li>EDDB</li>
-        </div>
+          <strong>{language === 'en' ? 'In your own interest: Refrain from the Major Airports for now:' : 'In deinem eigenen Interesse: Lass zunächst die Finger von den Major Airports:'}</strong>
+            <div style={{paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
+              <li>EDDF</li>
+              <li>EDDM</li>
+              <li>EDDH</li>
+              <li>EDDL</li>
+              <li>EDDB</li>
+          </div>
       </div>
 
       <div className="info-success">
-        <strong>Starte zunächst lieber an den kleineren Flughäfen!</strong>
+        <strong>{language === 'en' ? 'Start with smaller airports first!' : 'Starte zunächst lieber an den kleineren Flughäfen!'}</strong>
         <div style={{paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
           <li>EDDG</li>
           <li>EDDC</li>
           <li>EDDW</li>
           <li>EDAH</li>
           <li>EDSB</li>
-          <p>Und viele weitere... Das sind auch die Airports, wo neue Lotsen beginnen. Es ist also eine Win-Win Situation, wenn dort mehr los ist!</p>
+          <p>{language === 'en' ? 'And many more... These are also the airports where new controllers start. It is therefore a win-win situation when there is more activity there!' : 'Und viele weitere... Das sind auch die Airports, wo neue Lotsen beginnen. Es ist also eine Win-Win Situation, wenn dort mehr los ist!'}</p>
         </div>
       </div>
 </div>
@@ -116,7 +116,7 @@ export default function HomePage() {
   {language === 'en'
     ? (
       <>
-        <h3>Before flying into major airports, you should be able to:</h3>
+        <h3>Before flying into major airports, you must be able to:</h3>
         <ul>
           <li>Fly your aircraft confidently without relying on guesswork.</li>
           <li>Understand and correctly read back ATC instructions.</li>
@@ -129,7 +129,7 @@ export default function HomePage() {
     )
     : (
       <>
-        <h3>Bevor Du große Flughäfen anfliegst, sollten Du in der Lage sein:</h3>
+        <h3>Bevor Du große Flughäfen anfliegst, musst Du in der Lage sein:</h3>
         <ul>
           <li>Dein Flugzeug sicher zu bedienen, ohne zu raten oder jedes mal etwas nachzuschlagen.</li>
           <li>ATC-Anweisungen zu verstehen und korrekt zurückzulesen.</li>
@@ -187,7 +187,7 @@ export default function HomePage() {
               <>
                 <h3 style={{ textAlign: "center" }}>
                   <Link href="/">
-                    Join the Pilot Mentoring Program
+                    Join the Pilot Mentoring Program <ArrowUpRight className='linkArrow'></ArrowUpRight>
                   </Link>
                 </h3>
               </>
@@ -196,7 +196,7 @@ export default function HomePage() {
               <>
                 <h3 style={{ textAlign: "center" }}>
                   <Link href="/">
-                    Finde deinen Mentor beim PMP
+                    Finde deinen Mentor beim PMP <ArrowUpRight className='linkArrow'></ArrowUpRight>
                   </Link>
                 </h3>
               </>

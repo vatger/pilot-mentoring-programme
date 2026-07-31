@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 import { getTrainingTypeColors, getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
+import { AlertTriangle } from "lucide-react";
 
 interface RegistrationData {
   cid: string;
@@ -694,8 +695,10 @@ export default function MentorDashboard() {
                           <button
                             onClick={() => setShowCancellationReasonModal(training.id)}
                             className="button button--danger"
-                            style={{ margin: 0 }}
+                            style={{ margin: 0, background: "var(--amber)", color: "var(--accent-color)"
+                             }}
                           >
+                            <AlertTriangle style={{ marginRight: "6px", width: "16px", height: "16px" }} />
                             Training Abbrechen
                           </button>
                           <button
@@ -719,7 +722,8 @@ export default function MentorDashboard() {
                                   >
                                     Anmeldung ansehen
                                   </button>
-                                  <button className="button" onClick={() => handleRemoveSelfAsMentor(training.id)}>
+                                  <button className="button" style={{ background: "var(--amber)", color: "var(--accent-color)" }} onClick={() => handleRemoveSelfAsMentor(training.id)}>
+                                    <AlertTriangle style={{ marginRight: "6px", width: "16px", height: "16px" }} />
                                     Entferne mich als Mentor
                                   </button>
                                   {canManageAllTrainings && (
@@ -738,7 +742,9 @@ export default function MentorDashboard() {
                                       className="button"
                                       disabled={downgradingToCoaching === training.id}
                                       onClick={() => handleDowngradeToCoaching(training.id)}
+                                      style={{ background: "var(--amber)", color: "var(--accent-color)" }}
                                     >
+                                      <AlertTriangle style={{ marginRight: "6px", width: "16px", height: "16px" }} />
                                       {downgradingToCoaching === training.id
                                         ? "Wird zu Coaching..."
                                         : "In coaching umwandeln"}
@@ -749,7 +755,9 @@ export default function MentorDashboard() {
                                       className="button"
                                       disabled={migratingToStandard === training.id}
                                       onClick={() => handleMigrateToStandard(training.id)}
+                                      style={{ background: "var(--amber)", color: "var(--accent-color)" }}
                                     >
+                                      <AlertTriangle style={{ marginRight: "6px", width: "16px", height: "16px" }} />
                                       {migratingToStandard === training.id
                                         ? "Wird zu Airliner..."
                                         : "In Airliner umwandeln"}

@@ -10,10 +10,10 @@ import {
   formatRubricRating,
   parseRubricNotes,
   RUBRIC_CODE_COLORS,
-  RUBRIC_ROW_TINTS,
 } from "@/lib/checkrideRubric";
 import { trainingTopics } from "@/lib/trainingTopics";
 import { getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
+import { AlertTriangle } from "lucide-react";
 
 type Training = {
   id: string;
@@ -113,137 +113,7 @@ type CheckrideLog = {
   assessment?: Assessment | null;
 };
 
-const CHECKRIDE_SECTIONS: { key: string; title: string; fields: { key: string; label: string }[] }[] = [
-  {
-    key: "flightplan",
-    title: "1 - Flugplan",
-    fields: [
-      { key: "flightplanCallsign", label: "Callsign / AC Type" },
-      { key: "flightplanAircraft", label: "Equipment" },
-      { key: "flightplanRouting", label: "Routing" },
-      { key: "flightplanTimes", label: "Zeiten" },
-      { key: "flightplanRemarks", label: "Remarks" },
-    ],
-  },
-  {
-    key: "charts",
-    title: "2 - Charts",
-    fields: [
-      { key: "chartsParkingDep", label: "Parking DEP" },
-      { key: "chartsTaxiDep", label: "Taxi DEP" },
-      { key: "chartsDeparture", label: "Departure" },
-      { key: "chartsEnroute", label: "Enroute" },
-      { key: "chartsArrivalTransition", label: "Arrival / Transition" },
-      { key: "chartsApproach", label: "Approach (alle RWYs)" },
-      { key: "chartsTaxiDest", label: "Taxi DEST" },
-      { key: "chartsParkingDest", label: "Parking DEST" },
-    ],
-  },
-  {
-    key: "briefing",
-    title: "3 - Self Briefing",
-    fields: [
-      { key: "briefingFrequencies", label: "Frequenzen" },
-      { key: "briefingPushback", label: "Pushback" },
-      { key: "briefingTaxiRunway", label: "Taxi to Runway" },
-      { key: "briefingATCTakeoff", label: "ATC after Takeoff" },
-      { key: "briefingDeparture", label: "Departure / Restrictions" },
-      { key: "briefingArrival", label: "Arrival / Transition" },
-      { key: "briefingApproach", label: "Approach" },
-      { key: "briefingRunwayExits", label: "Runway Exits" },
-      { key: "briefingTaxiParking", label: "Taxi to Parking" },
-    ],
-  },
-  {
-    key: "clearance",
-    title: "4 - Enroute Clearance",
-    fields: [
-      { key: "clearanceInitialCall", label: "Initial Call" },
-      { key: "clearanceRequest", label: "Clearance Request" },
-      { key: "clearanceClearedTo", label: "Cleared to" },
-      { key: "clearanceDeparture", label: "Departure" },
-      { key: "clearanceRoute", label: "Flight Planned Route" },
-      { key: "clearanceClimb", label: "Climb / Climb via SID" },
-      { key: "clearanceSquawk", label: "Squawk" },
-      { key: "clearanceCallsign", label: "Callsign" },
-    ],
-  },
-  {
-    key: "startup",
-    title: "5 - Startup / Pushback",
-    fields: [
-      { key: "startupStation", label: "Station / CS" },
-      { key: "startupGate", label: "Gate / Request" },
-      { key: "startupReadback", label: "Readback / CS" },
-      { key: "startupExecution", label: "Ausfuehrung" },
-    ],
-  },
-  {
-    key: "taxi",
-    title: "6 - Taxi to Runway",
-    fields: [
-      { key: "taxiStation", label: "Station / CS" },
-      { key: "taxiRequest", label: "Request" },
-      { key: "taxiReadback", label: "Readback / CS" },
-      { key: "taxiExecution", label: "Ausfuehrung" },
-    ],
-  },
-  {
-    key: "takeoff",
-    title: "7 - Takeoff",
-    fields: [
-      { key: "takeoffStation", label: "Station / CS" },
-      { key: "takeoffReadback", label: "Readback / CS" },
-      { key: "takeoffExecution", label: "Ausfuehrung" },
-    ],
-  },
-  {
-    key: "departure",
-    title: "8 - Departure",
-    fields: [
-      { key: "departureStatement", label: "Meldung" },
-      { key: "departureStation", label: "Station / CS / Altitude" },
-      { key: "departureReadback", label: "Readback / CS" },
-      { key: "departureExecution", label: "Ausfuehrung" },
-    ],
-  },
-  {
-    key: "enroute",
-    title: "9 - Enroute",
-    fields: [
-      { key: "enrouteStation", label: "Station / CS / FL" },
-      { key: "enrouteReadbacks", label: "Readbacks" },
-      { key: "enrouteExecution", label: "Ausfuehrung" },
-    ],
-  },
-  {
-    key: "arrival",
-    title: "10 - Arrival / Transition",
-    fields: [
-      { key: "arrivalStation", label: "Station / CS / FL" },
-      { key: "arrivalClearances", label: "Freigaben / Anweisungen" },
-      { key: "arrivalExecution", label: "Ausfuehrung" },
-    ],
-  },
-  {
-    key: "landing",
-    title: "11 - Landung",
-    fields: [
-      { key: "landingStation", label: "Station / CS / APP" },
-      { key: "landingClearance", label: "Landing Clearance" },
-      { key: "landingExecution", label: "Ausfuehrung" },
-    ],
-  },
-  {
-    key: "parking",
-    title: "12 - Taxi to Parking",
-    fields: [
-      { key: "parkingStation", label: "Station / CS / TWY" },
-      { key: "parkingReadback", label: "Readback" },
-      { key: "parkingExecution", label: "Ausfuehrung" },
-    ],
-  },
-];
+
 
 export default function TraineeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession();
@@ -738,13 +608,15 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
         )}
 
           {canFinishWithoutCheckride && training.status === "ACTIVE" && (
-            <div style={{ marginTop: "1rem" }}>
+            <div style={{marginTop: "1rem" }}>
               <button
                 type="button"
                 className="button button--danger"
                 onClick={finishWithoutCheckride}
                 disabled={finishingWithoutCheckride}
+                style={{background: "var(--amber)", color: "var(--accent-color)", marginTop: "1rem" }}
               >
+                <AlertTriangle size={16} style={{ marginRight: "0.5rem" }} />
                 {finishingWithoutCheckride ? "Wird abgeschlossen..." : "Training ohne Checkride abschließen"}
               </button>
             </div>
@@ -757,7 +629,9 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                 className="button"
                 onClick={downgradeToCoaching}
                 disabled={downgradingToCoaching}
+                style={{background: "var(--amber)", color: "var(--accent-color)", marginTop: "1rem" }}
               >
+                <AlertTriangle size={16} style={{ marginRight: "0.5rem" }} />
                 {downgradingToCoaching ? "Wird zu Coaching umgewandelt..." : "Zu Coaching umwandeln"}
               </button>
             </div>
@@ -769,12 +643,15 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                 className="button"
                   style={{ 
                     margin: 0, 
+                    background: "var(--amber)",
+                    color: "var(--accent-color)",
                     padding: "8px 12px", 
                     fontSize: "0.9em",
                     opacity: actioningTrainingId === training.id && actioningType === "finish" ? 0.6 : 1,
                     cursor: actioningTrainingId === training.id && actioningType === "finish" ? "default" : "pointer",
                   }}
                 >
+                <AlertTriangle size={16} style={{ marginRight: "0.5rem" }} />
                 {actioningTrainingId === training.id && actioningType === "finish" ? "Wird abgeschlossen..." : "Coaching abschließen"}
               </button>
               )}
@@ -958,12 +835,13 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
               onClick={finishWithoutCheckride}
               disabled={finishingWithoutCheckride}
               style={{
-                backgroundColor: "#f59e0b",
-                color: "#1a1200",
-                border: "1px solid #7c4a03",
+                backgroundColor: "var(--amber)",
+                color: "var(--accent-color)",
+                border: "1px solid var(--accent-color)",
                 fontWeight: 700,
               }}
             >
+              <AlertTriangle size={16} style={{ marginRight: "0.5rem" }} />
               {finishingWithoutCheckride ? "Schliesst ab..." : "Finish without checkride"}
             </button>
           </div>

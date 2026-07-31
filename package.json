@@ -17,6 +17,7 @@
     "dejavu-fonts-ttf": "^2.37.3",
     "express": "^4.21.2",
     "framer-motion": "^12.23.12",
+    "lucide": "^1.27.0",
     "lucide-react": "^0.292.0",
     "mariadb": "^3.4.5",
     "next": "^16.0.10",
@@ -33,7 +34,7 @@
     "eslint": "^9.39.2",
     "eslint-config-next": "16.0.10",
     "postcss": "^8.4.31",
-    "tailwindcss": "^3.3.5",
+    "tailwindcss": "^3.4.19",
     "typescript": "^5.2.2"
   }
 }

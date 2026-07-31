@@ -382,7 +382,7 @@ export default function AdminPage() {
                           onClick={() => promoteToAdmin(user.id)}
                           disabled={updating === user.id}
                           className="button button--danger"
-                          style={{ padding: "6px 12px", fontSize: "0.85em", margin: 0 }}
+                          style={{ background: "var(--amber)", color: "var(--accent-color)", padding: "6px 12px", fontSize: "0.85em", margin: 0 }}
                         >
                           Befördern
                         </button>

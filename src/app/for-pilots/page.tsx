@@ -1,4 +1,5 @@
 import PageLayout from "@/components/PageLayout";
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 export default function ForPilotsPage() {
@@ -32,7 +33,7 @@ export default function ForPilotsPage() {
             <p>Wir erwarten von dir zeitliche Verfügbarkeit, Zuverlässigkeit bei der Termineinhaltung und Eigeninitiative beim selbstständigen Lernen und Üben zwischen den Trainingssessions.</p>
             <p>Wenn du das machen möchtest, fülle bitte unsere Anmeldung aus, und es kann sehr bald losgehen!</p>
             <a className="button" href="https://board.vatsim-germany.org/threads/pmp-training-dein-weg-zum-online-piloten.74740/" target="_blank" rel="noreferrer" style={{ marginTop: "8px", display: "inline-block" }}>
-              Zur Anmeldung
+              Zur Anmeldung <ArrowUpRight className='linkArrow'></ArrowUpRight>
             </a>
           </div>
           <div className="card card-link" style={{ margin: 0 }}>
@@ -42,7 +43,7 @@ export default function ForPilotsPage() {
             <p>Dann kannst du hier einen Mentor anfragen, der dann dein Ansprechpartner auf dem Netzwerk ist - so lange ihr beide aktiv seid.</p>
             <p>Natürlich kannst du auch dann immer noch in ein reguläres Training einsteigen.</p>
             <a className="button" href="https://board.vatsim-germany.org/threads/pmp-training-dein-weg-zum-online-piloten.74740/" target="_blank" rel="noreferrer" style={{ marginTop: "8px", display: "inline-block" }}>
-              Zur Anmeldung
+              Zur Anmeldung <ArrowUpRight className='linkArrow'></ArrowUpRight>
             </a>
           </div>
         </div>
@@ -54,7 +55,7 @@ export default function ForPilotsPage() {
           Melde dich mit deinem VATSIM-Account an, um deinen Fortschritt zu sehen.
         </p>
         <Link className="button" href="/trainee/progress">
-          Zum Fortschritt
+          Zum Fortschritt <ArrowUpRight className='linkArrow'></ArrowUpRight>
         </Link>
       </div>
     </PageLayout>

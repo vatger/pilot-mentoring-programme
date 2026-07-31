@@ -5,4 +5,6 @@ const nextConfig = {
   skipTrailingSlashRedirect: true,
 }
 
-module.exports = nextConfig
+module.exports = {
+  allowedDevOrigins: ['192.168.178.25'],
+}
