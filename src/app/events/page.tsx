@@ -1,4 +1,5 @@
 import PageLayout from '@/components/PageLayout';
+import { Calendar, Clock, TowerControl, Headphones } from "lucide-react";
 
 export default function EventsPage() {
   return (
@@ -38,15 +39,19 @@ export default function EventsPage() {
       <div className="card">
         <h3>Klingt gut. Wann und wo findet das statt?</h3>
         <p>
-          <strong>Termin</strong>: Termin: Jeden 1. und 3. Freitag im Monat
+          <Calendar style={{ color: "var(--accent-color)", marginRight: "6px", width: "20px", height: "20px" }} />
+          <strong>Termin</strong>: Jeden 1. und 3. Freitag im Monat
         </p>
         <p>
+          <Clock style={{ color: "var(--accent-color)", marginRight: "6px", width: "20px", height: "20px" }} />
           <strong>Zeit</strong>: 19:00 - 22:00 LCL
         </p>
         <p>
+          <TowerControl style={{ color: "var(--accent-color)", marginRight: "6px", width: "20px", height: "20px" }} />
           <strong>Airport</strong>: Wird jeweils im Event-Kalender bekannt gegeben
         </p>
         <p>
+          <Headphones style={{ color: "var(--accent-color)", marginRight: "6px", width: "20px", height: "20px" }} />
           <strong>Discord</strong>: Vatsim Germany Discord, Voice Chat
         </p>
       </div>
