@@ -26,7 +26,7 @@ export default function ForPilotsPage() {
       <div className="card" style={{ marginBottom: "1.25rem" }}>
         <h3>Anmeldung</h3>
         <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
-          <div className="card card-link" style={{ margin: 0 }}>
+          <div className="card" style={{ margin: 0 }}>
             <h4>Ready for IFR: Dein Airliner-Training</h4>
             <p>Du durchläufst mit einem unserer Mentoren ein vollständiges IFR-Flugtraining mit einem Airliner. Das fängt an mit der Wiederholung von Inhalten aus dem New Member Orientation Course, geht weiter mit theoretischen Grundlagen und praktischen Übungen und endet mit einem Online-Checkflug.</p>
             <p>Über den Verlauf mehrerer Wochen lernst du alle relevanten Prozeduren und die Kommunikation mit ATC, so dass du sicher am virtuellen Himmel unterwegs bist.</p>
@@ -36,7 +36,7 @@ export default function ForPilotsPage() {
               Zur Anmeldung <ArrowUpRight className='linkArrow'></ArrowUpRight>
             </a>
           </div>
-          <div className="card card-link" style={{ margin: 0 }}>
+          <div className="card" style={{ margin: 0 }}>
             <h4>Dein Mentor, dein Ansprechpartner</h4>
             <p>Du möchtest nicht das Airliner-Training, sondern hast einen anderen Trainingswunsch? IFR mit kleineren Flugzeugen, VFR, besondere Verfahren wie z.B. RNP-Anflüge, Helikopter?</p>
             <p>Du möchtest einfach nur einen Ansprechpartner für Fragen zum Online-Fliegen. Du kennst dich schon gut genug auf dem Netzwerk und mit der Fliegerei aus und kommst zurecht, hast aber immer mal wieder Fragen oder möchtest bestimmte Situationen trainieren?</p>
