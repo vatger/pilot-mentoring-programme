@@ -40,6 +40,10 @@ export async function GET(req: NextRequest) {
     const isAssignedMentor = training.mentors.some((m) => m.mentorId === userId);
     const isLeadership = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
 
+    if (training.status === "ABGEBROCHEN" && !isLeadership) {
+      return NextResponse.json({ error: "Training archived" }, { status: 403 });
+    }
+
     if (!isTrainee && !isAssignedMentor && !isLeadership) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

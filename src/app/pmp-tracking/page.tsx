@@ -7,12 +7,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
 import { trainingTopics } from "@/lib/trainingTopics";
 import { getTrainingTypeColors, getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, BadgeCheck } from "lucide-react";
 
 interface TrainingCoverageRow {
   trainingId: string;
   trainingType: "STANDARD" | "ONLINE_COACHING";
   status: string;
+  completionType: "CHECKRIDE" | "REGULAR";
   trainee: { id: string; name: string | null; cid: string | null };
   mentors: { id: string; name: string | null; cid: string | null }[];
   sessionsCount: number;
@@ -112,31 +113,6 @@ function PmpTrackingContent() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Fehler beim Abbrechen des Trainings");
-      }
-
-      await fetchData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const deleteTraining = async (trainingId: string, traineeLabel: string) => {
-    if (!confirm(`Training von ${traineeLabel} wirklich komplett loeschen? Alle Daten werden entfernt.`)) return;
-
-    setActionLoading(`delete-${trainingId}`);
-    setError("");
-    try {
-      const res = await fetch("/api/training/drop", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trainingId, deleteEverything: true }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Fehler beim Loeschen aller Trainingsdaten");
       }
 
       await fetchData();
@@ -347,8 +323,7 @@ function PmpTrackingContent() {
             const trainingTypeColors = getTrainingTypeColors(row.trainingType);
             const traineeLabel = row.trainee.name || row.trainee.cid || "Unbekannt";
             const isCancelling = actionLoading === `cancel-${row.trainingId}`;
-            const isDeleting = actionLoading === `delete-${row.trainingId}`;
-            const isActionBusy = isCancelling || isDeleting;
+            const isActionBusy = isCancelling;
             return (
               <div
                 key={row.trainingId}
@@ -386,6 +361,22 @@ function PmpTrackingContent() {
                     >
                       {getTrainingTypeLabel(row.trainingType)}
                     </span>
+                    {row.status === "COMPLETED" && (
+                      <span
+                        title={row.completionType === "CHECKRIDE" ? "Mit Checkride abgeschlossen" : "Regulär abgeschlossen"}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          color: row.completionType === "CHECKRIDE" ? "#2e7d32" : "var(--text-color)",
+                          fontSize: "0.82em",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {row.completionType === "CHECKRIDE" && <BadgeCheck size={16} />}
+                        {row.completionType === "CHECKRIDE" ? "Mit Checkride" : "Regulär"}
+                      </span>
+                    )}
                   </div>
 
                   {coachingTraining ? (
@@ -474,24 +465,6 @@ function PmpTrackingContent() {
                       {isCancelling ? "Abbrechen..." : "Training Abbrechen"}
                     </button>
                   )}
-                  <button
-                    className="button"
-                    type="button"
-                    onClick={() => deleteTraining(row.trainingId, traineeLabel)}
-                    disabled={isActionBusy}
-                    style={{
-                      margin: 0,
-                      padding: "5px 10px",
-                      fontSize: "0.85em",
-                      background: "var(--amber)",
-                      borderColor: "var(--accent-color)",
-                      color: "var(--accent-color)",
-                      opacity: isActionBusy ? 0.6 : 1,
-                    }}
-                  >
-                    <AlertTriangle style={{ marginRight: "6px", width: "16px", height: "16px" }} />
-                    {isDeleting ? "Löschen..." : "Training Löschen"}
-                  </button>
                 </div>
 
                 {row.status === "ACTIVE" && row.mentors.length > 0 && (

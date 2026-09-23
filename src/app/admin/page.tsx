@@ -109,7 +109,7 @@ export default function AdminPage() {
     }
   };
 
-  const approveCancellation = async (trainingId: string, action: "delete" | "reactivate") => {
+  const approveCancellation = async (trainingId: string, action: "archive" | "reactivate") => {
     setApprovingCancellation(trainingId);
     try {
       const res = await fetch("/api/training/cancel/approve", {
@@ -123,8 +123,8 @@ export default function AdminPage() {
       }
       await fetchUsers();
       alert(
-        action === "delete"
-          ? "Trainee und alle Daten wurden gelöscht"
+        action === "archive"
+          ? "Training wurde archiviert; Logs bleiben für Admin und PMP-Leitung erhalten"
           : "Trainee wurde als wartender Trainee zurück aktiviert"
       );
     } catch (err) {
@@ -254,12 +254,12 @@ export default function AdminPage() {
                       </div>
                       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                         <button
-                          onClick={() => approveCancellation(cancellation.id, "delete")}
+                          onClick={() => approveCancellation(cancellation.id, "archive")}
                           disabled={approvingCancellation === cancellation.id}
                           className="button button--danger"
                           style={{ margin: 0 }}
                         >
-                          {approvingCancellation === cancellation.id ? "Wird bearbeitet..." : "Trainee löschen"}
+                          {approvingCancellation === cancellation.id ? "Wird bearbeitet..." : "Training archivieren"}
                         </button>
                         <button
                           onClick={() => approveCancellation(cancellation.id, "reactivate")}

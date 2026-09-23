@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { trainingTopicKeys, trainingTopics } from "@/lib/trainingTopics";
-import { TrainingStatus } from "@prisma/client";
+
+const TRACKING_STATUSES = ["ACTIVE", "COMPLETED", "ABGEBROCHEN"] as const;
 
 // GET /api/admin/tracking
 // Returns coverage per trainee (topics covered) for ADMIN and PMP_LEITUNG
@@ -21,7 +22,10 @@ export async function GET(request: NextRequest) {
     }
 
     const statusParam = request.nextUrl.searchParams.get("status");
-    const status = statusParam as TrainingStatus | null;
+    if (statusParam && !TRACKING_STATUSES.includes(statusParam as (typeof TRACKING_STATUSES)[number])) {
+      return NextResponse.json({ error: "Invalid training status" }, { status: 400 });
+    }
+    const status = statusParam as (typeof TRACKING_STATUSES)[number] | null;
 
     const trainings = await prisma.training.findMany({
       where: {
@@ -42,6 +46,10 @@ export async function GET(request: NextRequest) {
           include: {
             topics: true,
           },
+        },
+        checkrides: {
+          where: { isDraft: false, result: "PASSED" },
+          select: { id: true },
         },
       },
       orderBy: { createdAt: "asc" },
@@ -95,6 +103,7 @@ export async function GET(request: NextRequest) {
         trainingId: training.id,
         trainingType: training.trainingType,
         status: training.status,
+        completionType: training.checkrides.length > 0 ? "CHECKRIDE" : "REGULAR",
         trainee: training.trainee,
         mentors: training.mentors.map((m) => m.mentor),
         sessionsCount: training.sessions.length,

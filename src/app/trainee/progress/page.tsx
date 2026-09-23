@@ -979,6 +979,9 @@ function TraineeProgressContent() {
                           <div style={{ fontWeight: 600, fontSize: "1.05em" }}>
                             {new Date(log.scheduledDate).toLocaleDateString()}
                           </div>
+                            <div style={{ fontSize: "0.9em", color: "var(--text-color)", marginTop: "0.35rem" }}>
+                              Prüfer: {log.availability.examiner?.name || log.availability.examiner?.cid || "Unbekannt"}
+                            </div>
                         </div>
                         <div style={{ textAlign: "right", fontSize: "0.9em", fontWeight: 600 }}>
                           Ergebnis: {assessment?.overallResult || log.result}

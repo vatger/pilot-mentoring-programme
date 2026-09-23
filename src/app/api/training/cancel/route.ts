@@ -57,24 +57,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update training status to ABGEBROCHEN and store cancellation reason
-    const updated = await prisma.training.update({
-      where: { id: trainingId },
-      data: { 
-        status: "ABGEBROCHEN",
-        cancellationReason: cancellationReason.trim(),
-        cancellationAt: new Date(),
-      } as any,
-      include: {
-        mentors: {
-          include: { mentor: { select: { id: true, name: true } } },
+    // Mark the training and trainee as cancelled atomically.
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedTraining = await tx.training.update({
+        where: { id: trainingId },
+        data: {
+          status: "ABGEBROCHEN",
+          cancellationReason: cancellationReason.trim(),
+          cancellationAt: new Date(),
         },
-        trainee: true,
-      },
-    });
+        include: {
+          mentors: {
+            include: { mentor: { select: { id: true, name: true } } },
+          },
+          trainee: true,
+        },
+      });
 
-    // DO NOT update trainee status here - let PMP_LEITUNG decide in approval route
-    // The trainee remains in their current state until PMP_LEITUNG takes action
+      await tx.user.update({
+        where: { id: training.trainee.id },
+        data: {
+          role: "VISITOR",
+          userStatus: "Cancelled Trainee",
+        },
+      });
+
+      return updatedTraining;
+    });
 
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {

@@ -5,9 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/training/cancel/approve
- * PMP_LEITUNG approves a cancellation and either:
- * 1. Removes the trainee's training history and marks the account as CANCELLED_TRAINEE, OR
- * 2. Resets trainee to PENDING_TRAINEE status (available for other mentors)
+ * PMP_LEITUNG approves a cancellation and either archives the training or
+ * reactivates it. Training data is only deleted through the GDPR endpoint.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -35,9 +34,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!["delete", "reactivate"].includes(action)) {
+    if (!["archive", "reactivate"].includes(action)) {
       return NextResponse.json(
-        { error: "action must be 'delete' or 'reactivate'" },
+        { error: "action must be 'archive' or 'reactivate'" },
         { status: 400 }
       );
     }
@@ -59,16 +58,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (action === "delete") {
+    if (action === "archive") {
       await prisma.$transaction(async (tx) => {
-        if (training.trainee.cid) {
-          await tx.registration.deleteMany({
-            where: { cid: training.trainee.cid },
-          });
-        }
-
-        await tx.training.deleteMany({
-          where: { traineeId: training.traineeId },
+        await tx.trainingMentor.deleteMany({
+          where: { trainingId },
         });
 
         await tx.user.update({
@@ -81,29 +74,33 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { success: true, message: "Trainee history removed and account marked as cancelled" },
+        { success: true, message: "Training archived and account marked as cancelled" },
         { status: 200 }
       );
     } else if (action === "reactivate") {
-      // Reset trainee to PENDING_TRAINEE and make them available for new mentors
-      const updated = await prisma.user.update({
-        where: { id: training.traineeId },
-        data: {
-          role: "PENDING_TRAINEE",
-          userStatus: null, // Clear any cancelled status
-        },
-      });
+      await prisma.$transaction(async (tx) => {
+        await tx.training.update({
+          where: { id: trainingId },
+          data: {
+            status: "ACTIVE",
+            cancellationReason: null,
+            cancellationAt: null,
+          },
+        });
 
-      // Also delete the current training record (since it's being reset)
-      await prisma.training.delete({
-        where: { id: trainingId },
+        await tx.user.update({
+          where: { id: training.traineeId },
+          data: {
+            role: "PENDING_TRAINEE",
+            userStatus: null,
+          },
+        });
       });
 
       return NextResponse.json(
         {
           success: true,
-          message: "Trainee reactivated as PENDING_TRAINEE",
-          trainee: updated,
+          message: "Training reactivated and trainee set to PENDING_TRAINEE",
         },
         { status: 200 }
       );

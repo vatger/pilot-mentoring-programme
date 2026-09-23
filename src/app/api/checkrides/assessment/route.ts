@@ -67,6 +67,10 @@ export async function GET(request: NextRequest) {
 
     // Permission: examiner, admin/le/w PMP_PRÜFER, mentor of training, trainee (but only after release)
     const training = checkride.training;
+    const isLeadership = ["ADMIN", "PMP_LEITUNG"].includes(role);
+    if (training.status === "ABGEBROCHEN" && !isLeadership) {
+      return NextResponse.json({ error: "Training archived" }, { status: 403 });
+    }
     const isMentor = training.mentors?.some((m: any) => m.mentorId === userId) ?? false;
     const isTrainee = training.traineeId === userId;
     const isExaminerUser = checkride.availability.examinerId === userId || isExaminer(role);
@@ -111,6 +115,10 @@ export async function POST(request: NextRequest) {
     });
     if (!checkride) {
       return NextResponse.json({ error: "Checkride not found" }, { status: 404 });
+    }
+
+    if (checkride.training.status === "ABGEBROCHEN" && !["ADMIN", "PMP_LEITUNG"].includes(role)) {
+      return NextResponse.json({ error: "Training archived" }, { status: 403 });
     }
 
     const isExaminerUser = checkride.availability.examinerId === userId || isExaminer(role);
