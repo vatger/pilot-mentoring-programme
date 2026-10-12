@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import {
   CHECKRIDE_RUBRIC,
@@ -164,6 +165,9 @@ export default function AssessmentPage() {
       <div className="header-container">
         <div className="header">
           <h1>{CHECKRIDE_RUBRIC_INTRO.title} Assessment</h1>
+          <Link href={`/examiner/assessment/${checkrideId}/merge`} className="button" style={{ marginTop: "12px" }}>
+            Merge-Ansicht öffnen
+          </Link>
         </div>
       </div>
 

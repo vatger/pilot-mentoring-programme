@@ -1,6 +1,6 @@
 "use client";
 import { ArrowUpRight, Check, Flag, Moon, Sun, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import PageLayout from '@/components/PageLayout';
 import Modal from '@/components/Modal';
@@ -77,7 +77,7 @@ export default function HomePage() {
 
   function parseContent(text: string, opts?: { highlightFirstN?: number; highlightClass?: string }) {
     const lines = text.split(/\r?\n/);
-    const elements: JSX.Element[] = [];
+    const elements: ReactNode[] = [];
     let listBuffer: string[] | null = null;
     const highlightN = opts?.highlightFirstN ?? 0;
     const highlightClass = opts?.highlightClass;

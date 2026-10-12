@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     }
 
     const isTrainee = training.traineeId === userId;
-    const isAssignedMentor = training.mentors.some((m) => m.mentorId === userId);
+    const isAssignedMentor = training.mentors.some((m: { mentorId: string }) => m.mentorId === userId);
     const isLeadership = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
 
     if (!isTrainee && !isAssignedMentor && !isLeadership) {
@@ -64,6 +64,7 @@ export async function GET(req: NextRequest) {
           },
         },
         assessment: true,
+        mentorAssessment: true,
       },
     });
 
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Checkride not found" }, { status: 404 });
     }
 
-    const sanitized = checkrides.map((checkride) => {
+    const sanitized = checkrides.map((checkride: any) => {
       if (isTrainee && checkride.isDraft) {
         return { ...checkride, assessment: null };
       }

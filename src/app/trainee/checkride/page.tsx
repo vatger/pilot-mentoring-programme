@@ -29,6 +29,7 @@ type Assessment = Record<string, any> & {
 type CheckrideBooking = {
   id: string;
   scheduledDate: string;
+  agreedDateTime?: string | null;
   result: string;
   isDraft: boolean;
   availability: AvailableSlot;
@@ -53,8 +54,9 @@ export default function TraineeCheckridePage() {
 
   const bookedInfo = useMemo(() => {
     if (!booking) return null;
+    const rawDate = booking.agreedDateTime || booking.scheduledDate;
     return {
-      date: new Date(booking.scheduledDate).toLocaleString(),
+      date: rawDate ? new Date(rawDate).toLocaleString() : "-",
       examiner:
         booking.availability.examiner?.name
           ? `${booking.availability.examiner.name} (${booking.availability.examiner.cid || ""})`

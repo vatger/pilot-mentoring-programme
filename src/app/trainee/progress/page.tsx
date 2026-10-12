@@ -80,6 +80,7 @@ type Assessment = Record<string, any> & {
 interface CheckrideLog {
   id: string;
   scheduledDate: string;
+  agreedDateTime?: string | null;
   result: string;
   isDraft: boolean;
   availability: {
@@ -382,7 +383,7 @@ function TraineeProgressContent() {
     ...checkrideLogs.map((log) => ({
       type: "checkride" as const,
       key: `checkride-${log.id}`,
-      date: log.scheduledDate,
+      date: log.agreedDateTime || log.scheduledDate,
       log,
       released: !log.isDraft && !!log.assessment,
     })),

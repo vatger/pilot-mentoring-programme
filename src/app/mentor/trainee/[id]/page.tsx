@@ -81,6 +81,7 @@ type Training = {
 type Checkride = {
   id: string;
   scheduledDate: string;
+  agreedDateTime?: string | null;
   result: string;
   isDraft: boolean;
   availability: {
@@ -93,6 +94,10 @@ type Checkride = {
     id: string;
     overallResult: string | null;
   } | null;
+  mentorAssessment?: {
+    id: string;
+    isDraft: boolean;
+  } | null;
 };
 
 type Assessment = Record<string, any> & {
@@ -104,6 +109,7 @@ type Assessment = Record<string, any> & {
 type CheckrideLog = {
   id: string;
   scheduledDate: string;
+  agreedDateTime?: string | null;
   result: string;
   isDraft: boolean;
   availability: {
@@ -142,6 +148,8 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const [savingMentorLogId, setSavingMentorLogId] = useState<string | null>(null);
   const [checkrideResultDrafts, setCheckrideResultDrafts] = useState<Record<string, string>>({});
   const [savingCheckrideResultId, setSavingCheckrideResultId] = useState<string | null>(null);
+  const [checkrideDateDraft, setCheckrideDateDraft] = useState("");
+  const [savingCheckrideDateId, setSavingCheckrideDateId] = useState<string | null>(null);
   const [actioningTrainingId, setActioningTrainingId] = useState<string | null>(null);
   const [actioningType, setActioningType] = useState<"finish" | "migrate" | null>(null);
 
@@ -169,6 +177,14 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       });
 
     return coverageMap;
+  };
+
+  const toDateTimeLocalValue = (value?: string | null) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const offset = date.getTimezoneOffset();
+    return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16);
   };
 
   const userRole = (session?.user as any)?.role;
@@ -221,6 +237,9 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
         const activeCheckride = logs.find((entry: CheckrideLog) => entry.result === "INCOMPLETE") || null;
         setCheckride(activeCheckride);
         setCheckrideLogs(logs);
+        setCheckrideDateDraft(
+          toDateTimeLocalValue(activeCheckride?.agreedDateTime || activeCheckride?.scheduledDate)
+        );
         setMentorLogDrafts(
           Object.fromEntries(
             logs.map((entry: CheckrideLog) => [entry.id, entry.assessment?.mentorNotes || ""])
@@ -380,6 +399,27 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       setError(err.message || "Checkride-Ergebnis konnte nicht gespeichert werden");
     } finally {
       setSavingCheckrideResultId(null);
+    }
+  };
+
+  const saveCheckrideDate = async (checkrideId: string) => {
+    if (savingCheckrideDateId !== null) return;
+
+    setSavingCheckrideDateId(checkrideId);
+    setError("");
+    try {
+      const res = await fetch(`/api/checkrides/${checkrideId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agreedDateTime: checkrideDateDraft || null }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Termin konnte nicht gespeichert werden");
+      await fetchTrainingDetails();
+    } catch (err: any) {
+      setError(err.message || "Termin konnte nicht gespeichert werden");
+    } finally {
+      setSavingCheckrideDateId(null);
     }
   };
   const finishCoachingTraining = async (trainingId: string) => {
@@ -609,7 +649,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
     ...checkrideLogs.map((log) => ({
       type: "checkride" as const,
       key: `checkride-${log.id}`,
-      date: log.scheduledDate,
+      date: log.agreedDateTime || log.scheduledDate,
       log,
       released: !log.isDraft && !!log.assessment,
     })),
@@ -792,6 +832,48 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                 >
                   {savingAnmeldetext ? "Speichert..." : "Anmeldetext speichern"}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {checkride && (
+            <div style={{ marginTop: "1rem", padding: "1rem", border: "1px solid var(--footer-border)", borderRadius: "8px" }}>
+              <h3 style={{ marginTop: 0 }}>Checkride Termin</h3>
+              <p style={{ marginTop: 0, color: "var(--text-muted)" }}>
+                Hier trägst du den mit dem Prüfer abgestimmten Termin ein.
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "12px", alignItems: "end" }}>
+                <label className="form-label" style={{ margin: 0 }}>
+                  Datum und Uhrzeit
+                  <input
+                    type="datetime-local"
+                    className="form-input"
+                    value={checkrideDateDraft}
+                    onChange={(e) => setCheckrideDateDraft(e.target.value)}
+                  />
+                </label>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => saveCheckrideDate(checkride.id)}
+                    disabled={savingCheckrideDateId === checkride.id}
+                  >
+                    {savingCheckrideDateId === checkride.id ? "Speichert..." : "Termin speichern"}
+                  </button>
+                  <Link href={`/mentor/checkrides/${checkride.id}`} className="button">
+                    Mein Checkride-Log öffnen
+                  </Link>
+                  <Link href={`/examiner/assessment/${checkride.id}/merge`} className="button">
+                    Merge-Ansicht öffnen
+                  </Link>
+                </div>
+              </div>
+              <div style={{ marginTop: "0.75rem", fontSize: "0.92rem", color: "var(--text-muted)" }}>
+                Aktuell: {checkride.agreedDateTime || checkride.scheduledDate ? new Date(checkride.agreedDateTime || checkride.scheduledDate || "").toLocaleString() : "kein Termin"}
+              </div>
+              <div style={{ marginTop: "0.5rem", fontSize: "0.92rem" }}>
+                Mentor-Log: {checkride.mentorAssessment ? (checkride.mentorAssessment.isDraft ? "Entwurf vorhanden" : "Freigegeben") : "noch nicht begonnen"}
               </div>
             </div>
           )}

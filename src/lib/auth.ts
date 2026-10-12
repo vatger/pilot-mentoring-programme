@@ -43,8 +43,40 @@ export interface VatsimProfile {
 
 const AUTHORIZATION_URL = process.env.VATGER_CONNECT_URL || "https://vatsim-germany.org/oauth/authorize";
 // Use public endpoints for token and userinfo
-const TOKEN_URL = process.env.VATGER_TOKEN_URL || "http://hp.vatsim-germany.org/oauth/token";
-const USERINFO_URL = process.env.VATGER_USER_INFO || "http://hp.vatsim-germany.org/oauth/userinfo";
+const TOKEN_URL = process.env.VATGER_TOKEN_URL || "https://vatsim-germany.org/oauth/token";
+const USERINFO_URL = process.env.VATGER_USER_INFO || "https://vatsim-germany.org/oauth/userinfo";
+
+function isPrismaConnectionError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+
+  const message =
+    "message" in error && typeof (error as { message?: unknown }).message === "string"
+      ? (error as { message: string }).message
+      : "";
+  const code = "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+
+  return (
+    code === "45009" ||
+    code === "P1001" ||
+    code === "P1002" ||
+    message.includes("socket has unexpectedly been closed") ||
+    message.includes("Database server closed the connection") ||
+    message.includes("Can't reach database server")
+  );
+}
+
+async function withPrismaRetry<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (!isPrismaConnectionError(error)) {
+      throw error;
+    }
+
+    await prisma.$connect().catch(() => undefined);
+    return await operation();
+  }
+}
 
 export const VatgerProvider: OAuthConfig<VatsimProfile> = {
   id: "vatger",
@@ -102,7 +134,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       // On sign-in, create or update user in DB with VISITOR role (unless already set)
       if (user) {
-        const cid = (user as any).cid;
+        const cid = String((user as any).cid ?? "");
         const teams = (user as any).teams || [];
 
         // Determine role based on team membership
@@ -113,64 +145,70 @@ export const authOptions: NextAuthOptions = {
         if (teams.includes("PMP Leitung")) {
           roleFromTeams = "PMP_LEITUNG";
         }
-        
-        // Check if user already exists
-        const existingUser = await prisma.user.findUnique({
-          where: { cid },
-          select: { id: true, role: true, userStatus: true },
-        });
 
-        let userRecord;
-        if (existingUser) {
-          userRecord = await prisma.user.update({
-            where: { cid },
-            data: {
-              name: (user as any).name,
-              role:
-                existingUser.role === "VISITOR" && !existingUser.userStatus
-                  ? (roleFromTeams as any)
-                  : undefined,
-            },
-          });
-        } else {
-          const isAdmin = ADMIN_CIDS.includes(cid);
-          const finalRole = isAdmin ? "ADMIN" : roleFromTeams;
-          userRecord = await prisma.user.create({
-            data: {
-              cid,
-              name: (user as any).name,
-              email: (user as any).email,
-              image: (user as any).image,
-              role: finalRole as any,
-            },
-          });
-        }
+        const fallbackRole = ADMIN_CIDS.includes(cid) ? "ADMIN" : roleFromTeams;
 
-        // Persist selected fields from user into the JWT
-        token.id = userRecord.id;
         token.cid = cid;
         token.name = (user as any).name;
         token.rating = (user as any).rating;
-        token.role = userRecord.role;
+        token.role = fallbackRole;
         token.fir = (user as any).fir || "";
         token.teams = teams;
+        token.userStatus = token.userStatus || null;
+
+        if (!cid) {
+          return token;
+        }
+
+        try {
+          let userRecord = await withPrismaRetry(() =>
+            prisma.user.upsert({
+              where: { cid },
+              create: {
+                cid,
+                name: (user as any).name,
+                email: (user as any).email,
+                image: (user as any).image,
+                role: fallbackRole as any,
+              },
+              update: {
+                name: (user as any).name,
+                email: (user as any).email,
+                image: (user as any).image,
+              },
+              select: { id: true, role: true, userStatus: true },
+            })
+          );
+
+          if (userRecord.role === "VISITOR" && fallbackRole !== "VISITOR" && !userRecord.userStatus) {
+            userRecord = await withPrismaRetry(() =>
+              prisma.user.update({
+                where: { cid },
+                data: { role: fallbackRole as any },
+                select: { id: true, role: true, userStatus: true },
+              })
+            );
+          }
+
+          // Persist selected fields from user into the JWT
+          token.id = userRecord.id;
+          token.role = userRecord.role;
+          token.userStatus = userRecord.userStatus || null;
+        } catch (error) {
+          console.error("Failed to sync auth user with Prisma:", error);
+          token.id = cid;
+        }
       }
       return token;
     },
     async session({ session, token }) {
-      // Fetch latest user data from database to check for role changes
-      const currentUser = await prisma.user.findUnique({
-        where: { id: token.id as string },
-        select: { role: true, userStatus: true },
-      });
-
       const sessionUser = {
         id: token.id,
         cid: token.cid,
         name: token.name,
         rating: token.rating,
-        role: currentUser?.role || token.role || "VISITOR",
-        userStatus: currentUser?.userStatus || null,
+        role: token.role || "VISITOR",
+        userStatus: token.userStatus || null,
         fir: token.fir || "",
         teams: token.teams || [],
       };
