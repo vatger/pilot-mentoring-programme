@@ -23,6 +23,7 @@ type SessionHistory = {
 type CheckrideEntry = {
   id: string;
   scheduledDate: string;
+  agreedDateTime?: string | null;
   result: string;
   isDraft: boolean;
   trainee: { id: string; cid: string | null; name: string | null };
@@ -313,7 +314,7 @@ export default function ExaminerAvailabilityPage() {
                       )}
                     </div>
                     <div style={{ fontSize: "0.9em", marginBottom: "4px" }}>
-                      {new Date(c.scheduledDate).toLocaleString("de-DE", {
+                      {new Date(c.agreedDateTime || c.scheduledDate).toLocaleString("de-DE", {
                         dateStyle: "short",
                         timeStyle: "short",
                       })}

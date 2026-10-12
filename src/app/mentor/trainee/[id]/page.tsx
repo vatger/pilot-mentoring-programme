@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
+import Modal from "@/components/Modal";
 import Link from "next/link";
 import {
   CHECKRIDE_RUBRIC,
@@ -80,6 +81,7 @@ type Training = {
 type Checkride = {
   id: string;
   scheduledDate: string;
+  agreedDateTime?: string | null;
   result: string;
   isDraft: boolean;
   availability: {
@@ -92,16 +94,22 @@ type Checkride = {
     id: string;
     overallResult: string | null;
   } | null;
+  mentorAssessment?: {
+    id: string;
+    isDraft: boolean;
+  } | null;
 };
 
 type Assessment = Record<string, any> & {
   overallResult?: string;
   examinernotes?: string;
+  mentorNotes?: string | null;
 };
 
 type CheckrideLog = {
   id: string;
   scheduledDate: string;
+  agreedDateTime?: string | null;
   result: string;
   isDraft: boolean;
   availability: {
@@ -130,11 +138,18 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
   const [downgradingToCoaching, setDowngradingToCoaching] = useState(false);
   const [checkrideRequestText, setCheckrideRequestText] = useState("");
   const [showCheckrideRequestInput, setShowCheckrideRequestInput] = useState(false);
+  const [showReadyConfirmation, setShowReadyConfirmation] = useState(false);
   const [savingSession, setSavingSession] = useState(false);
   const [editableAnmeldetext, setEditableAnmeldetext] = useState("");
   const [savingAnmeldetext, setSavingAnmeldetext] = useState(false);
   const [anmeldetextError, setAnmeldetextError] = useState("");
   const [expandedCheckrideIds, setExpandedCheckrideIds] = useState<Record<string, boolean>>({});
+  const [mentorLogDrafts, setMentorLogDrafts] = useState<Record<string, string>>({});
+  const [savingMentorLogId, setSavingMentorLogId] = useState<string | null>(null);
+  const [checkrideResultDrafts, setCheckrideResultDrafts] = useState<Record<string, string>>({});
+  const [savingCheckrideResultId, setSavingCheckrideResultId] = useState<string | null>(null);
+  const [checkrideDateDraft, setCheckrideDateDraft] = useState("");
+  const [savingCheckrideDateId, setSavingCheckrideDateId] = useState<string | null>(null);
   const [actioningTrainingId, setActioningTrainingId] = useState<string | null>(null);
   const [actioningType, setActioningType] = useState<"finish" | "migrate" | null>(null);
 
@@ -162,6 +177,14 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       });
 
     return coverageMap;
+  };
+
+  const toDateTimeLocalValue = (value?: string | null) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const offset = date.getTimezoneOffset();
+    return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16);
   };
 
   const userRole = (session?.user as any)?.role;
@@ -214,6 +237,19 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
         const activeCheckride = logs.find((entry: CheckrideLog) => entry.result === "INCOMPLETE") || null;
         setCheckride(activeCheckride);
         setCheckrideLogs(logs);
+        setCheckrideDateDraft(
+          toDateTimeLocalValue(activeCheckride?.agreedDateTime || activeCheckride?.scheduledDate)
+        );
+        setMentorLogDrafts(
+          Object.fromEntries(
+            logs.map((entry: CheckrideLog) => [entry.id, entry.assessment?.mentorNotes || ""])
+          )
+        );
+        setCheckrideResultDrafts(
+          Object.fromEntries(
+            logs.map((entry: CheckrideLog) => [entry.id, entry.assessment?.overallResult || entry.result || "INCOMPLETE"])
+          )
+        );
       } else {
         setCheckride(null);
         setCheckrideLogs([]);
@@ -262,17 +298,129 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
     if (!training || updatingCheckride) return;
     const nextReady = !training.readyForCheckride;
 
+    if (!nextReady) {
+      await updateReadyForCheckride(false);
+      return;
+    }
+
     if (nextReady && checkrideRequestText.trim().length === 0) {
       setShowCheckrideRequestInput(true);
       setError("");
       return;
     }
 
-    await updateReadyForCheckride(nextReady);
+    if (missingTopics.length > 0) {
+      setShowReadyConfirmation(true);
+      return;
+    }
+
+    await updateReadyForCheckride(true);
   };
 
   const submitReadyForCheckride = async () => {
+    if (checkrideRequestText.trim().length === 0) {
+      setShowCheckrideRequestInput(true);
+      return;
+    }
+
+    if (missingTopics.length > 0) {
+      setShowReadyConfirmation(true);
+      return;
+    }
+
     await updateReadyForCheckride(true);
+  };
+
+  const saveMentorLog = async (checkrideId: string) => {
+    if (savingMentorLogId !== null) return;
+
+    setSavingMentorLogId(checkrideId);
+    setError("");
+    try {
+      const res = await fetch("/api/checkrides/assessment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkrideId,
+          mentorNotes: mentorLogDrafts[checkrideId] || "",
+        }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Mentor-Log konnte nicht gespeichert werden");
+
+      setCheckrideLogs((current) =>
+        current.map((entry) =>
+          entry.id === checkrideId
+            ? { ...entry, assessment: { ...(entry.assessment || {}), mentorNotes: mentorLogDrafts[checkrideId] || "" } }
+            : entry
+        )
+      );
+    } catch (err: any) {
+      setError(err.message || "Mentor-Log konnte nicht gespeichert werden");
+    } finally {
+      setSavingMentorLogId(null);
+    }
+  };
+
+  const saveCheckrideResult = async (checkrideId: string, release = false) => {
+    if (savingCheckrideResultId !== null) return;
+
+    setSavingCheckrideResultId(checkrideId);
+    setError("");
+    try {
+      const res = await fetch("/api/checkrides/assessment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkrideId,
+          overallResult: checkrideResultDrafts[checkrideId] || "INCOMPLETE",
+          release: release ? true : undefined,
+        }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Checkride-Ergebnis konnte nicht gespeichert werden");
+
+      setCheckrideLogs((current) =>
+        current.map((entry) =>
+          entry.id === checkrideId
+            ? {
+                ...entry,
+                result: checkrideResultDrafts[checkrideId] || "INCOMPLETE",
+                isDraft: release ? false : entry.isDraft,
+                assessment: {
+                  ...(entry.assessment || {}),
+                  overallResult: checkrideResultDrafts[checkrideId] || "INCOMPLETE",
+                },
+              }
+            : entry
+        )
+      );
+    } catch (err: any) {
+      setError(err.message || "Checkride-Ergebnis konnte nicht gespeichert werden");
+    } finally {
+      setSavingCheckrideResultId(null);
+    }
+  };
+
+  const saveCheckrideDate = async (checkrideId: string) => {
+    if (savingCheckrideDateId !== null) return;
+
+    setSavingCheckrideDateId(checkrideId);
+    setError("");
+    try {
+      const res = await fetch(`/api/checkrides/${checkrideId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agreedDateTime: checkrideDateDraft || null }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Termin konnte nicht gespeichert werden");
+      await fetchTrainingDetails();
+    } catch (err: any) {
+      setError(err.message || "Termin konnte nicht gespeichert werden");
+    } finally {
+      setSavingCheckrideDateId(null);
+    }
   };
   const finishCoachingTraining = async (trainingId: string) => {
     if (!confirm("Möchtest du diese Coaching-Ausbildung wirklich abschließen? Der Trainee wird als COMPLETED_TRAINEE markiert.")) {
@@ -485,6 +633,10 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
       }, 0);
   const formatPoints = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
   const progressPercent = coachingTraining ? 0 : Math.round((progressPoints / trainingTopics.length) * 100);
+  const missingTopics = trainingTopics.filter((topic) => {
+    const coverage = topicCoverage.get(topic.key);
+    return topic.category === "THEORY" ? !coverage?.theorie : !coverage?.praxis;
+  });
   const isAssignedMentor = training.mentors.some((assignment) => assignment.mentor.id === userId);
   const canFinishWithoutCheckride = !coachingTraining && (isLeadership || isAssignedMentor);
   const timelineEntries = [
@@ -497,7 +649,7 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
     ...checkrideLogs.map((log) => ({
       type: "checkride" as const,
       key: `checkride-${log.id}`,
-      date: log.scheduledDate,
+      date: log.agreedDateTime || log.scheduledDate,
       log,
       released: !log.isDraft && !!log.assessment,
     })),
@@ -560,18 +712,20 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
           </p>
         {!coachingTraining && training.status === "ACTIVE" && (
           <>
-          <p style={{ marginTop: "1rem" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={training.readyForCheckride}
-                onChange={toggleReadyForCheckride}
-                disabled={updatingCheckride}
-                style={{ width: "1.2rem", height: "1.2rem", cursor: "pointer" }}
-              />
-              <strong>Bereit für den Check Ride</strong>
-            </label>
-          </p>
+          <div style={{ marginTop: "1rem" }}>
+            <button
+              type="button"
+              className="button"
+              onClick={toggleReadyForCheckride}
+              disabled={updatingCheckride}
+            >
+              {updatingCheckride
+                ? "Speichern..."
+                : training.readyForCheckride
+                ? "Bereitschaft für Checkride zurücknehmen"
+                : "Für Checkride bereit markieren"}
+            </button>
+          </div>
           {(training.readyForCheckride || showCheckrideRequestInput) && (
             <div style={{ marginTop: "1rem" }}>
               <label className="form-label" style={{ marginBottom: "0.5rem", display: "block" }}>
@@ -678,6 +832,48 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                 >
                   {savingAnmeldetext ? "Speichert..." : "Anmeldetext speichern"}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {checkride && (
+            <div style={{ marginTop: "1rem", padding: "1rem", border: "1px solid var(--footer-border)", borderRadius: "8px" }}>
+              <h3 style={{ marginTop: 0 }}>Checkride Termin</h3>
+              <p style={{ marginTop: 0, color: "var(--text-muted)" }}>
+                Hier trägst du den mit dem Prüfer abgestimmten Termin ein.
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "12px", alignItems: "end" }}>
+                <label className="form-label" style={{ margin: 0 }}>
+                  Datum und Uhrzeit
+                  <input
+                    type="datetime-local"
+                    className="form-input"
+                    value={checkrideDateDraft}
+                    onChange={(e) => setCheckrideDateDraft(e.target.value)}
+                  />
+                </label>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => saveCheckrideDate(checkride.id)}
+                    disabled={savingCheckrideDateId === checkride.id}
+                  >
+                    {savingCheckrideDateId === checkride.id ? "Speichert..." : "Termin speichern"}
+                  </button>
+                  <Link href={`/mentor/checkrides/${checkride.id}`} className="button">
+                    Mein Checkride-Log öffnen
+                  </Link>
+                  <Link href={`/examiner/assessment/${checkride.id}/merge`} className="button">
+                    Merge-Ansicht öffnen
+                  </Link>
+                </div>
+              </div>
+              <div style={{ marginTop: "0.75rem", fontSize: "0.92rem", color: "var(--text-muted)" }}>
+                Aktuell: {checkride.agreedDateTime || checkride.scheduledDate ? new Date(checkride.agreedDateTime || checkride.scheduledDate || "").toLocaleString() : "kein Termin"}
+              </div>
+              <div style={{ marginTop: "0.5rem", fontSize: "0.92rem" }}>
+                Mentor-Log: {checkride.mentorAssessment ? (checkride.mentorAssessment.isDraft ? "Entwurf vorhanden" : "Freigegeben") : "noch nicht begonnen"}
               </div>
             </div>
           )}
@@ -1007,6 +1203,36 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                       <details open style={{ marginTop: "0.25rem" }}>
                         <summary style={{ cursor: "pointer", fontWeight: 600 }}>Vollständiges Checkride-Log</summary>
                         <div style={{ marginTop: "0.75rem", display: "grid", gap: "0.75rem" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
+                            <div style={{ border: "1px solid var(--footer-border)", borderRadius: "8px", padding: "0.75rem", backgroundColor: "var(--container-bg)" }}>
+                              <strong>Prüfer-Log (Standard)</strong>
+                              <p style={{ margin: "0.5rem 0 0", whiteSpace: "pre-wrap" }}>
+                                {parsedNotes.generalNote || "Noch kein Prüfer-Log vorhanden."}
+                              </p>
+                            </div>
+                            <div style={{ border: "1px solid var(--footer-border)", borderRadius: "8px", padding: "0.75rem", backgroundColor: "var(--container-bg)" }}>
+                              <label className="form-label" style={{ margin: 0 }}>
+                                Mentor-Log
+                                <textarea
+                                  className="form-textarea"
+                                  value={mentorLogDrafts[log.id] || ""}
+                                  onChange={(event) =>
+                                    setMentorLogDrafts((current) => ({ ...current, [log.id]: event.target.value }))
+                                  }
+                                  placeholder="Notizen für das Debrief und die Zusammenführung mit dem Prüfer-Log"
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                className="button"
+                                onClick={() => saveMentorLog(log.id)}
+                                disabled={savingMentorLogId === log.id}
+                                style={{ marginTop: "0.5rem" }}
+                              >
+                                {savingMentorLogId === log.id ? "Speichert..." : "Mentor-Log speichern"}
+                              </button>
+                            </div>
+                          </div>
                           {CHECKRIDE_RUBRIC.map((procedure) => (
                             <div
                               key={procedure.id}
@@ -1099,6 +1325,44 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
                               <div style={{ whiteSpace: "pre-wrap" }}>{parsedNotes.generalNote}</div>
                             </div>
                           )}
+
+                          <div style={{ borderTop: "2px solid var(--footer-border)", paddingTop: "1rem", marginTop: "0.5rem" }}>
+                            <h4 style={{ margin: "0 0 0.75rem" }}>Abschluss</h4>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "flex-end" }}>
+                              <label className="form-label" style={{ margin: 0, minWidth: "220px" }}>
+                                Ergebnis
+                                <select
+                                  className="form-select"
+                                  value={checkrideResultDrafts[log.id] || "INCOMPLETE"}
+                                  onChange={(event) =>
+                                    setCheckrideResultDrafts((current) => ({ ...current, [log.id]: event.target.value }))
+                                  }
+                                >
+                                  <option value="INCOMPLETE">Noch offen</option>
+                                  <option value="PASSED">Bestanden</option>
+                                  <option value="FAILED">Nicht bestanden</option>
+                                </select>
+                              </label>
+                              <button
+                                type="button"
+                                className="button"
+                                onClick={() => saveCheckrideResult(log.id)}
+                                disabled={savingCheckrideResultId === log.id}
+                              >
+                                {savingCheckrideResultId === log.id ? "Speichert..." : "Ergebnis speichern"}
+                              </button>
+                              {log.isDraft && (
+                                <button
+                                  type="button"
+                                  className="button"
+                                  onClick={() => saveCheckrideResult(log.id, true)}
+                                  disabled={savingCheckrideResultId === log.id}
+                                >
+                                  {savingCheckrideResultId === log.id ? "Veröffentlicht..." : "Ergebnis veröffentlichen"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </details>
                     )}
@@ -1114,6 +1378,43 @@ export default function TraineeDetailPage({ params }: { params: Promise<{ id: st
             </Link>
           </div>
         </div>
+
+        <Modal
+          isOpen={showReadyConfirmation}
+          onClose={() => setShowReadyConfirmation(false)}
+          title="Bereitschaft für den Checkride bestätigen"
+          variant="warning"
+        >
+          <p>
+            Nicht alle Trainingsthemen wurden abgeschlossen. Bitte bestätige ausdrücklich,
+            dass du den Trainee trotzdem als bereit für den Checkride einschätzt.
+          </p>
+          <ul>
+            {missingTopics.map((topic) => (
+              <li key={topic.key}>{topic.label}</li>
+            ))}
+          </ul>
+          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "1.5rem" }}>
+            <button
+              type="button"
+              className="button"
+              onClick={() => setShowReadyConfirmation(false)}
+            >
+              Abbrechen
+            </button>
+            <button
+              type="button"
+              className="button"
+              onClick={() => {
+                setShowReadyConfirmation(false);
+                void updateReadyForCheckride(true);
+              }}
+              disabled={updatingCheckride}
+            >
+              Trotzdem als bereit markieren
+            </button>
+          </div>
+        </Modal>
       </div>
     </PageLayout>
   );

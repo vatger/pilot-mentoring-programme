@@ -3,6 +3,38 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
+function isPrismaConnectionError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+
+  const message =
+    "message" in error && typeof (error as { message?: unknown }).message === "string"
+      ? (error as { message: string }).message
+      : "";
+  const code = "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+
+  return (
+    code === "45009" ||
+    code === "P1001" ||
+    code === "P1002" ||
+    message.includes("socket has unexpectedly been closed") ||
+    message.includes("Database server closed the connection") ||
+    message.includes("Can't reach database server")
+  );
+}
+
+async function withPrismaRetry<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (!isPrismaConnectionError(error)) {
+      throw error;
+    }
+
+    await prisma.$connect().catch(() => undefined);
+    return await operation();
+  }
+}
+
 /**
  * GET /api/admin/users - List all users
  * Only ADMIN and PMP_LEITUNG can access
@@ -21,17 +53,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        cid: true,
-        name: true,
-        role: true,
-        userStatus: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const users = await withPrismaRetry(() =>
+      prisma.user.findMany({
+        select: {
+          id: true,
+          cid: true,
+          name: true,
+          role: true,
+          userStatus: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      })
+    );
 
     return NextResponse.json(users);
   } catch (error) {

@@ -85,6 +85,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Assessment not released yet" }, { status: 403 });
     }
 
+    if (isTrainee && !isMentor && !isExaminerUser && checkride.assessment) {
+      return NextResponse.json(
+        { ...checkride, assessment: { ...checkride.assessment, mentorNotes: undefined } },
+        { status: 200 }
+      );
+    }
+
     return NextResponse.json(checkride, { status: 200 });
   } catch (error) {
     console.error("Error fetching assessment:", error);
@@ -104,7 +111,7 @@ export async function POST(request: NextRequest) {
     const role = (session.user as any).role;
 
     const body = await request.json();
-    const { checkrideId, release, overallResult, examinernotes, ...rest } = body;
+    const { checkrideId, release, overallResult, examinernotes, mentorNotes, ...rest } = body;
     if (!checkrideId) {
       return NextResponse.json({ error: "checkrideId is required" }, { status: 400 });
     }
@@ -122,11 +129,51 @@ export async function POST(request: NextRequest) {
     }
 
     const isExaminerUser = checkride.availability.examinerId === userId || isExaminer(role);
+    const isAssignedMentor = checkride.training.mentors.some((mentor: any) => mentor.mentorId === userId);
+    if (!isExaminerUser) {
+      if (mentorNotes === undefined || (!isAssignedMentor && !["ADMIN", "PMP_LEITUNG"].includes(role))) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
+    const mentorOnlyUpdate =
+      mentorNotes !== undefined &&
+      Object.keys(rest).length === 0 &&
+      overallResult === undefined &&
+      examinernotes === undefined &&
+      release === undefined;
+
+    if (mentorOnlyUpdate) {
+      if (!isAssignedMentor && !["ADMIN", "PMP_LEITUNG"].includes(role)) {
+        return NextResponse.json({ error: "Only an assigned mentor can save the mentor log" }, { status: 403 });
+      }
+
+      const assessment = await db.checkrideAssessment.upsert({
+        where: { checkrideId },
+        create: {
+          checkrideId,
+          mentorNotes: typeof mentorNotes === "string" ? mentorNotes : null,
+        },
+        update: {
+          mentorNotes: typeof mentorNotes === "string" ? mentorNotes : null,
+        },
+      });
+
+      return NextResponse.json({ assessment, checkride }, { status: 200 });
+    }
+
     if (!isExaminerUser) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const normalizedFields = normalizeAssessmentPayload(rest as Record<string, unknown>);
+    const assessmentData: Record<string, unknown> = { ...normalizedFields };
+    if (overallResult !== undefined) {
+      assessmentData.overallResult = (overallResult as any) || "INCOMPLETE";
+    }
+    if (examinernotes !== undefined) {
+      assessmentData.examinernotes = examinernotes || null;
+    }
 
     // Upsert assessment
     const assessment = await db.checkrideAssessment.upsert({
@@ -134,19 +181,17 @@ export async function POST(request: NextRequest) {
       create: {
         checkrideId,
         overallResult: (overallResult as any) || "INCOMPLETE",
-        examinernotes: examinernotes || null,
-        ...normalizedFields,
+        ...assessmentData,
       },
       update: {
-        overallResult: (overallResult as any) || "INCOMPLETE",
-        examinernotes: examinernotes || null,
-        ...normalizedFields,
+        ...assessmentData,
       },
     });
 
-    const checkrideUpdate: any = {
-      result: (overallResult as any) || "INCOMPLETE",
-    };
+    const checkrideUpdate: any = {};
+    if (overallResult !== undefined) {
+      checkrideUpdate.result = (overallResult as any) || "INCOMPLETE";
+    }
 
     const releaseFlag = typeof release === "string" ? toBoolean(release) : release;
 

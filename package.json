@@ -11,30 +11,39 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@prisma/adapter-mariadb": "^7.2.0",
-    "@prisma/client": "^7.3.0",
+    "@prisma/adapter-mariadb": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "canvas": "^3.2.1",
     "dejavu-fonts-ttf": "^2.37.3",
     "express": "^4.21.2",
     "framer-motion": "^12.23.12",
-    "lucide": "^1.27.0",
-    "lucide-react": "^0.292.0",
-    "mariadb": "^3.4.5",
-    "next": "^16.0.10",
+    "lucide-react": "^1.55.0",
+    "mariadb": "^3.5.4",
+    "next": "^16.4.0",
     "next-auth": "^4.24.13",
-    "prisma": "^7.3.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "prisma": "^7.10.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "autoprefixer": "^10.4.16",
     "eslint": "^9.39.2",
-    "eslint-config-next": "16.0.10",
+    "eslint-config-next": "^16.4.0",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.2.2"
+  },
+  "overrides": {
+    "mariadb": "^3.5.4"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.9.1": true,
+    "canvas@3.2.1": true,
+    "prisma@7.9.1": true,
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.11.1": true
   }
 }

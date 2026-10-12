@@ -32,12 +32,17 @@ export async function GET(_request: NextRequest) {
 
     const booking = training?.checkrides?.[0] ?? null;
     const releasedAssessment = booking && !booking.isDraft ? booking.assessment : null;
+    const traineeAssessment = releasedAssessment
+      ? { ...releasedAssessment, mentorNotes: undefined }
+      : null;
 
     return NextResponse.json(
       {
         training,
-        booking,
-        assessment: releasedAssessment,
+        booking: booking
+          ? { ...booking, assessment: booking.isDraft ? null : traineeAssessment }
+          : null,
+        assessment: traineeAssessment,
       },
       { status: 200 }
     );

@@ -60,6 +60,14 @@
     --primary: oklch(0.361 0.046 251.47);
     --secondary: oklch(0.281 0.017 266.38);
     --amber: oklch(0.839 0.147 88.09);
+    --compare-row-bg: rgba(255, 244, 246, 0.95);
+    --compare-mentor-bg: #ffd7dc;
+    --compare-mentor-text: #5a1018;
+    --compare-examiner-bg: #d7ecff;
+    --compare-examiner-text: #0b3d91;
+    --compare-final-bg: #daf3de;
+    --compare-final-text: #0f5132;
+    --compare-final-border: #2e7d32;
 }
 
 [data-theme="dark"] {
@@ -83,6 +91,14 @@
     --danger-text: #ffffff;
     --primary:oklch(0.958 0.003 264.69);
     --secondary: oklch(0.281 0.017 266.38);
+    --compare-row-bg: rgba(49, 18, 24, 0.95);
+    --compare-mentor-bg: #5b1822;
+    --compare-mentor-text: #fff1f2;
+    --compare-examiner-bg: #12395f;
+    --compare-examiner-text: #e0f2fe;
+    --compare-final-bg: #163c26;
+    --compare-final-text: #dcfce7;
+    --compare-final-border: #4ade80;
 }
 
 /* ---------------------------------------------------
@@ -541,6 +557,9 @@ p { margin-bottom: 20px; }
     box-shadow: 0 1px 4px var(--shadow-light);
     outline: none;
 }
+    .form-select {
+        color-scheme: light;
+    }
 .form-input:focus,
 .form-textarea:focus,
 .form-select:focus {
@@ -802,6 +821,13 @@ input[type="file"]::file-selector-button:hover {
     background: #232a45;
     color: #fff;
     border-color: #1e2a47;
+}
+[data-theme="dark"] .form-select {
+    color-scheme: dark;
+}
+[data-theme="dark"] .form-select option {
+    background: #232a45;
+    color: #fff;
 }
 [data-theme="dark"] .form-input:focus,
 [data-theme="dark"] .form-textarea:focus,
