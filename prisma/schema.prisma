@@ -421,6 +421,7 @@ model CheckrideAssessment {
   
   overallResult           CheckrideResult @default(INCOMPLETE)
   examinernotes           String?  @db.Text
+  mentorNotes             String?  @db.Text
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 

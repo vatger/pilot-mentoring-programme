@@ -36,5 +36,12 @@
     "postcss": "^8.4.31",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.2.2"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.9.1": true,
+    "canvas@3.2.1": true,
+    "prisma@7.9.1": true,
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.11.1": true
   }
 }

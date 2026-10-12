@@ -20,6 +20,7 @@ import {
 type Assessment = Record<string, any> & {
   overallResult?: string;
   examinernotes?: string;
+  mentorNotes?: string | null;
 };
 
 type Checkride = {
@@ -41,6 +42,7 @@ export default function AssessmentPage() {
   });
   const [generalNote, setGeneralNote] = useState<string>("");
   const [blockNotes, setBlockNotes] = useState<Record<string, string>>(createInitialBlockNotes());
+  const [mentorNotes, setMentorNotes] = useState("");
   const [overallResult, setOverallResult] = useState<string>("INCOMPLETE");
   const [isDraft, setIsDraft] = useState<boolean>(true);
 
@@ -55,7 +57,12 @@ export default function AssessmentPage() {
       if (!res.ok) throw new Error(`Load failed: ${res.status}`);
       const data = await res.json();
       const existing = data?.assessment || {};
-      const { overallResult: existingResult, examinernotes: existingNotes, ...rest } = existing;
+      const {
+        overallResult: existingResult,
+        examinernotes: existingNotes,
+        mentorNotes: existingMentorNotes,
+        ...rest
+      } = existing;
       const parsedNotes = parseRubricNotes(existingNotes);
       setAssessment({
         ...createInitialRubricAssessment(),
@@ -65,6 +72,7 @@ export default function AssessmentPage() {
       } as Assessment);
       setGeneralNote(parsedNotes.generalNote);
       setBlockNotes(parsedNotes.blockNotes);
+      setMentorNotes(existingMentorNotes || "");
       setOverallResult(existingResult || "INCOMPLETE");
       setIsDraft(Boolean(data?.isDraft ?? true));
     } catch (e: any) {
@@ -93,7 +101,6 @@ export default function AssessmentPage() {
           checkrideId,
           release: opts?.release,
           ...assessment,
-          overallResult,
           examinernotes: serializeRubricNotes(generalNote, blockNotes),
         }),
       });
@@ -108,6 +115,7 @@ export default function AssessmentPage() {
         const {
           overallResult: savedResult,
           examinernotes: savedNotes,
+          mentorNotes: savedMentorNotes,
           ...rest
         } = savedAssessment;
         const parsedNotes = parseRubricNotes(savedNotes);
@@ -119,6 +127,7 @@ export default function AssessmentPage() {
         } as Assessment);
         setGeneralNote(parsedNotes.generalNote);
         setBlockNotes(parsedNotes.blockNotes);
+        setMentorNotes(savedMentorNotes || "");
         setOverallResult(savedResult || overallResult);
       }
       if (savedCheckride && typeof savedCheckride.isDraft === "boolean") {
@@ -195,29 +204,10 @@ export default function AssessmentPage() {
             <span>{isDraft ? "Entwurf (nicht freigegeben)" : "Freigegeben fuer Trainee"}</span>
           </div>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
-            <label className="form-label" style={{ marginBottom: 0, minWidth: "220px" }}>
-              Gesamtergebnis
-              <select
-                value={overallResult}
-                onChange={(e) => setOverallResult(e.target.value)}
-                className="form-select"
-              >
-                <option value="INCOMPLETE">INCOMPLETE</option>
-                <option value="PASSED">PASSED</option>
-                <option value="FAILED">FAILED</option>
-              </select>
-            </label>
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              <button onClick={() => save()} disabled={saving} className="button">
-                {saving ? "Speichere..." : "Zwischenspeichern"}
-              </button>
-              {isDraft && (
-                <button onClick={() => save({ release: true })} disabled={saving} className="button">
-                  {saving ? "Veroeffentliche..." : "Veroeffentlichen"}
-                </button>
-              )}
-            </div>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={() => save()} disabled={saving} className="button">
+              {saving ? "Speichere..." : "Zwischenspeichern"}
+            </button>
           </div>
 
           {CHECKRIDE_RUBRIC.map((procedure) => {
@@ -285,15 +275,28 @@ export default function AssessmentPage() {
             );
           })}
 
-          <div className="form-card" style={{ maxWidth: "100%", margin: 0 }}>
-            <label className="form-label">
-              Examiner Notizen
-              <textarea
-                className="form-textarea"
-                value={generalNote}
-                onChange={(e) => setGeneralNote(e.target.value)}
-              />
-            </label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
+            <div className="form-card" style={{ maxWidth: "100%", margin: 0 }}>
+              <label className="form-label">
+                Examiner Notizen (Standard)
+                <textarea
+                  className="form-textarea"
+                  value={generalNote}
+                  onChange={(e) => setGeneralNote(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className="form-card" style={{ maxWidth: "100%", margin: 0 }}>
+              <label className="form-label">
+                Mentor-Log (Debrief)
+                <textarea
+                  className="form-textarea"
+                  value={mentorNotes}
+                  readOnly
+                  placeholder="Noch kein Mentor-Log vorhanden."
+                />
+              </label>
+            </div>
           </div>
         </div>
       )}

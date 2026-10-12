@@ -75,6 +75,9 @@ export async function GET(req: NextRequest) {
       if (isTrainee && checkride.isDraft) {
         return { ...checkride, assessment: null };
       }
+      if (isTrainee && checkride.assessment) {
+        return { ...checkride, assessment: { ...checkride.assessment, mentorNotes: undefined } };
+      }
       return checkride;
     });
 
