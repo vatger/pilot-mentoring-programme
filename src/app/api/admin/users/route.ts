@@ -37,7 +37,7 @@ async function withPrismaRetry<T>(operation: () => Promise<T>): Promise<T> {
 
 /**
  * GET /api/admin/users - List all users
- * Only ADMIN and PMP_LEITUNG can access
+ * Mentors receive only mentor candidates; ADMIN and PMP_LEITUNG can access all users.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -49,8 +49,29 @@ export async function GET(request: NextRequest) {
 
     const userRole = (session.user as any).role;
     
-    if (userRole !== "ADMIN" && userRole !== "PMP_LEITUNG") {
+    if (!["MENTOR", "ADMIN", "PMP_LEITUNG"].includes(userRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (userRole === "MENTOR") {
+      const mentors = await withPrismaRetry(() =>
+        prisma.user.findMany({
+          where: {
+            role: {
+              in: ["MENTOR", "PMP_LEITUNG", "ADMIN", "PMP_PRÜFER"],
+            },
+          },
+          select: {
+            id: true,
+            cid: true,
+            name: true,
+            role: true,
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      );
+
+      return NextResponse.json(mentors);
     }
 
     const users = await withPrismaRetry(() =>
