@@ -29,7 +29,7 @@ RUN npm run build
 FROM node:26-alpine AS runner
 
 # Install OpenSSL in runtime image as well
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache openssl
   
 WORKDIR /app
 
