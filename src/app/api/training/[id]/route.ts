@@ -52,10 +52,14 @@ export async function GET(
       return NextResponse.json({ error: "Training not found" }, { status: 404 });
     }
 
+    const isAdmin = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
+    if (training.status === "ABGEBROCHEN" && !isAdmin) {
+      return NextResponse.json({ error: "Training archived" }, { status: 403 });
+    }
+
     // Check if user is trainee, mentor, or admin/leitung
     const isMentor = training.mentors.some((m) => m.mentorId === userId);
     const isTrainee = training.traineeId === userId;
-    const isAdmin = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
 
     if (!isMentor && !isTrainee && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -26,7 +26,10 @@ export async function GET(request: NextRequest) {
 
     // Get all trainings with ABGEBROCHEN status
     const pendingCancellations = await prisma.training.findMany({
-      where: { status: "ABGEBROCHEN" },
+      where: {
+        status: "ABGEBROCHEN",
+        mentors: { some: {} },
+      },
       include: {
         trainee: {
           select: { id: true, name: true, cid: true },

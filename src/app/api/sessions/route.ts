@@ -258,6 +258,10 @@ export async function GET(request: NextRequest) {
     const isAdminOrLeitung = ["ADMIN", "PMP_LEITUNG"].includes(userRole);
     const isExaminer = userRole === "PMP_PRÜFER";
 
+    if (training.status === "ABGEBROCHEN" && !isAdminOrLeitung) {
+      return NextResponse.json({ error: "Training archived" }, { status: 403 });
+    }
+
     let examinerHasPlannedCheckride = false;
     if (isExaminer) {
       const checkride = await prisma.checkride.findFirst({

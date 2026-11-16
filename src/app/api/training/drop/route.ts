@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
  * POST /api/training/drop
  * Two use cases:
  * 1. Remove a co-mentor from a training (mentorId provided)
- * 2. Reset a cancelled trainee's old training data when reapplying (userId provided, called from /anmeldung)
+ * 2. Reset a cancelled trainee's account state when reapplying (userId provided, called from /anmeldung)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +28,13 @@ export async function POST(request: NextRequest) {
       deleteEverything,
       cancellationReason,
     } = await request.json();
+
+    if (deleteEverything) {
+      return NextResponse.json(
+        { error: "Daten dürfen ausschließlich über die GDPR-API gelöscht werden" },
+        { status: 403 }
+      );
+    }
 
     // Use case 1: Mentor dropping a co-mentor or trainee
     if (trainingId && !resetCancelledTrainee) {
@@ -135,40 +142,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (deleteEverything) {
-        if (!["ADMIN", "PMP_LEITUNG"].includes(userRole)) {
-          return NextResponse.json(
-            { error: "Only PMP leadership can delete all trainee data" },
-            { status: 403 }
-          );
-        }
-
-        await prisma.$transaction(async (tx) => {
-          if (training.trainee.cid) {
-            await tx.registration.deleteMany({
-              where: { cid: training.trainee.cid },
-            });
-          }
-
-          await tx.training.deleteMany({
-            where: { traineeId: training.trainee.id },
-          });
-
-          await tx.user.update({
-            where: { id: training.trainee.id },
-            data: {
-              role: "VISITOR",
-              userStatus: "Cancelled Trainee",
-            },
-          });
-        });
-
-        return NextResponse.json(
-          { success: true, message: "Training history removed and trainee marked as cancelled" },
-          { status: 200 }
-        );
-      }
-
       if (mentorId) {
         // Remove specific mentor
         await prisma.trainingMentor.deleteMany({
@@ -199,24 +172,34 @@ export async function POST(request: NextRequest) {
           { status: 200 }
         );
       } else {
-        // No mentorId specified, delete the entire training
-        const deleted = await prisma.training.delete({
-          where: { id: trainingId },
-        });
-        
-        // If trainee has no other active trainings, set role to VISITOR
-        const activeTrainings = await prisma.training.count({
-          where: { traineeId: training.trainee.id, status: { not: "ABGEBROCHEN" } },
-        });
-        if (activeTrainings === 0) {
-          await prisma.user.update({
-            where: { id: training.trainee.id },
-            data: { role: "VISITOR" },
+        await prisma.$transaction(async (tx) => {
+          await tx.trainingMentor.deleteMany({
+            where: { trainingId },
           });
-        }
+
+          await tx.training.update({
+            where: { id: trainingId },
+            data: {
+              status: "ABGEBROCHEN",
+              cancellationReason: "Training abgebrochen",
+              cancellationAt: new Date(),
+              readyForCheckride: false,
+              checkrideRequestText: null,
+              checkrideRequestedAt: null,
+            },
+          });
+
+          await tx.user.update({
+            where: { id: training.trainee.id },
+            data: {
+              role: "VISITOR",
+              userStatus: "Cancelled Trainee",
+            },
+          });
+        });
         
         return NextResponse.json(
-          { success: true, message: "Training dropped successfully" },
+          { success: true, message: "Training archived. Logs were retained." },
           { status: 200 }
         );
       }
@@ -237,28 +220,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      await prisma.$transaction(async (tx) => {
-        if (user?.cid) {
-          await tx.registration.deleteMany({
-            where: { cid: user.cid },
-          });
-        }
-
-        await tx.training.deleteMany({
-          where: { traineeId: userId },
-        });
-
-        await tx.user.update({
-          where: { id: userId },
-          data: {
-            userStatus: null,
-            role: "VISITOR",
-          },
-        });
-      });
-
       return NextResponse.json(
-        { success: true, message: "Old training data reset successfully. You can now reapply." },
+        { success: true, message: "Cancelled trainee reset without deleting training data." },
         { status: 200 }
       );
     }
