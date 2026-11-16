@@ -1,5 +1,5 @@
 # ---- BUILDER ----
-FROM node:20-bookworm AS builder
+FROM node:26-bookworm AS builder
 
 WORKDIR /app
 

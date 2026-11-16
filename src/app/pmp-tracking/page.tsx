@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
+import MentorAssignmentManager from "@/components/MentorAssignmentManager";
 import { trainingTopics } from "@/lib/trainingTopics";
 import { getTrainingTypeColors, getTrainingTypeLabel, isCoachingTraining } from "@/lib/trainingMode";
 import { AlertTriangle, BadgeCheck } from "lucide-react";
@@ -246,6 +247,8 @@ function PmpTrackingContent() {
           Übersicht der Trainingsabdeckung nach Thema für jeden Trainee
         </p>
       </div>
+
+      <MentorAssignmentManager />
 
       {error && (
         <div className="info-danger" style={{ marginBottom: "1rem" }}>

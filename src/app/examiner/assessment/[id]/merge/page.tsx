@@ -163,8 +163,8 @@ export default function CheckrideMergePage() {
           checkrideId,
           release,
           overallResult,
-          examinernotes: serializeRubricNotes(generalFinalNote, finalBlockNotes),
           ...examinerAssessment,
+          examinernotes: serializeRubricNotes(generalFinalNote, finalBlockNotes),
         }),
       });
       if (!res.ok) {

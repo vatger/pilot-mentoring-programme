@@ -29,6 +29,7 @@ export async function GET(_request: NextRequest) {
     const checkrides = await prisma.checkride.findMany({
       where: {
         result: { not: "PASSED" },
+        ...(role === "PMP_PRÜFER" ? { isDraft: true } : {}),
       },
       include: {
         availability: {
