@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
+import MentorAssignmentManager from "@/components/MentorAssignmentManager";
 
 interface User {
   id: string;
@@ -207,6 +208,8 @@ export default function AdminPage() {
           </button>
         </div>
       </div>
+
+      <MentorAssignmentManager />
 
       {error && (
         <div className="info-danger" style={{ marginBottom: "1.5rem" }}>

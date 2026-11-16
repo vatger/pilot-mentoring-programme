@@ -76,13 +76,6 @@ export default function MentorDashboard() {
   const [showCancellationReasonModal, setShowCancellationReasonModal] = useState<string | null>(null);
   const [cancellationReason, setCancellationReason] = useState("");
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
-  const [showDirectAddModal, setShowDirectAddModal] = useState(false);
-  const [directTraineeCid, setDirectTraineeCid] = useState("");
-  const [directAnmeldetext, setDirectAnmeldetext] = useState("");
-  const [directTrainingType, setDirectTrainingType] = useState<"STANDARD" | "ONLINE_COACHING">("STANDARD");
-  const [creatingInvite, setCreatingInvite] = useState(false);
-  const [inviteLink, setInviteLink] = useState("");
-  const [inviteError, setInviteError] = useState("");
   const [editableAnmeldetext, setEditableAnmeldetext] = useState("");
   const [savingAnmeldetext, setSavingAnmeldetext] = useState(false);
   const [anmeldetextError, setAnmeldetextError] = useState("");
@@ -428,53 +421,6 @@ export default function MentorDashboard() {
     }
   };
 
-  const createDirectInvite = async () => {
-    const traineeCid = directTraineeCid.trim();
-    const anmeldetext = directAnmeldetext.trim();
-
-    if (!/^\d+$/.test(traineeCid)) {
-      setInviteError("Bitte eine gültige numerische CID eingeben");
-      return;
-    }
-
-    if (!anmeldetext) {
-      setInviteError("Bitte einen Anmeldetext eingeben");
-      return;
-    }
-
-    setInviteError("");
-    setCreatingInvite(true);
-    setInviteLink("");
-
-    try {
-      const res = await fetch("/api/training/direct-invite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ traineeCid, anmeldetext, trainingType: directTrainingType }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Fehler beim Erstellen des Einladungslinks");
-      }
-
-      setInviteLink(data.inviteUrl || "");
-    } catch (err) {
-      setInviteError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setCreatingInvite(false);
-    }
-  };
-
-  const closeDirectAddModal = () => {
-    setShowDirectAddModal(false);
-    setDirectTraineeCid("");
-    setDirectAnmeldetext("");
-    setDirectTrainingType("STANDARD");
-    setInviteLink("");
-    setInviteError("");
-  };
-
   const getDiscordStatus = (other?: string | null) => {
     if (!other) return null;
     const line = other.split("\n").find((entry) => entry.startsWith("VATSIM Germany Discord:"));
@@ -520,19 +466,6 @@ export default function MentorDashboard() {
               ? "Verwalte alle aktiven Trainings und Trainees"
               : "Verwalte deine Trainings und Trainees"}
           </p>
-          <div style={{ marginTop: "1rem" }}>
-            <button
-              className="button"
-              onClick={() => {
-                setInviteError("");
-                setInviteLink("");
-                setShowDirectAddModal(true);
-              }}
-              style={{ margin: 0 }}
-            >
-              Mir einen Trainee hinzufügen
-            </button>
-          </div>
         </div>
 
         {error && (
@@ -872,115 +805,6 @@ export default function MentorDashboard() {
           </>
         )}
       </PageLayout>
-
-      {/* Registration Details Modal - Outside PageLayout */}
-      {showDirectAddModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 10001,
-            padding: "24px",
-          }}
-          onClick={closeDirectAddModal}
-        >
-          <div
-            className="card"
-            style={{
-              maxWidth: "640px",
-              width: "100%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              overflowX: "hidden",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>Mir einen Trainee hinzufügen</h2>
-
-            <div style={{ display: "grid", gap: "0.75rem" }}>
-              <label className="form-label">
-                Art des Trainings
-                <select
-                  className="form-input"
-                  value={directTrainingType}
-                  onChange={(e) => setDirectTrainingType(e.target.value as "STANDARD" | "ONLINE_COACHING")}
-                >
-                  <option value="STANDARD">Airliner-Training (mit Themen-Tracking)</option>
-                  <option value="ONLINE_COACHING">Online Coaching (Notiz)</option>
-                </select>
-              </label>
-
-              <label className="form-label">
-                Trainee CID
-                <input
-                  className="form-input"
-                  value={directTraineeCid}
-                  onChange={(e) => setDirectTraineeCid(e.target.value)}
-                  placeholder="z.B. 1234567"
-                />
-              </label>
-
-              <label className="form-label">
-                Anmeldetext
-                <textarea
-                  className="form-textarea"
-                  value={directAnmeldetext}
-                  onChange={(e) => setDirectAnmeldetext(e.target.value)}
-                  placeholder="Freitext zur Anmeldung"
-                  style={{ minHeight: "140px" }}
-                />
-              </label>
-            </div>
-
-            {inviteError && (
-              <div className="info-danger" style={{ marginTop: "1rem" }}>
-                <p>{inviteError}</p>
-              </div>
-            )}
-
-            {inviteLink && (
-              <div style={{ marginTop: "1rem", display: "grid", gap: "0.5rem" }}>
-                <strong style={{ color: "var(--text-color)" }}>Einladungslink</strong>
-                <textarea
-                  className="form-textarea"
-                  value={inviteLink}
-                  readOnly
-                  style={{ minHeight: "100px" }}
-                />
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <button
-                    className="button"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(inviteLink);
-                        alert("Link in Zwischenablage kopiert");
-                      } catch {
-                        alert("Kopieren fehlgeschlagen");
-                      }
-                    }}
-                    style={{ margin: 0 }}
-                  >
-                    Link kopieren
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginTop: "1.25rem" }}>
-              <button className="button" onClick={closeDirectAddModal} disabled={creatingInvite}>
-                Schließen
-              </button>
-              <button className="button" onClick={createDirectInvite} disabled={creatingInvite}>
-                {creatingInvite ? "Erstellt…" : "Link erstellen"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Registration Details Modal - Outside PageLayout */}
       {showModal && selectedTrainee && (

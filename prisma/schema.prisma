@@ -106,7 +106,7 @@ model Registration {
   @@index([status])
 }
 
-// Direct mentor invite for one-click trainee onboarding
+// Legacy records from the retired direct-invite flow.
 model MentorInvite {
   id          String   @id @default(cuid())
   mentorId    String
@@ -122,6 +122,19 @@ model MentorInvite {
   @@index([mentorId])
   @@index([traineeCid])
   @@index([expiresAt])
+}
+
+// CID reservations are applied when the trainee first signs in through VATSIM SSO.
+model PendingMentorAssignment {
+  id         String   @id @default(cuid())
+  traineeCid String
+  mentorId   String
+  createdAt  DateTime @default(now())
+
+  mentor User @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+
+  @@unique([traineeCid, mentorId])
+  @@index([traineeCid])
 }
 
 // Account model for potential future SSO session management
@@ -178,6 +191,7 @@ model User {
   trainingsAsMentor  TrainingMentor[]
   authoredSessions   TrainingSession[] @relation("sessionAuthor")
   mentorInvites      MentorInvite[]
+  pendingMentorAssignments PendingMentorAssignment[]
   checkrideAvailabilities CheckrideAvailability[] @relation("examinedSessions")
   checkrides         Checkride[] @relation("checkrides")
   checkrideMentorAssessments CheckrideMentorAssessment[] @relation("mentorAssessments")

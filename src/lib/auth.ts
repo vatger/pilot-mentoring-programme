@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import type { OAuthConfig } from "next-auth/providers/oauth";
 import { prisma } from "./prisma";
+import { applyPendingMentorAssignments } from "./mentorAssignment";
 
 // Admin CID that can manage other admins
 const ADMIN_CIDS = ["1893789"];
@@ -194,6 +195,16 @@ export const authOptions: NextAuthOptions = {
           token.id = userRecord.id;
           token.role = userRecord.role;
           token.userStatus = userRecord.userStatus || null;
+
+          try {
+            const result = await applyPendingMentorAssignments(cid, userRecord.id);
+            if (result.applied > 0) {
+              token.role = "TRAINEE";
+              token.userStatus = null;
+            }
+          } catch (error) {
+            console.error("Failed to apply pending mentor assignment:", error);
+          }
         } catch (error) {
           console.error("Failed to sync auth user with Prisma:", error);
           token.id = cid;
@@ -225,7 +236,7 @@ export const authOptions: NextAuthOptions = {
           return `${baseUrl}/signin?postauth=true`;
         }
 
-        // Preserve direct invite callbacks so the token can be executed after login
+        // Keep old invite URLs on the page explaining the retired flow.
         if (resolvedUrl.pathname === "/direkt-einladung") {
           return resolvedUrl.toString();
         }

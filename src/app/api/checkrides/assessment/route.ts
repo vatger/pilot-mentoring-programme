@@ -55,7 +55,11 @@ export async function GET(request: NextRequest) {
       where: { id: checkrideId },
       include: {
         assessment: true,
-        availability: true,
+        availability: {
+          include: {
+            examiner: { select: { id: true, cid: true, name: true } },
+          },
+        },
         training: {
           include: { mentors: true },
         },
@@ -63,6 +67,10 @@ export async function GET(request: NextRequest) {
     });
     if (!checkride) {
       return NextResponse.json({ error: "Checkride not found" }, { status: 404 });
+    }
+
+    if (role === "PMP_PRÜFER" && !checkride.isDraft) {
+      return NextResponse.json({ error: "Assessment has already been released" }, { status: 403 });
     }
 
     // Permission: examiner, admin/le/w PMP_PRÜFER, mentor of training, trainee (but only after release)
@@ -118,6 +126,10 @@ export async function POST(request: NextRequest) {
     });
     if (!checkride) {
       return NextResponse.json({ error: "Checkride not found" }, { status: 404 });
+    }
+
+    if (role === "PMP_PRÜFER" && !checkride.isDraft) {
+      return NextResponse.json({ error: "Assessment has already been released" }, { status: 403 });
     }
 
     const isExaminerUser = checkride.availability.examinerId === userId || isExaminer(role);

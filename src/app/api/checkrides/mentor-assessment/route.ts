@@ -66,6 +66,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Checkride not found" }, { status: 404 });
     }
 
+    if (role === "PMP_PRÜFER" && !checkride.isDraft) {
+      return NextResponse.json({ error: "Assessment has already been released" }, { status: 403 });
+    }
+
     const isAssignedMentor = checkride.training.mentors?.some((mentor: any) => mentor.mentorId === userId) ?? false;
     const canRead = isAssignedMentor || isCheckrideRole(role);
 
@@ -111,6 +115,10 @@ export async function POST(request: NextRequest) {
 
     if (!checkride) {
       return NextResponse.json({ error: "Checkride not found" }, { status: 404 });
+    }
+
+    if (role === "PMP_PRÜFER" && !checkride.isDraft) {
+      return NextResponse.json({ error: "Assessment has already been released" }, { status: 403 });
     }
 
     const isAssignedMentor = checkride.training.mentors.some((mentor: any) => mentor.mentorId === userId);

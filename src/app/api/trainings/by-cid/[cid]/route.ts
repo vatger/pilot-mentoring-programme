@@ -48,7 +48,7 @@ export async function GET(
       where: { traineeId: trainee.id },
       include: {
         trainee: { select: { id: true, cid: true, name: true } },
-        sessions: true,
+        sessions: { include: { topics: true } },
         mentors: { select: { mentorId: true, mentor: { select: { id: true, name: true, cid: true } } } },
       },
       orderBy: { createdAt: "desc" },
