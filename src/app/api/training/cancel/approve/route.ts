@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
           data: {
             status: "ACTIVE",
             cancellationReason: null,
+            cancellationReasonAuthorId: null,
             cancellationAt: null,
           },
         });

@@ -14,7 +14,7 @@ import {
 
 type AvailableSlot = {
   id: string;
-  examinerId: string;
+  examinerId: string | null;
   startTime: string;
   endTime: string;
   status: string;

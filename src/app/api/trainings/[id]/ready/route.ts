@@ -67,6 +67,7 @@ export async function PATCH(
       data: {
         readyForCheckride,
         checkrideRequestText: readyForCheckride ? requestText : null,
+        checkrideRequestAuthorId: readyForCheckride ? userId : null,
         checkrideRequestedAt: readyForCheckride ? new Date() : null,
       } as any,
     });

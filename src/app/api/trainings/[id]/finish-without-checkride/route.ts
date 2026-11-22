@@ -48,6 +48,7 @@ export async function POST(
           status: "COMPLETED",
           readyForCheckride: false,
           checkrideRequestText: null,
+          checkrideRequestAuthorId: null,
           checkrideRequestedAt: null,
         },
       });

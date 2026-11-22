@@ -161,9 +161,11 @@ export async function POST(request: NextRequest) {
         create: {
           checkrideId,
           mentorNotes: typeof mentorNotes === "string" ? mentorNotes : null,
+          mentorNotesAuthorId: userId,
         },
         update: {
           mentorNotes: typeof mentorNotes === "string" ? mentorNotes : null,
+          mentorNotesAuthorId: userId,
         },
       });
 
@@ -181,6 +183,10 @@ export async function POST(request: NextRequest) {
     }
     if (examinernotes !== undefined) {
       assessmentData.examinernotes = examinernotes || null;
+    }
+    if (mentorNotes !== undefined) {
+      assessmentData.mentorNotes = typeof mentorNotes === "string" ? mentorNotes : null;
+      assessmentData.mentorNotesAuthorId = userId;
     }
 
     // Upsert assessment

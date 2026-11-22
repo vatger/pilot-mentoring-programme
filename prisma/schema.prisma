@@ -189,12 +189,15 @@ model User {
   sessions           Session[]
   trainingsAsTrainee Training[] @relation("trainee")
   trainingsAsMentor  TrainingMentor[]
+  authoredCheckrideRequests Training[] @relation("checkrideRequestAuthor")
+  authoredCancellations Training[] @relation("cancellationReasonAuthor")
   authoredSessions   TrainingSession[] @relation("sessionAuthor")
   mentorInvites      MentorInvite[]
   pendingMentorAssignments PendingMentorAssignment[]
   checkrideAvailabilities CheckrideAvailability[] @relation("examinedSessions")
   checkrides         Checkride[] @relation("checkrides")
   checkrideMentorAssessments CheckrideMentorAssessment[] @relation("mentorAssessments")
+  authoredCheckrideMentorNotes CheckrideAssessment[] @relation("checkrideMentorNotes")
 
   @@index([cid])
   @@index([role])
@@ -209,13 +212,17 @@ model Training {
   status              TrainingStatus @default(ACTIVE) // ACTIVE, COMPLETED, ABGEBROCHEN
   readyForCheckride   Boolean @default(false)
   checkrideRequestText String?  @db.Text
+  checkrideRequestAuthorId String?
   checkrideRequestedAt DateTime?
   cancellationReason  String?  @db.Text // Reason for cancellation (filled by mentor)
+  cancellationReasonAuthorId String?
   cancellationAt      DateTime? // When the cancellation was initiated
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   trainee    User               @relation("trainee", fields: [traineeId], references: [id], onDelete: Cascade)
+  checkrideRequestAuthor User? @relation("checkrideRequestAuthor", fields: [checkrideRequestAuthorId], references: [id], onDelete: SetNull)
+  cancellationReasonAuthor User? @relation("cancellationReasonAuthor", fields: [cancellationReasonAuthorId], references: [id], onDelete: SetNull)
   mentors    TrainingMentor[]
   sessions   TrainingSession[]
   checkrides Checkride[]
@@ -298,14 +305,14 @@ enum CheckrideResult {
 // Examiner availability calendar
 model CheckrideAvailability {
   id          String   @id @default(cuid())
-  examinerId  String
+  examinerId  String?
   startTime   DateTime
   endTime     DateTime
   status      CheckrideStatus @default(AVAILABLE)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  examiner    User     @relation("examinedSessions", fields: [examinerId], references: [id], onDelete: Cascade)
+  examiner    User?    @relation("examinedSessions", fields: [examinerId], references: [id], onDelete: SetNull)
   checkride   Checkride?
 
   @@index([examinerId])
@@ -439,10 +446,12 @@ model CheckrideAssessment {
   overallResult           CheckrideResult @default(INCOMPLETE)
   examinernotes           String?  @db.Text
   mentorNotes             String?  @db.Text
+  mentorNotesAuthorId     String?
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
   checkride               Checkride @relation(fields: [checkrideId], references: [id], onDelete: Cascade)
+  mentorNotesAuthor       User?     @relation("checkrideMentorNotes", fields: [mentorNotesAuthorId], references: [id], onDelete: SetNull)
 
   @@index([checkrideId])
 }
