@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import PageLayout from "@/components/PageLayout";
 
@@ -36,9 +36,9 @@ export default function TrainingsPage() {
   const [newSessionLink, setNewSessionLink] = useState<string | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
 
-  const teams = useMemo(() => ((session?.user as any)?.teams ?? []) as string[], [session]);
-  const isMentor = teams.includes("pmp-mentor") || teams.includes("pmp-leitung");
-  const isLead = teams.includes("pmp-leitung");
+  const userRole = (session?.user as any)?.role;
+  const isMentor = ["MENTOR", "PMP_LEITUNG", "PMP_PRÜFER", "ADMIN"].includes(userRole);
+  const isLead = ["PMP_LEITUNG", "ADMIN"].includes(userRole);
 
   if (status === "loading") {
     return (
@@ -131,15 +131,6 @@ export default function TrainingsPage() {
             </div>
             <div style={{ fontSize: "1em", fontWeight: 500, fontFamily: "monospace" }}>
               {(session.user as any)?.cid}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: "0.85em", color: "var(--text-color)", marginBottom: "0.25rem", fontWeight: 500 }}>
-              Rating
-            </div>
-            <div style={{ fontSize: "1em", fontWeight: 500 }}>
-              {(session.user as any)?.rating}
-              {(session.user as any)?.fir && ` (${(session.user as any)?.fir})`}
             </div>
           </div>
           <div>

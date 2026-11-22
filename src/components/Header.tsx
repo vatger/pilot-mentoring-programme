@@ -92,7 +92,6 @@ export default function Header() {
   isManualToggleRef.current = true;
   };
 
-const teams = (session?.user as any)?.teams || [];
 const userRole = (session?.user as any)?.role;
 
 // Role-based access determination

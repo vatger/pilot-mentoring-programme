@@ -75,8 +75,8 @@ export async function POST(request: NextRequest) {
       create: {
         cid: user.cid,
         name: user.name || "Unknown",
-        rating: user.rating || "UNKNOWN",
-        fir: user.fir || "",
+        rating: "UNKNOWN",
+        fir: "",
         simulator: body.simulator,
         aircraft: body.aircraft,
         client: body.client,
