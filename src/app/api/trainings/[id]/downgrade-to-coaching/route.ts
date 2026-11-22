@@ -70,6 +70,7 @@ export async function POST(
           trainingType: "ONLINE_COACHING",
           readyForCheckride: false,
           checkrideRequestText: null,
+          checkrideRequestAuthorId: null,
           checkrideRequestedAt: null,
         },
       });

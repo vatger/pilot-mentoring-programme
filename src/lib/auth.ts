@@ -8,23 +8,13 @@ const ADMIN_CIDS = ["1893789"];
 
 export interface VatsimProfile {
   id?: number;
-  firstname?: string;
-  lastname?: string;
   fullname?: string;
-  rating_atc?: number;
-  rating_atc_short?: string;
-  fir_code?: string;
   data?: {
     cid?: string | number;
     personal?: {
       name_full?: string;
       name_first?: string;
       name_last?: string;
-    };
-    vatsim?: {
-      rating?: {
-        short?: string;
-      };
     };
     teams?: string[];
   };
@@ -33,11 +23,6 @@ export interface VatsimProfile {
     name_full?: string;
     name_first?: string;
     name_last?: string;
-  };
-  vatsim?: {
-    rating?: {
-      short?: string;
-    };
   };
   teams?: string[];
 }
@@ -85,7 +70,7 @@ export const VatgerProvider: OAuthConfig<VatsimProfile> = {
   type: "oauth",
   authorization: {
     url: AUTHORIZATION_URL,
-    params: { scope: "name rating assignment teams" },
+    params: { scope: "name teams" },
   },
   token: TOKEN_URL,
   userinfo: USERINFO_URL,
@@ -108,8 +93,6 @@ export const VatgerProvider: OAuthConfig<VatsimProfile> = {
       fullName = profile.fullname;
     }
 
-    const rating = data?.vatsim?.rating?.short || profile?.rating_atc_short || "UNKNOWN";
-    const fir = profile?.fir_code || "";
     const teams = Array.isArray((data as any)?.teams)
       ? (data as any).teams.map((t: any) => String(t)).filter(Boolean)
       : Array.isArray((profile as any)?.teams)
@@ -120,8 +103,6 @@ export const VatgerProvider: OAuthConfig<VatsimProfile> = {
       id: String(Number.isFinite(cid) ? cid : profile?.id ?? Date.now()),
       cid: String(Number.isFinite(cid) ? cid : ""),
       name: fullName,
-      rating,
-      fir,
       teams,
     } as any;
   },
@@ -133,6 +114,12 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: "/signin" },
   callbacks: {
     async jwt({ token, user }) {
+      delete token.email;
+      delete token.picture;
+      delete token.rating;
+      delete token.fir;
+      delete token.teams;
+
       // On sign-in, create or update user in DB with VISITOR role (unless already set)
       if (user) {
         const cid = String((user as any).cid ?? "");
@@ -151,10 +138,7 @@ export const authOptions: NextAuthOptions = {
 
         token.cid = cid;
         token.name = (user as any).name;
-        token.rating = (user as any).rating;
         token.role = fallbackRole;
-        token.fir = (user as any).fir || "";
-        token.teams = teams;
         token.userStatus = token.userStatus || null;
 
         if (!cid) {
@@ -168,14 +152,13 @@ export const authOptions: NextAuthOptions = {
               create: {
                 cid,
                 name: (user as any).name,
-                email: (user as any).email,
-                image: (user as any).image,
                 role: fallbackRole as any,
               },
               update: {
                 name: (user as any).name,
-                email: (user as any).email,
-                image: (user as any).image,
+                email: null,
+                emailVerified: null,
+                image: null,
               },
               select: { id: true, role: true, userStatus: true },
             })
@@ -217,11 +200,8 @@ export const authOptions: NextAuthOptions = {
         id: token.id,
         cid: token.cid,
         name: token.name,
-        rating: token.rating,
         role: token.role || "VISITOR",
         userStatus: token.userStatus || null,
-        fir: token.fir || "",
-        teams: token.teams || [],
       };
       (session as any).user = sessionUser;
 

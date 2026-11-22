@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
             data: {
               readyForCheckride: false,
               checkrideRequestText: null,
+              checkrideRequestAuthorId: null,
               checkrideRequestedAt: null,
             },
           });
@@ -117,9 +118,11 @@ export async function POST(request: NextRequest) {
             data: {
               status: "ABGEBROCHEN",
               cancellationReason: String(cancellationReason || "").trim() || "Training abgebrochen",
+              cancellationReasonAuthorId: userId,
               cancellationAt: new Date(),
               readyForCheckride: false,
               checkrideRequestText: null,
+              checkrideRequestAuthorId: null,
               checkrideRequestedAt: null,
             },
           });
@@ -156,6 +159,7 @@ export async function POST(request: NextRequest) {
             data: {
               readyForCheckride: false,
               checkrideRequestText: null,
+              checkrideRequestAuthorId: null,
               checkrideRequestedAt: null,
             },
           });
@@ -182,9 +186,11 @@ export async function POST(request: NextRequest) {
             data: {
               status: "ABGEBROCHEN",
               cancellationReason: "Training abgebrochen",
+              cancellationReasonAuthorId: userId,
               cancellationAt: new Date(),
               readyForCheckride: false,
               checkrideRequestText: null,
+              checkrideRequestAuthorId: null,
               checkrideRequestedAt: null,
             },
           });

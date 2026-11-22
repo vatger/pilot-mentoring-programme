@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
         data: {
           status: "ABGEBROCHEN",
           cancellationReason: cancellationReason.trim(),
+          cancellationReasonAuthorId: userId,
           cancellationAt: new Date(),
         },
         include: {
